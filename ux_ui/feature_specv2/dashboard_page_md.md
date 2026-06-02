@@ -4,6 +4,17 @@ This markdown provides instructions for implementing the Dashboard Page of the C
 
 ---
 
+## 0. Page Images
+
+| Image | Path | Dimensions | Use |
+|---|---|---|---|
+| CTA banner | `assets/image/dashboard/dashboard_cta_banner_nature.png` | 2172×724 | Bottom CTA ("Small Actions. Big Impact.") |
+| Shared banner | `assets/image/banner.png` | 1916×821 | Secondary banner fallback |
+| Sidebar bottom | `assets/image/sidebar/sidebar_bottom_all_pages.png` | 1254×1254 | Sidebar bottom-left |
+
+> See `community_greentoken_dashboard_cta_banner.md` for CTA banner implementation.  
+> See `assets/image/sidebar/sidebar_all_pages_guide.md` for sidebar image guide.
+
 ## 1. Components
 - `TokenBalanceCard` – Displays user's current token balance.
 - `LeaderboardCard` – Shows top users and rankings.
