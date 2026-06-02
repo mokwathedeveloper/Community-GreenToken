@@ -7,14 +7,51 @@ This document serves as a **cross-reference index** for all UX/UI documentation 
 ## 1. Folder Overview
 ```
 ux_ui/
-└─ features_specs/
-   ├─ design_system.md
-   ├─ features_to_mockup_map.md
-   ├─ uiux_implementation_blueprint.md
-   ├─ documentation_index.md  # This file
-   ├─ interaction_guidelines.md
-   ├─ prototyping_notes.md
-   └─ accessibility_checklist.md
+├─ features_specs/
+│  ├─ design_system.md
+│  ├─ features_to_mockup_map.md
+│  ├─ uiux_implementation_blueprint.md
+│  ├─ documentation_index.md  # This file
+│  ├─ interaction_guidelines.md
+│  ├─ prototyping_notes.md
+│  └─ accessibility_checklist.md
+└─ feature_specv2/            # Per-page blueprints + starter code
+   │
+   │  ── MVP Core Pages (7) ──────────────────────────────
+   ├─ landing_page_md.md
+   ├─ landing_page_hero_image_md.md
+   ├─ dashboard_page_md.md
+   ├─ token_redemption_page_md.md
+   ├─ donation_tracking_page_md.md
+   ├─ leaderboard_page_md.md
+   ├─ analytics_metrics_page_md.md
+   ├─ community_greentoken_dashboard_cta_banner.md
+   │
+   │  ── Added Pages (4) ────────────────────────────────
+   ├─ signin_page_md.md          # Sign In / Auth
+   ├─ about_us_page_md.md        # About Us
+   ├─ how_it_works_page_md.md    # How It Works
+   ├─ impact_page_md.md          # Public Impact Stats
+   │
+   │  ── SaaS Pages (7) ─────────────────────────────────
+   ├─ pricing_page_md.md         # Public pricing / plan comparison
+   ├─ org_onboarding_page_md.md  # 5-step org setup wizard
+   ├─ org_admin_dashboard_md.md  # Per-org admin overview
+   ├─ super_admin_dashboard_md.md# Platform super admin
+   ├─ billing_page_md.md         # Subscription management
+   ├─ org_members_page_md.md     # Member management + invites
+   ├─ org_settings_page_md.md    # Org token + profile config
+   │
+   │  ── Starter Code (7 JS files) ─────────────────────
+   ├─ landing_page_starter_code.js
+   ├─ dashboard_page_starter_code.js
+   ├─ token_redemption_page_starter_code.js
+   ├─ donation_tracking_page_starter_code.js
+   ├─ leaderboard_page_starter_code.js
+   ├─ analytics_metrics_page_starter_code.js
+   ├─ Main Feature Page action_submission_page_starter_code.js
+   │
+   └─ ux_ui_pages_features_blueprint.md   # Master blueprint (updated for SaaS)
 ```
 
 ## 2. Document Cross-References
