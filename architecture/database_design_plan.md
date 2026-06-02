@@ -84,3 +84,60 @@ This document provides a professional **database design plan** for the Community
 
 This design ensures **secure, scalable, and hackathon-ready data management** for the Community GreenToken application, fully compatible with Supabase and serverless Next.js architecture.
 
+---
+
+## SaaS Extension — Multi-Tenant Schema
+
+> **See also:** `saas/saas_database_schema.md` for the full SaaS schema with all SQL.
+
+### New Tables Added for SaaS
+
+| Table | Purpose |
+|---|---|
+| `organizations` | Tenant root — each org is one tenant |
+| `org_members` | User ↔ Org relationship with role (owner/admin/member) |
+| `invites` | Invite tokens for joining an org |
+| `rewards` | Per-org redeemable reward catalog |
+| `billing_events` | Stripe webhook audit log |
+| `plan_limits` | Feature limits per subscription plan |
+
+### org_id Added to All Existing Tables
+
+Every existing table receives an `org_id UUID NOT NULL REFERENCES organizations(id)` column:
+
+```
+Users          → + org_id
+Actions        → + org_id
+TokenBalances  → + org_id
+RedemptionLogs → + org_id
+Leaderboard    → + org_id
+AnalyticsMetrics → + org_id
+Donations      → + org_id
+```
+
+### Updated RLS Policies
+
+All RLS policies now scope data by `org_id` extracted from the JWT:
+
+```sql
+-- Pattern applied to every table
+CREATE POLICY "org_isolation" ON <table> FOR ALL
+USING (org_id = (auth.jwt() ->> 'org_id')::UUID);
+```
+
+Super admin bypass:
+```sql
+CREATE POLICY "superadmin_bypass" ON <table> FOR ALL
+USING ((auth.jwt() ->> 'role') = 'superadmin');
+```
+
+### JWT Custom Claims (auth hook)
+
+On every sign-in, Supabase injects `org_id` and `role` into the JWT so all RLS policies can use them without extra queries:
+
+```sql
+-- Returns JWT + org_id + role claims
+SELECT custom_jwt_claims(event) FROM auth.users;
+```
+
+
