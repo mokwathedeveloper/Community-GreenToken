@@ -1,0 +1,111 @@
+/* Community GreenToken — Global Styles
+   Tailwind v4 CSS-based configuration
+   Design tokens from: ux_ui/features_specs/DESIGN_SPEC.md Section 8
+*/
+
+@import "tailwindcss";
+
+/* ── Google Font: Poppins ──────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+/* ── Design Tokens (Tailwind v4 @theme) ────────────────────────── */
+@theme {
+  /* Font */
+  --font-family-sans: Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Brand Primary — #22c55e green */
+  --color-primary-50:  #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
+  --color-primary-950: #052e16;
+
+  /* Accent Colors */
+  --color-accent-yellow: #f59e0b;
+  --color-accent-blue:   #3b82f6;
+
+  /* Semantic Surface Colors */
+  --color-bg-page:    #ffffff;
+  --color-bg-surface: #f9fafb;
+  --color-bg-subtle:  #f0fdf4;
+
+  /* Shadows */
+  --shadow-card:    0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-card-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-card-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08);
+  --shadow-modal:   0 25px 50px -12px rgb(0 0 0 / 0.20);
+
+  /* Extra Border Radius */
+  --radius-xl:  12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+
+  /* Extra Spacing */
+  --spacing-4_5: 18px;
+  --spacing-13:  52px;
+  --spacing-15:  60px;
+  --spacing-18:  72px;
+
+  /* Custom Animations */
+  --animate-count-up: countUp 1s ease-out forwards;
+  --animate-fade-in:  fadeIn 0.2s ease-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-bar-fill: barFill 0.8s ease-out forwards;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────── */
+@keyframes countUp {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes barFill {
+  from { width: 0%; }
+  to   { width: var(--bar-width, 100%); }
+}
+
+/* ── Reduced Motion ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Base Styles ───────────────────────────────────────────────── */
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-bg-page);
+  color: #111827;
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus Ring (Accessibility) ────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
