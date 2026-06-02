@@ -4,6 +4,18 @@ This markdown provides **implementation instructions** for the Leaderboard Page 
 
 ---
 
+## 0. Page Images
+
+| Image | Path | Dimensions | Use |
+|---|---|---|---|
+| Shared banner | `assets/image/banner.png` | 1916×821 | Top hero/banner section |
+| Trophy image | `assets/image/leaderboard-dashboard/leaderboard_trophy.png` | 1672×941 | Top-right of leaderboard section |
+| Sidebar bottom (primary) | `assets/image/sidebar/sidebar_bottom_all_pages.png` | 1254×1254 | Sidebar bottom-left |
+| Sidebar bottom (alt) | `assets/image/leaderboard-dashboard/sidebarleaderboard/eco_achievement_trophy_plants.png` | 1122×1402 | Optional: leaderboard-specific variant |
+
+> See `assets/image/leaderboard-dashboard/leaderboard_trophy_image.md` for trophy implementation.  
+> See `assets/image/sidebar/sidebar_all_pages_guide.md` for sidebar image guide.
+
 ## 1. Components
 - `LeaderboardTable` – Displays a list of users with their rank and token totals.
 - `UserRankCard` – Represents individual user entries with rank, username, and tokens.
