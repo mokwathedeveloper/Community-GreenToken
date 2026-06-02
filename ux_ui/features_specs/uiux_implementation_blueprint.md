@@ -40,3 +40,92 @@ This document provides a **professional implementation blueprint** for the front
 - **Props and Component Blueprint:** Each component should document props, expected data structure, and optional/required values.
 
 This blueprint ensures that the Community GreenToken frontend and AI/Analytics integration are **modular, maintainable, and strictly aligned with UX/UI design standards**, providing a polished MVP ready for hackathon demonstration.
+
+---
+
+## SaaS Extension — Multi-Tenant UI Blueprint
+
+### 5. Tenant Context (OrgProvider)
+
+All pages are wrapped in `OrgProvider` which supplies org-specific values to every component:
+
+```jsx
+// _app.jsx
+import { OrgProvider } from '../components/org/OrgProvider';
+
+export default function App({ Component, pageProps, orgConfig }) {
+  return (
+    <OrgProvider config={orgConfig}>
+      <Component {...pageProps} />
+    </OrgProvider>
+  );
+}
+```
+
+`OrgProvider` exposes: `orgId`, `orgSlug`, `tokenName`, `tokenSymbol`, `primaryColor`, `plan`, `memberLimit`.
+
+### 6. Plan Gate Hook
+
+Components that require a paid plan use the `usePlan` hook to conditionally render upgrade prompts:
+
+```jsx
+import { usePlan } from '../hooks/usePlan';
+
+export default function AnalyticsPage() {
+  const { canAccess, requiredPlan } = usePlan('analytics');
+  if (!canAccess) return <UpgradeModal feature="Analytics" requiredPlan={requiredPlan} />;
+  return <AnalyticsContent />;
+}
+```
+
+### 7. Dynamic Branding
+
+The org's `primaryColor` is applied as a CSS custom property at root level, so all Tailwind `text-primary`, `bg-primary` classes automatically use the org's brand color:
+
+```tsx
+// OrgProvider.tsx
+useEffect(() => {
+  document.documentElement.style.setProperty('--color-primary', org.primaryColor);
+}, [org.primaryColor]);
+```
+
+### 8. New SaaS Pages — Component Summary
+
+| Page | Route | Key Components | Access |
+|---|---|---|---|
+| Pricing | `/pricing` | `PricingTable`, `FeatureRow`, `FAQAccordion` | Public |
+| Sign Up | `/signup` | `SignUpForm`, `InviteTokenInput`, `TermsCheckbox` | Public |
+| Org Onboarding | `/org/setup` | `OnboardingProgressBar`, 5 step components | Auth |
+| Org Admin | `/org/admin` | `AdminStatCard`, `ActionVerificationQueue`, `PlanUsageBar` | owner/admin |
+| Super Admin | `/admin` | `OrgTable`, `PlatformMetricCard`, `RevenueChart` | superadmin |
+| Billing | `/org/admin/billing` | `CurrentPlanCard`, `TrialCountdown`, `BillingAlertBanner` | owner |
+| Members | `/org/admin/members` | `MemberTable`, `InviteModal`, `BulkActionBar` | owner/admin |
+| Settings | `/org/admin/settings` | `TokenConfigForm`, `ActionTypesEditor`, `DangerZone` | owner |
+
+### 9. Tenant Middleware
+
+Every server-side request resolves the org from the subdomain before rendering:
+
+```typescript
+// middleware.ts
+export function middleware(req: NextRequest) {
+  const host  = req.headers.get('host') || '';
+  const slug  = host.split('.')[0];  // capetown from capetown.greentoken.app
+  const res   = NextResponse.next();
+  res.headers.set('x-org-slug', slug);
+  return res;
+}
+```
+
+### 10. Admin Route Protection
+
+Super admin pages check role server-side — never trust client-side guards alone:
+
+```typescript
+// pages/admin/index.jsx
+export async function getServerSideProps({ req }) {
+  const jwt = await verifyJWT(req.cookies.token);
+  if (jwt?.role !== 'superadmin') return { redirect: { destination: '/', permanent: false } };
+  return { props: {} };
+}
+```
