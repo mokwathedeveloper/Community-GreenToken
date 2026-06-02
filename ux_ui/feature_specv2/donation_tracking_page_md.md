@@ -4,6 +4,18 @@ This markdown provides **implementation instructions** for the Donation Tracking
 
 ---
 
+## 0. Page Images
+
+| Image | Path | Dimensions | Use |
+|---|---|---|---|
+| Shared banner | `assets/image/banner.png` | 1916×821 | Top hero/banner section |
+| Sidebar bottom (primary) | `assets/image/sidebar/sidebar_bottom_all_pages.png` | 1254×1254 | Sidebar bottom-left |
+| Sidebar bottom (alt) | `assets/image/donationsidebar/green_earth_and_sprout.png` | 1254×1254 | Optional: donation-specific sidebar variant |
+| Donation tracker icon | `assets/image/donationsidebar/donation_tracker_sidebar.png` | 320×320 | Optional: compact sidebar icon |
+
+> See `assets/image/donationsidebar/sidebar_bottom_green_earth.md` for green earth sidebar component.  
+> See `assets/image/sidebar/sidebar_all_pages_guide.md` for sidebar image guide.
+
 ## 1. Components
 - `DonationCard` – Displays each project with token contribution progress.
 - `ProjectProgressBar` – Visualizes cumulative contributions across projects.
