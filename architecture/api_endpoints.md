@@ -141,3 +141,66 @@ user_id=string
 
 All API responses follow a **consistent JSON structure**, and proper authentication is enforced for sensitive operations.
 
+---
+
+## SaaS Extension — Org-Scoped and New Endpoints
+
+> **Full SaaS endpoint reference:** `saas/saas_api_endpoints.md`
+
+### Breaking Change: org_id Scope on All Existing Endpoints
+
+All existing endpoints now derive `org_id` from the JWT and scope responses accordingly:
+
+```typescript
+// Every route handler now starts with:
+const orgId = req.jwt.org_id;
+// All DB queries include: .eq('org_id', orgId)
+```
+
+### Updated Existing Endpoints
+
+| Old Endpoint | Change |
+|---|---|
+| `POST /api/actions/submit` | Now requires JWT with `org_id`; action stored with `org_id` |
+| `POST /api/actions/verify` | Validates `role = 'admin'` within the org (not global admin) |
+| `GET /api/tokens/balance` | Returns balance scoped to `org_id` in JWT |
+| `GET /api/leaderboard` | Returns leaderboard only for the user's org |
+| `GET /api/analytics/metrics` | Scoped to org; blocked on Free plan |
+| `GET/POST /api/donations` | Scoped to org; projects per org |
+
+### New Endpoint Groups
+
+```
+POST /api/orgs/create               Create new organization (onboarding)
+GET  /api/orgs/check-slug           Check slug availability
+PUT  /api/orgs/:id                  Update org settings
+POST /api/invites/create            Generate invite link
+POST /api/invites/:token/accept     Accept invite → join org
+POST /api/billing/create-checkout   Start Stripe Checkout
+POST /api/billing/webhook           Stripe webhook handler
+POST /api/billing/portal            Open Stripe Customer Portal
+POST /api/contracts/deploy          Deploy per-org smart contract
+GET  /api/admin/orgs                Super admin: list all orgs
+GET  /api/admin/metrics             Super admin: platform stats
+```
+
+### Updated Standard Response Format
+
+```typescript
+// Success (with org context)
+{
+  "data": { ... },
+  "meta": { "org_id": "uuid", "plan": "pro", "request_id": "uuid" }
+}
+
+// Plan gate error
+{
+  "error": {
+    "code": "PLAN_LIMIT_EXCEEDED",
+    "message": "Upgrade to Starter to access Analytics.",
+    "upgrade_url": "https://greentoken.app/pricing"
+  }
+}
+```
+
+
