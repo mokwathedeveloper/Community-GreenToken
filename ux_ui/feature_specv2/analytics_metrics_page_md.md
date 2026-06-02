@@ -4,6 +4,16 @@ This markdown provides **implementation instructions** for the Analytics/Impact 
 
 ---
 
+## 0. Page Images
+
+| Image | Path | Dimensions | Use |
+|---|---|---|---|
+| Shared banner | `assets/image/banner.png` | 1916×821 | Top hero/banner section |
+| Architecture diagram | `assets/image/architecture/blockchain_ecosystem_diagram.png` | 1448×1086 | Optional: visual reference |
+| Sidebar bottom | `assets/image/sidebar/sidebar_bottom_all_pages.png` | 1254×1254 | Sidebar bottom-left |
+
+> See `assets/image/sidebar/sidebar_all_pages_guide.md` for sidebar image guide.
+
 ## 1. Components
 - `MetricCard` – Displays key metrics such as total tokens, donations, and actions.
 - `TrendChart` – Line or area chart to show trends over time.
