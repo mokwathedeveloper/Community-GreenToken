@@ -51,6 +51,78 @@ Define the UX/UI feature-to-mockup mapping to ensure consistency, usability, and
 - **User Flow:** Backend sends action and donation data to AI/Analytics API → metrics calculated → dashboard updated.
 - **Interaction Points:** Dynamic charts, tooltips, drill-down capabilities.
 
+### 2.8 Sign In Page
+- **Features:** Email/password login, wallet connect, forgot password link.
+- **Mockups:** `mockup/signin_page_mockup.png`
+- **User Flow:** User enters credentials → Supabase Auth → JWT with org_id issued → redirect to `/dashboard`.
+- **Interaction Points:** Loading spinner, inline error messages, wallet connect modal.
+
+### 2.9 About Us Page
+- **Features:** Mission statement, values grid, team cards, CTA banner.
+- **Mockups:** `mockup/about_us_page_mockup.png`
+- **User Flow:** User arrives via nav → reads mission → clicks CTA → goes to `/org/setup`.
+- **Interaction Points:** Scroll-triggered value card animations, team card hover bio.
+
+### 2.10 How It Works Page
+- **Features:** 5-step cards, flow diagram, FAQ accordion, CTA.
+- **Mockups:** `mockup/how_it_works_page_mockup.png`
+- **User Flow:** User reads steps 1→5 → views diagram → reads FAQ → clicks CTA → `/feature`.
+- **Interaction Points:** FAQ expand/collapse, diagram lazy load, CTA scroll-trigger.
+
+### 2.11 Public Impact Page
+- **Features:** Live stat count-up cards, project progress bars, ecosystem diagram.
+- **Mockups:** `mockup/impact_page_mockup.png`
+- **User Flow:** Public visitor → sees community stats → sees funded projects → shares on social.
+- **Interaction Points:** Number count-up on viewport entry, progress bar fill animation.
+
+### 2.12 Sign Up Page
+- **Features:** Name/email/password form, wallet connect, invite token pre-fill, terms checkbox.
+- **Mockups:** `mockup/signin_page_mockup.png` *(placeholder — create dedicated signup mockup)*
+- **User Flow:** New user signs up → if invite token redirect to `/dashboard`, else → `/org/setup`.
+- **Interaction Points:** Password strength meter, terms links open in new tab.
+
+### 2.13 Pricing Page *(SaaS)*
+- **Features:** Monthly/annual toggle, 4 plan cards, feature comparison table, FAQ.
+- **Mockups:** `mockup/pricing_page_mockup.png`
+- **User Flow:** Visitor sees plans → selects plan → Free goes to `/org/setup`, paid goes to Stripe.
+- **Interaction Points:** Annual/monthly toggle, plan card hover lift, Stripe redirect.
+
+### 2.14 Org Onboarding Wizard *(SaaS)*
+- **Features:** 5-step wizard, slug availability check, brand color picker, contract deploy.
+- **Mockups:** `assets/image/saas/org_onboarding_wizard.png`
+- **User Flow:** New org owner → fills 5 steps → deploys contract → invites members → goes live.
+- **Interaction Points:** Real-time slug check, live brand preview, confetti on step 5.
+
+### 2.15 Org Admin Dashboard *(SaaS)*
+- **Features:** Stat cards, plan usage bar, trial banner, verification queue, admin tabs.
+- **Mockups:** `assets/image/saas/org_admin_dashboard.png`
+- **User Flow:** Admin logs in → sees overview → approves/rejects actions → manages members.
+- **Interaction Points:** Approve/reject actions, real-time queue updates, tab switching.
+
+### 2.16 Super Admin Dashboard *(SaaS)*
+- **Features:** Platform MRR, org table, revenue chart, plan distribution pie.
+- **Mockups:** `assets/image/saas/super_admin_dashboard.png`
+- **User Flow:** Platform owner → sees all orgs → drills into org → overrides plan or suspends.
+- **Interaction Points:** Org table sorting, drill-down, plan override dropdown.
+
+### 2.17 Billing Page *(SaaS)*
+- **Features:** Current plan card, usage bar, trial countdown, upgrade buttons, Stripe portal.
+- **Mockups:** `assets/image/saas/billing_page_mockup.png`
+- **User Flow:** Org owner → sees plan → clicks upgrade → Stripe checkout → plan updated.
+- **Interaction Points:** Trial countdown bar, upgrade/downgrade CTAs, Stripe portal link.
+
+### 2.18 Member Management Page *(SaaS)*
+- **Features:** Searchable member table, role badges, invite modal, bulk actions.
+- **Mockups:** `assets/image/saas/member_management_page.png`
+- **User Flow:** Admin → searches members → changes roles → invites new via link or email.
+- **Interaction Points:** Live search, checkbox bulk select, invite modal copy link.
+
+### 2.19 Org Settings Page *(SaaS)*
+- **Features:** Profile form, token config, action types editor, contract info, danger zone.
+- **Mockups:** `assets/image/saas/org_settings_page.png`
+- **User Flow:** Owner → edits token name/symbol → updates action types → saves.
+- **Interaction Points:** Color picker live preview, action type toggle, delete org confirmation.
+
 ## 3. Design Files and Prototypes
 - **Figma/Adobe XD Links:** [Insert links to mockups and prototypes]
 - Ensure all mockups follow design system guidelines.
