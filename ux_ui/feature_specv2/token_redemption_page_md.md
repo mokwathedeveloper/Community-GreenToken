@@ -4,6 +4,16 @@ This markdown provides instructions for implementing the Token Redemption Page o
 
 ---
 
+## 0. Page Images
+
+| Image | Path | Dimensions | Use |
+|---|---|---|---|
+| Shared banner | `assets/image/banner.png` | 1916×821 | Top hero/banner section |
+| Sidebar bottom | `assets/image/sidebar/sidebar_bottom_all_pages.png` | 1254×1254 | Sidebar bottom-left |
+
+> See `banner/banner_guide.md` for banner component.  
+> See `assets/image/sidebar/sidebar_all_pages_guide.md` for sidebar image guide.
+
 ## 1. Components
 - `RewardCard` – Displays each redeemable reward with title, description, and token cost.
 - `RedeemButton` – Button to submit redemption requests.
