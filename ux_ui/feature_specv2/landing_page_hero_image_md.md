@@ -5,7 +5,9 @@ This markdown provides instructions for implementing the hero section illustrati
 ---
 
 ## 1. Image Details
-- **File:** `a_highly_detailed_photorealistic_illustrative_eco.png`
+- **File:** `hero_eco_illustration.png`
+  - Stored at: `assets/image/herosection/hero_eco_illustration.png`
+  - Dimensions: 1402 × 1122 px, RGB PNG
 - **Role:** Hero illustration for the Landing Page.
 - **Positioning:** Primary visual element behind the HeroCard component.
 - **Visual Focus:** Community engagement, sustainability, blockchain/eco overlay.
@@ -13,10 +15,10 @@ This markdown provides instructions for implementing the hero section illustrati
 ## 2. Implementation Instructions
 
 ### Frontend Placement
-- Place image in `frontend/assets/images/hero/`.
+- Place image in `frontend/assets/images/herosection/`.
 - Import into `HeroCard.jsx`:
 ```jsx
-import heroImage from '../assets/images/hero/a_highly_detailed_photorealistic_illustrative_eco.png';
+import heroImage from '../assets/images/herosection/hero_eco_illustration.png';
 ```
 - Use as a background image or a full-width `img` inside the HeroCard:
 ```jsx
