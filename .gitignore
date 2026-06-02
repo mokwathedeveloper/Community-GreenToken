@@ -1,0 +1,45 @@
+# ── Environment ──────────────────────────────────────────────
+.env.local
+.env*.local
+.env
+
+# ── Internal working documents (not for judges) ───────────────
+MEETING_PRESENTATION_GUIDE.md
+TEAM_TASK_ASSIGNMENT.md
+FULL_AUDIT_REPORT.md
+PROJECT_REVIEW_REPORT.md
+SAAS_TRANSFORMATION_REPORT.md
+FOLDER_STRUCTURE_REPORT.md
+
+# ── Commit scripts (internal team tooling) ────────────────────
+scripts/commits/
+
+# ── Node / Next.js ────────────────────────────────────────────
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# ── Rust / Soroban build artifacts ────────────────────────────
+target/
+contracts/target/
+*.wasm
+
+# ── OS / Editor ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# ── Testing ──────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Vercel ───────────────────────────────────────────────────
+.vercel
