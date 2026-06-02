@@ -7,14 +7,23 @@ This folder contains professional UX/UI documentation for Community GreenToken, 
 ## Folder Structure
 ```
 ux_ui/
-└─ features_specs/
-   ├─ design_system.md
-   ├─ features_to_mockup_map.md
-   ├─ uiux_implementation_blueprint.md
-   ├─ documentation_index.md
-   ├─ interaction_guidelines.md
-   ├─ prototyping_notes.md
-   └─ accessibility_checklist.md
+├─ features_specs/         ← Design system + global UX specs
+│  ├─ design_system.md
+│  ├─ features_to_mockup_map.md   (updated: covers all 19 pages)
+│  ├─ uiux_implementation_blueprint.md  (updated: SaaS sections added)
+│  ├─ documentation_index.md
+│  ├─ interaction_guidelines.md
+│  ├─ prototyping_notes.md
+│  ├─ accessibility_checklist.md
+│  └─ ux_ui_features_specs_skeleton.md  ← This file
+│
+└─ feature_specv2/         ← Per-page blueprints + starter code
+   ├─ [MVP pages 1–7: landing, dashboard, action_submission, etc.]
+   ├─ [Added pages 8–11: signin, about_us, how_it_works, impact, signup]
+   ├─ [SaaS pages 12–18: pricing, onboarding, org_admin, super_admin, billing, members, settings]
+   ├─ [Legal pages: privacy_policy, terms_of_service]
+   ├─ [Starter code JS: 13 files — all major pages covered]
+   └─ ux_ui_pages_features_blueprint.md  (master blueprint)
 ```
 
 ## 1. design_system.md
