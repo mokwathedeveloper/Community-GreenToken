@@ -4,6 +4,16 @@ This markdown provides **implementation instructions** for the Landing Page of t
 
 ---
 
+## 0. Page Images
+
+| Image | Path | Dimensions | Use |
+|---|---|---|---|
+| Hero illustration | `assets/image/herosection/hero_eco_illustration.png` | 1402×1122 | HeroCard background |
+| Shared banner | `assets/image/banner.png` | 1916×821 | BannerSection (mid-page CTA) |
+
+> See `ux_ui/feature_specv2/landing_page_hero_image_md.md` for hero implementation details.  
+> See `banner/banner_guide.md` for banner component.
+
 ## 1. Components
 - `Navbar` – Top navigation bar with logo and page links.
 - `HeroCard` – Main hero section with headline, subheadline, and hero illustration.
