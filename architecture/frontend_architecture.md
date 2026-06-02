@@ -59,3 +59,86 @@ This document outlines the **frontend architecture** for the Community GreenToke
 
 This frontend architecture ensures a **modular, scalable, and reusable system** that supports the Community GreenToken MVP, mandatory features, and provides a polished user experience for hackathon demonstrations.
 
+---
+
+## SaaS Extension — Multi-Tenant Frontend
+
+> **See also:** `saas/saas_folder_structure.md`
+
+### New Routing Groups
+
+```
+/pricing              Public plan comparison page
+/org/setup            5-step onboarding wizard (new org owners)
+/org/admin            Org admin dashboard
+/org/admin/members    Member management
+/org/admin/settings   Org token + profile configuration
+/org/admin/billing    Subscription management
+/admin                Super admin platform overview (superadmin only)
+/admin/orgs           All organizations table
+```
+
+### Tenant Middleware (`middleware.ts`)
+
+Runs at the Edge before every page request. Extracts the org slug from the subdomain and passes it as a header (`x-org-slug`) to the page:
+
+```typescript
+// slug.greentoken.app → x-org-slug: slug
+const slug = host.split('.')[0];
+response.headers.set('x-org-slug', slug);
+```
+
+### OrgContext — Global Tenant State
+
+Wraps the entire app. Provides org-specific values to all components:
+
+```typescript
+const { orgId, tokenName, tokenSymbol, primaryColor, plan } = useOrg();
+```
+
+### Dynamic Branding
+
+Every org can customize their token name, symbol, and primary color. The `OrgProvider` applies the org's `primary_color` as a CSS variable:
+
+```typescript
+// Applied at root: --color-primary: #2ECC71 (default) or org's custom color
+document.documentElement.style.setProperty('--color-primary', org.primaryColor);
+```
+
+### Plan Gate Hook
+
+Components that are plan-restricted use the `usePlan` hook to render upgrade prompts:
+
+```typescript
+const { canAccess } = usePlan('analytics');
+if (!canAccess) return <UpgradeModal feature="Analytics" requiredPlan="starter" />;
+```
+
+### Updated Component Hierarchy
+
+```
+App
+├── OrgProvider       (tenant context)
+├── AuthProvider      (Supabase session)
+│   ├── Navbar        (now shows org logo + token name)
+│   ├── TrialBanner   (shown during trial period)
+│   └── Pages
+│       ├── [existing pages — all org-scoped via OrgContext]
+│       ├── /org/setup    (onboarding wizard)
+│       ├── /org/admin/*  (org admin pages)
+│       └── /admin/*      (super admin — role guarded)
+```
+
+### New Pages Added
+
+| Page | Route | Access |
+|---|---|---|
+| Pricing | `/pricing` | Public |
+| Org Onboarding | `/org/setup` | Auth |
+| Org Admin | `/org/admin` | owner/admin |
+| Member Management | `/org/admin/members` | owner/admin |
+| Billing | `/org/admin/billing` | owner |
+| Org Settings | `/org/admin/settings` | owner |
+| Super Admin | `/admin` | superadmin |
+
+
