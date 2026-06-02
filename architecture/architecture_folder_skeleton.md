@@ -69,3 +69,21 @@ This folder contains the professional MD skeleton files for documenting the full
 
 This skeleton provides a **professional, organized architecture documentation folder** for Community GreenToken and serves as a foundation to fill in detailed technical content for the hackathon and beyond.
 
+---
+
+## SaaS Extension — Additional Architecture Files
+
+The following files have been added to this folder as part of the SaaS transformation. See `saas/` folder for full content:
+
+| File Reference | Location | Description |
+|---|---|---|
+| Multi-tenancy | `saas/multi_tenancy_architecture.md` | org_id isolation, RLS, JWT claims |
+| SaaS Database | `saas/saas_database_schema.md` | Full schema with org tables |
+| Billing | `saas/billing_and_subscriptions.md` | Stripe plans and webhooks |
+| Onboarding | `saas/onboarding_flow.md` | 5-step org setup wizard |
+| Admin Portal | `saas/admin_portal.md` | Super admin + org admin specs |
+| Smart Contracts | `saas/smart_contract_strategy.md` | Factory vs shared contracts |
+| SaaS API | `saas/saas_api_endpoints.md` | All 50+ org-scoped routes |
+| SaaS Structure | `saas/saas_folder_structure.md` | Full SaaS directory tree |
+| SaaS Deploy | `saas/saas_deployment_plan.md` | Vercel wildcard + Stripe setup |
+
