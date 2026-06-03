@@ -45,7 +45,8 @@ export const submitActionSchema = z.object({
   actionType:   z.enum(actionTypes),
   description:  z.string().min(5).max(200),
   evidenceHash: z.string().regex(/^[0-9a-f]{64}$/, "Evidence hash must be a 64-char hex string (SHA-256)"),
-  orgId:        z.string().uuid(),
+  // orgId is NOT sent by the client — it is always extracted from the JWT
+  // (Rule R-SAAS-01: never trust client-sent org_id)
 });
 
 export const verifyActionSchema = z.object({
@@ -82,7 +83,8 @@ export const createDonationSchema = z.object({
 // ── Billing ───────────────────────────────────────────────────────────────
 export const createCheckoutSchema = z.object({
   priceId: z.string().startsWith("price_"),
-  orgId:   z.string().uuid(),
+  // orgId is optional — server uses auth.orgId from JWT as the authoritative source
+  orgId:   z.string().optional(),
 });
 
 // ── Wallet ────────────────────────────────────────────────────────────────

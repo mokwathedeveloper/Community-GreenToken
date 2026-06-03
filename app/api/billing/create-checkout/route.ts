@@ -16,14 +16,10 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseBody(req, createCheckoutSchema);
   if ("error" in parsed) return parsed.error;
-  const { priceId, orgId } = parsed.data;
+  const { priceId } = parsed.data;
 
-  if (orgId !== auth!.orgId) {
-    return NextResponse.json(
-      { error: { code: "FORBIDDEN", message: "Cannot create checkout for another organization." } },
-      { status: 403 }
-    );
-  }
+  // Always use orgId from JWT — never trust client-sent orgId (Rule R-SAAS-01)
+  const orgId = auth!.orgId;
 
   const stripe    = new Stripe(process.env.STRIPE_SECRET_KEY!);
   const supabase  = createAdminClient();
