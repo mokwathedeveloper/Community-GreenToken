@@ -21,20 +21,38 @@ export async function POST(req: NextRequest) {
   if ("error" in parsed) return parsed.error;
   const { publicKey } = parsed.data;
 
+  // AbortController timeout — Friendbot can be slow; fail fast after 10s
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+
   try {
     const res = await fetch(
-      `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`
+      `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
+      { signal: controller.signal }
     );
-    if (!res.ok) throw new Error(await res.text());
+    clearTimeout(timer);
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "unknown error");
+      throw new Error(`Friendbot returned ${res.status}: ${body}`);
+    }
 
     const tx = await res.json();
     return NextResponse.json({
       data: { success: true, txHash: tx.hash ?? null, message: "Wallet funded with 10,000 XLM on testnet." },
     });
   } catch (err) {
+    clearTimeout(timer);
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    console.error("[api/stellar/wallet/fund]", isTimeout ? "timeout" : err);
     return NextResponse.json(
-      { error: { code: "FRIENDBOT_ERROR", message: "Failed to fund wallet. Try again." } },
-      { status: 500 }
+      {
+        error: {
+          code:    isTimeout ? "FRIENDBOT_TIMEOUT" : "FRIENDBOT_ERROR",
+          message: isTimeout ? "Friendbot timed out. Try again." : "Failed to fund wallet. Try again.",
+        },
+      },
+      { status: 503 }
     );
   }
 }
