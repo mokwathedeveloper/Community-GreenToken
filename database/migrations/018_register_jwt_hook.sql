@@ -48,3 +48,50 @@
 
 -- Ensure function is SECURITY DEFINER so it can query org_members
 ALTER FUNCTION public.custom_jwt_claims(event JSONB) SECURITY DEFINER;
+
+-- ── FIXED FUNCTION (replaces original in 014) ────────────────
+-- Root cause of 500 on signin: original used 'user_id' key but
+-- Supabase hook passes 'sub' (standard JWT subject claim).
+-- Also added EXCEPTION safety net so hook NEVER breaks auth.
+
+CREATE OR REPLACE FUNCTION public.custom_jwt_claims(event JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  member_record RECORD;
+  uid           UUID;
+BEGIN
+  BEGIN
+    uid := COALESCE(
+      NULLIF(event->>'sub',     '')::UUID,
+      NULLIF(event->>'user_id', '')::UUID
+    );
+  EXCEPTION WHEN OTHERS THEN
+    RETURN event;
+  END;
+
+  IF uid IS NULL THEN RETURN event; END IF;
+
+  SELECT om.org_id, om.role
+  INTO  member_record
+  FROM  public.org_members om
+  WHERE om.user_id = uid
+  ORDER BY om.joined_at DESC
+  LIMIT 1;
+
+  IF FOUND AND member_record.org_id IS NOT NULL THEN
+    RETURN jsonb_set(
+      event, '{claims}',
+      COALESCE(event->'claims', '{}'::jsonb) ||
+      jsonb_build_object('org_id', member_record.org_id, 'role', member_record.role)
+    );
+  END IF;
+
+  RETURN event;
+EXCEPTION WHEN OTHERS THEN
+  RETURN event;  -- Never let hook crash login
+END;
+$$;
