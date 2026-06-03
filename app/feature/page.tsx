@@ -1,16 +1,17 @@
 "use client";
 
-// Rules: R-FE-01, R-FE-02, R-COMP-02 (Button), R-A11Y-01, R-A11Y-03, R-FE-05
+// Rules: R-FE-01, R-FE-02, R-COMP-02, R-A11Y-01, R-A11Y-03, R-FE-05
 // Spec: ux_ui/feature_specv2/action_submission_page_md.md
 // Mockup: mockup/action_submission_page_mockup.png
 
-import type { Metadata } from "next";
-import { useState, useRef, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
+import Link from "next/link";
 import AppLayout from "@/components/layouts/AppLayout";
 import Button from "@/components/ui/Button";
 import { Select } from "@/components/ui/Input";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
+import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 
 const ACTION_TYPES = [
@@ -33,13 +34,23 @@ const VERIFICATION_STEPS = [
   { icon: "🪙", title: "Earn GreenTokens", desc: "After verification, GTK tokens are minted to your Stellar wallet." },
 ];
 
-// Mock recent actions
-const RECENT = [
-  { type: "Recycling",    desc: "Collected recycled materials", date: "2026-05-19 14:22", status: "verified"  as const, tokens: 10 },
-  { type: "TreePlanting", desc: "Planted 2 trees in the park",  date: "2026-05-18 09:14", status: "pending"   as const, tokens: 0  },
-];
+interface ActionStat {
+  label: string;
+  value: string;
+  change?: string;
+}
+
+interface RecentAction {
+  action_type: string;
+  description: string;
+  submitted_at: string;
+  status: "pending" | "verified" | "rejected";
+  tokens_awarded: number;
+}
 
 export default function ActionSubmissionPage() {
+  const { isLoading: authLoading } = useUser();
+
   const [actionType,   setActionType]   = useState("");
   const [description,  setDescription]  = useState("");
   const [evidence,     setEvidence]     = useState<File | null>(null);
@@ -48,6 +59,56 @@ export default function ActionSubmissionPage() {
   const [success,      setSuccess]      = useState(false);
   const [error,        setError]        = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Live stats from API
+  const [stats, setStats] = useState<ActionStat[]>([
+    { label: "Actions Submitted", value: "—" },
+    { label: "GTK Earned",        value: "—" },
+    { label: "Pending Review",    value: "—" },
+  ]);
+
+  // Live recent actions from API
+  const [recentActions, setRecentActions] = useState<RecentAction[]>([]);
+  const [statsLoading,  setStatsLoading]  = useState(true);
+
+  // Fetch real action stats on mount
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const [actionsRes, balanceRes] = await Promise.all([
+          fetch("/api/actions"),
+          fetch("/api/tokens/balance"),
+        ]);
+
+        if (actionsRes.ok) {
+          const actionsData = await actionsRes.json();
+          const all     = actionsData.data ?? [];
+          const pending = all.filter((a: RecentAction) => a.status === "pending").length;
+          setRecentActions(all.slice(0, 5));
+          setStats((prev) => [
+            { ...prev[0], value: String(all.length),  change: all.length > 0 ? undefined : undefined },
+            prev[1],
+            { ...prev[2], value: String(pending) },
+          ]);
+        }
+
+        if (balanceRes.ok) {
+          const balData = await balanceRes.json();
+          const earned  = balData.data?.totalEarned ?? 0;
+          setStats((prev) => [
+            prev[0],
+            { label: "GTK Earned", value: String(earned) },
+            prev[2],
+          ]);
+        }
+      } catch {
+        // Use defaults — not critical
+      } finally {
+        setStatsLoading(false);
+      }
+    }
+    loadStats();
+  }, [success]); // re-fetch after successful submission
 
   // SHA-256 hash of evidence file — Rule: evidence hash on-chain
   async function hashFile(file: File): Promise<string> {
@@ -69,7 +130,6 @@ export default function ActionSubmissionPage() {
     if (!evidence)           { setError("Please upload photo evidence."); return; }
     if (!evidenceHash)       { setError("Evidence hash not ready. Please re-upload."); return; }
 
-    // Validate hash format before submitting (must be 64-char hex)
     if (!/^[0-9a-f]{64}$/.test(evidenceHash)) {
       setError("Invalid evidence hash. Please re-upload your photo.");
       return;
@@ -83,14 +143,20 @@ export default function ActionSubmissionPage() {
         body: JSON.stringify({
           actionType,
           description: description.trim(),
-          evidenceHash,  // SHA-256 hex computed client-side via crypto.subtle.digest
+          evidenceHash,
         }),
       });
 
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error?.message ?? "Submission failed. Please try again.");
+        // Provide a friendlier message for session expiry
+        const msg = json.error?.message ?? "Submission failed.";
+        if (res.status === 401) {
+          setError("Your session has expired. Please sign out and sign back in, then try again.");
+        } else {
+          setError(msg);
+        }
         return;
       }
 
@@ -112,18 +178,18 @@ export default function ActionSubmissionPage() {
       {/* Page header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Submit Action</h2>
-        <p className="text-sm text-gray-500 mt-1">Record your sustainable actions and get verified. Every verified action earns you GreenTokens.</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Record your sustainable actions and get verified. Every verified action earns you GreenTokens.
+        </p>
       </div>
 
-      {/* Top stats — R-COMP-01 pattern */}
+      {/* Top stats — live from API */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        {[
-          { label: "Actions Submitted", value: "128", change: "+12 this week" },
-          { label: "Impact Points",     value: "2,450" },
-          { label: "Impact Points",     value: "45" },
-        ].map(({ label, value, change }, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+        {stats.map(({ label, value, change }) => (
+          <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+            <p className={cn("text-2xl font-bold text-gray-900", statsLoading && "animate-pulse")}>
+              {value}
+            </p>
             <p className="text-xs text-gray-500 mt-0.5">{label}</p>
             {change && <p className="text-xs text-primary-600 mt-0.5">{change}</p>}
           </div>
@@ -131,12 +197,28 @@ export default function ActionSubmissionPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Form — R-A11Y-03: all inputs have labels */}
+        {/* Form */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <p className="text-xs text-gray-400 mb-4">This action will be independently reviewed. All verified actions contribute to a greener community and earn you GreenTokens.</p>
+          <p className="text-xs text-gray-400 mb-4">
+            This action will be independently reviewed. All verified actions contribute to a greener community and earn you GreenTokens.
+          </p>
 
-          {error && (
+          {/* Session expiry banner */}
+          {error && error.includes("session") && (
+            <div role="alert" className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800">
+              <span aria-hidden="true">⚠️</span>
+              <div>
+                <p className="font-semibold">Session expired</p>
+                <p className="text-xs mt-0.5">{error}</p>
+                <Link href="/signin" className="text-primary-600 font-semibold text-xs hover:underline mt-1 inline-block">
+                  Sign In Again →
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Other errors */}
+          {error && !error.includes("session") && (
             <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">
               <span aria-hidden="true">⚠</span>{error}
             </div>
@@ -158,7 +240,7 @@ export default function ActionSubmissionPage() {
               </label>
               <textarea
                 id="action-description"
-                placeholder="Submit recycled materials"
+                placeholder="Describe what you did (e.g. Recycled 5 bags at local depot)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -199,7 +281,7 @@ export default function ActionSubmissionPage() {
           </form>
         </div>
 
-        {/* Right panel — how verification works */}
+        {/* Right panel */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-4">How Action Verification Works</h3>
@@ -216,7 +298,6 @@ export default function ActionSubmissionPage() {
             </div>
           </div>
 
-          {/* Leaderboard preview */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Leaderboard Preview</p>
             <p className="text-xs text-gray-400">This section will appear after you submit your first action and scores are calculated.</p>
@@ -224,37 +305,43 @@ export default function ActionSubmissionPage() {
         </div>
       </div>
 
-      {/* Recent actions */}
+      {/* Recent actions — live from API */}
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-50">
           <h3 className="text-sm font-semibold text-gray-900">Recent Actions</h3>
         </div>
-        <table className="w-full text-sm">
-          <caption className="sr-only">Your recent submitted actions</caption>
-          <thead className="bg-gray-50">
-            <tr>
-              {["Type", "Description", "Date", "Status", "Tokens"].map((h) => (
-                <th key={h} scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {RECENT.map((r, i) => (
-              <tr key={i} className="hover:bg-gray-50 transition-colors">
-                <td className="px-5 py-3.5 font-medium text-gray-900">{r.type}</td>
-                <td className="px-5 py-3.5 text-gray-600 max-w-[200px] truncate">{r.desc}</td>
-                <td className="px-5 py-3.5 text-gray-400 text-xs">{r.date}</td>
-                <td className="px-5 py-3.5">
-                  <Badge color={r.status === "verified" ? "green" : "amber"} dot>{r.status}</Badge>
-                </td>
-                <td className="px-5 py-3.5 font-semibold text-primary-600">{r.tokens > 0 ? `+${r.tokens} GTK` : "—"}</td>
+        {recentActions.length === 0 && !statsLoading ? (
+          <p className="text-sm text-gray-400 text-center py-8">No actions submitted yet. Submit your first eco-action above!</p>
+        ) : (
+          <table className="w-full text-sm">
+            <caption className="sr-only">Your recent submitted actions</caption>
+            <thead className="bg-gray-50">
+              <tr>
+                {["Type", "Description", "Date", "Status", "Tokens"].map((h) => (
+                  <th key={h} scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {recentActions.map((r, i) => (
+                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-5 py-3.5 font-medium text-gray-900">{r.action_type}</td>
+                  <td className="px-5 py-3.5 text-gray-600 max-w-[200px] truncate">{r.description}</td>
+                  <td className="px-5 py-3.5 text-gray-400 text-xs">{r.submitted_at?.slice(0, 16).replace("T", " ")}</td>
+                  <td className="px-5 py-3.5">
+                    <Badge color={r.status === "verified" ? "green" : r.status === "rejected" ? "red" : "amber"} dot>{r.status}</Badge>
+                  </td>
+                  <td className="px-5 py-3.5 font-semibold text-primary-600">
+                    {r.tokens_awarded > 0 ? `+${r.tokens_awarded} GTK` : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Success modal — R-A11Y-06 focus trap */}
+      {/* Success modal */}
       <Modal
         open={success}
         onClose={() => setSuccess(false)}
