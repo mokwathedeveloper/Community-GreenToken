@@ -31,14 +31,17 @@ Users earn **GreenTokens (GTK)** by completing verifiable eco-actions like recyc
 
 ## Live Demo
 
-🌐 **Frontend:** `https://community-greentoken.vercel.app` *(link once deployed)*  
-🔗 **Stellar Testnet Contracts:**
+🌐 **Frontend:** `http://localhost:3000` (run `npm run dev`)  
+🔗 **Stellar Testnet Contracts — LIVE:**
 
 | Contract | ID | Explorer |
 |---|---|---|
-| GreenToken (GTK) | `C...` *(add after deploy)* | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/C...) |
-| ActionRegistry | `C...` *(add after deploy)* | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/C...) |
-| RewardManager | `C...` *(add after deploy)* | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/C...) |
+| GreenToken (GTK) | `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH) |
+| ActionRegistry | `CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO) |
+| RewardManager | `CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR) |
+
+**Admin Wallet (Testnet):** `GBUJUY43L6EVCKLPRNZUPUE7RO7MTFFTRUDXURJPE2SRE4K6X6KAT6HZ`  
+**Supabase Project:** `https://thjqzzsoptsdocnyoxcu.supabase.co` — 13 tables, RLS enabled
 
 ---
 
