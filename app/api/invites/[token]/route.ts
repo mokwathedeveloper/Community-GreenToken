@@ -3,22 +3,22 @@ import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 
-// GET    /api/invites/[id]  — validate a single invite by token or UUID
-// DELETE /api/invites/[id]  — admin revokes an invite
-// Spec: saas/saas_api_endpoints.md — Member Management
+// GET    /api/invites/[token]  — validate a single invite by token or UUID
+// DELETE /api/invites/[token]  — admin revokes an invite
+// POST   /api/invites/[token]/accept — handled by accept/route.ts
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const { id } = await params;
-  const supabase = createAdminClient();
+  const { token } = await params;
+  const supabase   = createAdminClient();
 
   // id can be either the UUID or the token hex string
   const { data: invite } = await (supabase as any)
     .from("invites")
     .select("id, org_id, role, uses_left, expires_at, created_at, organizations(name, slug)")
-    .or(`id.eq.${id},token.eq.${id}`)
+    .or(`id.eq.${token},token.eq.${token}`)
     .maybeSingle() as { data: Record<string, unknown> | null };
 
   if (!invite) {
@@ -28,7 +28,7 @@ export async function GET(
     );
   }
 
-  const isExpired = new Date(invite.expires_at as string) < new Date();
+  const isExpired   = new Date(invite.expires_at as string) < new Date();
   const isExhausted = invite.uses_left !== null && (invite.uses_left as number) <= 0;
 
   return NextResponse.json({
@@ -42,19 +42,19 @@ export async function GET(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const auth  = await getAuthContext();
   const guard = requireOrgAdmin(auth);
   if (guard) return guard;
 
-  const { id } = await params;
-  const supabase = createAdminClient();
+  const { token } = await params;
+  const supabase   = createAdminClient();
 
   const { error } = await (supabase as any)
     .from("invites")
     .delete()
-    .eq("id", id)
+    .or(`id.eq.${token},token.eq.${token}`)
     .eq("org_id", auth!.orgId);
 
   if (error) {
@@ -64,5 +64,5 @@ export async function DELETE(
     );
   }
 
-  return NextResponse.json({ data: { revoked: true, id }, meta: { org_id: auth!.orgId } });
+  return NextResponse.json({ data: { revoked: true }, meta: { org_id: auth!.orgId } });
 }
