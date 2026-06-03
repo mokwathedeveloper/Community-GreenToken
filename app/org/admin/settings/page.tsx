@@ -4,7 +4,7 @@
 // Spec: ux_ui/feature_specv2/org_settings_page_md.md
 
 import { useState, type FormEvent } from "react";
-import AppLayout from "@/components/layouts/AppLayout";
+import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,7 @@ export default function OrgSettingsPage() {
   ];
 
   return (
-    <AppLayout title="Org Settings">
+    <OrgAdminLayout orgName="GreenFuture Org" plan="Pro Plan">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Organization Settings</h2>
         <p className="text-sm text-gray-500 mt-1">Configure your token, branding, and organization profile.</p>
@@ -197,6 +197,6 @@ export default function OrgSettingsPage() {
           </Button>
         </div>
       )}
-    </AppLayout>
+    </OrgAdminLayout>
   );
 }

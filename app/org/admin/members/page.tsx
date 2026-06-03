@@ -4,7 +4,7 @@
 // Spec: ux_ui/feature_specv2/org_members_page_md.md
 
 import { useState } from "react";
-import AppLayout from "@/components/layouts/AppLayout";
+import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
@@ -47,7 +47,7 @@ export default function MembersPage() {
   }
 
   return (
-    <AppLayout title="Member Management">
+    <OrgAdminLayout orgName="GreenFuture Org" plan="Pro Plan">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Members</h2>
@@ -126,6 +126,6 @@ export default function MembersPage() {
           <Button variant="primary" size="md" fullWidth loading={sending} onClick={sendInvite}>Send Invite</Button>
         </div>
       </Modal>
-    </AppLayout>
+    </OrgAdminLayout>
   );
 }
