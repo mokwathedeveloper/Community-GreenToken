@@ -1,17 +1,19 @@
 /* Community GreenToken — Global Styles
    Tailwind v4 CSS-based configuration
    Design tokens from: ux_ui/features_specs/DESIGN_SPEC.md Section 8
+
+   NOTE: Poppins font is loaded via next/font/google in app/layout.tsx
+   DO NOT add @import url() here — Tailwind v4 processes @import "tailwindcss"
+   into thousands of lines first, which would push any @import url() after CSS
+   rules and break the CSS spec (@import must precede all rules).
 */
 
 @import "tailwindcss";
 
-/* ── Google Font: Poppins ──────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
-
 /* ── Design Tokens (Tailwind v4 @theme) ────────────────────────── */
 @theme {
-  /* Font */
-  --font-family-sans: Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Font — variable set by next/font/google in layout.tsx */
+  --font-family-sans: var(--font-poppins), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Brand Primary — #22c55e green */
   --color-primary-50:  #f0fdf4;

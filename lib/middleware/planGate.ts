@@ -31,7 +31,7 @@ export async function getOrgPlanLimits(orgId: string): Promise<PlanLimits | null
     .from("organizations")
     .select("plan, subscription_status, member_limit")
     .eq("id", orgId)
-    .single();
+    .single() as { data: { plan: string; subscription_status: string; member_limit: number } | null };
 
   if (!org) return null;
 

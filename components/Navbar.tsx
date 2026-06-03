@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import Button from "@/components/ui/Button";
 
 // Spec: DESIGN_SPEC.md Section 6.1
 // Rule R-COMP-08: Navbar is public-facing, RockieRaheem owns this.
@@ -70,12 +69,18 @@ export default function Navbar() {
 
         {/* Auth Buttons */}
         <div className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/signin">Sign In</Link>
-          </Button>
-          <Button variant="primary" size="sm" asChild>
-            <Link href="/org/setup">Get Started</Link>
-          </Button>
+          <Link
+            href="/signin"
+            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/org/setup"
+            className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors duration-150 shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Get Started
+          </Link>
         </div>
 
         {/* Mobile Hamburger */}
@@ -116,12 +121,20 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="pt-2 flex flex-col gap-2 border-t border-gray-100">
-            <Button variant="ghost" size="sm" fullWidth asChild>
-              <Link href="/signin" onClick={() => setMenuOpen(false)}>Sign In</Link>
-            </Button>
-            <Button variant="primary" size="sm" fullWidth asChild>
-              <Link href="/org/setup" onClick={() => setMenuOpen(false)}>Get Started</Link>
-            </Button>
+            <Link
+              href="/signin"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-150"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/org/setup"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center justify-center w-full px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors duration-150 shadow-sm"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       )}
