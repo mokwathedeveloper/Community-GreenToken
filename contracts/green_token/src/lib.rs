@@ -227,15 +227,24 @@ mod test {
 
     #[test]
     fn test_initialize() {
-        let (_, _, _, client) = setup();
+        let (env, _, _, client) = setup();
         assert_eq!(client.decimals(), 7);
-        assert_eq!(client.symbol(), soroban_sdk::String::from_str(&client.env, "GTK"));
+        assert_eq!(client.symbol(),   String::from_str(&env, "GTK"));
+        assert_eq!(client.name(),     String::from_str(&env, "GreenToken"));
     }
 
     #[test]
     fn test_mint_and_balance() {
         let (_, admin, user, client) = setup();
         client.mint(&admin, &user, &1_000_000_000i128); // 100 GTK
+        assert_eq!(client.balance(&user), 1_000_000_000i128);
+    }
+
+    #[test]
+    fn test_mint_accumulates() {
+        let (_, admin, user, client) = setup();
+        client.mint(&admin, &user, &500_000_000i128);
+        client.mint(&admin, &user, &500_000_000i128);
         assert_eq!(client.balance(&user), 1_000_000_000i128);
     }
 
@@ -255,5 +264,74 @@ mod test {
         client.mint(&admin, &user, &1_000_000_000i128);
         client.burn(&user, &400_000_000i128);
         assert_eq!(client.balance(&user), 600_000_000i128);
+    }
+
+    #[test]
+    fn test_approve_and_allowance() {
+        let (env, admin, user, client) = setup();
+        let spender = Address::generate(&env);
+        client.mint(&admin, &user, &1_000_000_000i128);
+        client.approve(&user, &spender, &300_000_000i128, &1000u32);
+        assert_eq!(client.allowance(&user, &spender), 300_000_000i128);
+    }
+
+    #[test]
+    fn test_transfer_from() {
+        let (env, admin, user, client) = setup();
+        let spender   = Address::generate(&env);
+        let recipient = Address::generate(&env);
+        client.mint(&admin, &user, &1_000_000_000i128);
+        client.approve(&user, &spender, &300_000_000i128, &9999u32);
+        client.transfer_from(&spender, &user, &recipient, &200_000_000i128);
+        assert_eq!(client.balance(&user),      800_000_000i128);
+        assert_eq!(client.balance(&recipient), 200_000_000i128);
+        // Remaining allowance consumed
+        assert_eq!(client.allowance(&user, &spender), 100_000_000i128);
+    }
+
+    #[test]
+    fn test_set_admin() {
+        let (env, admin, _user, client) = setup();
+        let new_admin = Address::generate(&env);
+        client.set_admin(&admin, &new_admin);
+        // New admin can mint; old admin cannot (auth mocking allows both in tests)
+        client.mint(&new_admin, &_user, &100_000_000i128);
+        assert_eq!(client.balance(&_user), 100_000_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "insufficient balance")]
+    fn test_transfer_insufficient_balance() {
+        let (env, admin, user, client) = setup();
+        let recipient = Address::generate(&env);
+        client.mint(&admin, &user, &100_000_000i128);
+        // Try to transfer more than balance
+        client.transfer(&user, &recipient, &200_000_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "amount must be positive")]
+    fn test_mint_zero_rejected() {
+        let (_, admin, user, client) = setup();
+        client.mint(&admin, &user, &0i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "allowance exceeded")]
+    fn test_transfer_from_exceeds_allowance() {
+        let (env, admin, user, client) = setup();
+        let spender   = Address::generate(&env);
+        let recipient = Address::generate(&env);
+        client.mint(&admin, &user, &1_000_000_000i128);
+        client.approve(&user, &spender, &100_000_000i128, &9999u32);
+        client.transfer_from(&spender, &user, &recipient, &200_000_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "already initialized")]
+    fn test_double_initialize_rejected() {
+        let (env, admin, _, client) = setup();
+        // Try to re-initialize
+        client.initialize(&admin, &7u32, &String::from_str(&env, "Hack"), &String::from_str(&env, "HCK"));
     }
 }
