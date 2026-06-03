@@ -6,10 +6,12 @@
 // Note: This page is additionally protected by proxy.ts (role === 'superadmin' check)
 
 import { useState } from "react";
-import Badge, { BadgePastDue } from "@/components/ui/Badge";
+import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 
-const MOCK_ORGS = [
+type OrgStatus = "active" | "past_due" | "trialing" | "canceled";
+interface Org { id: string; name: string; plan: string; members: number; mrr: number; status: OrgStatus; }
+const MOCK_ORGS: Org[] = [
   { id: "1", name: "Cape Town Council", plan: "pro",     members: 4823, mrr: 199, status: "active"   as const },
   { id: "2", name: "Wits University",   plan: "pro",     members: 812,  mrr: 199, status: "active"   as const },
   { id: "3", name: "Pick n Pay",        plan: "starter", members: 234,  mrr: 49,  status: "past_due" as const },
@@ -37,7 +39,7 @@ export default function SuperAdminPage() {
 
   function suspend(id: string) {
     if (!confirm("Suspend this organization?")) return;
-    setOrgs((o) => o.map((org) => org.id === id ? { ...org, status: "canceled" as const } : org));
+    setOrgs((o: Org[]) => o.map((org) => org.id === id ? { ...org, status: "canceled" as OrgStatus } : org));
   }
 
   return (
