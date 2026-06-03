@@ -11,8 +11,7 @@ export async function GET(req: NextRequest) {
   if (!auth) return unauthorized();
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("donation_records")
+  const { data, error } = await (supabase as any).from("donation_records")
     .select("id, project_name, tokens_donated, tx_hash, created_at")
     .eq("org_id", auth.orgId)
     .eq("user_id", auth.userId)
@@ -40,8 +39,7 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
 
   // Check balance
-  const { data: bal } = await supabase
-    .from("token_balances")
+  const { data: bal } = await (supabase as any).from("token_balances")
     .select("id, balance, total_spent")
     .eq("org_id", auth.orgId)
     .eq("user_id", auth.userId)
@@ -55,14 +53,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Deduct balance
-  await supabase
-    .from("token_balances")
+  await (supabase as any).from("token_balances")
     .update({ balance: bal.balance - tokensDonated, total_spent: bal.total_spent + tokensDonated })
     .eq("id", bal.id);
 
   // Record donation
-  const { data: donation, error } = await supabase
-    .from("donation_records")
+  const { data: donation, error } = await (supabase as any).from("donation_records")
     .insert({ org_id: auth.orgId, user_id: auth.userId, project_name: projectName, tokens_donated: tokensDonated })
     .select("id, project_name, tokens_donated, created_at")
     .single();

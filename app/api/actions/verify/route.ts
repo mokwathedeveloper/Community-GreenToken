@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
 
   // Fetch the action — ensure it belongs to admin's org
-  const { data: action, error: fetchErr } = await supabase
+  const { data: action, error: fetchErr } = await (supabase as any)
     .from("actions")
     .select("id, org_id, user_id, status")
     .eq("id", actionId)
@@ -42,9 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Update action to verified
-  const { error: updateErr } = await supabase
-    .from("actions")
-    .update({ status: "verified", tokens_awarded: tokensToMint, verified_by: auth!.userId })
+  const { error: updateErr } = await (supabase as any).from("actions").update({ status: "verified", tokens_awarded: tokensToMint, verified_by: auth!.userId })
     .eq("id", actionId);
 
   if (updateErr) {
@@ -55,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert token balance
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("token_balances")
     .select("id, balance, total_earned")
     .eq("org_id", action.org_id)
@@ -63,7 +61,7 @@ export async function POST(req: NextRequest) {
     .single() as { data: { id: string; balance: number; total_earned: number } | null };
 
   if (existing) {
-    await supabase
+    await (supabase as any)
       .from("token_balances")
       .update({
         balance:      existing.balance      + tokensToMint,
@@ -71,7 +69,7 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", existing.id);
   } else {
-    await supabase.from("token_balances").insert({
+    await (supabase as any).from("token_balances").insert({
       org_id:       action.org_id,
       user_id:      action.user_id,
       balance:      tokensToMint,

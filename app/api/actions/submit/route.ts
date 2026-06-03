@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   // 3. Check duplicate evidence hash (prevent replay)
   const supabase = createAdminClient();
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("actions")
     .select("id")
     .eq("org_id", orgId)
