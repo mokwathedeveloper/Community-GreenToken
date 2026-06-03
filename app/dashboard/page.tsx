@@ -67,7 +67,7 @@ const MOCK_DONATIONS = [
 
 export default function DashboardPage() {
   return (
-    <AppLayout title="Dashboard" tokenBalance={BigInt(12500000000)} userName="GreenUser">
+    <AppLayout title="Dashboard" tokenBalance={BigInt(12500000000)}>
 
       {/* Greeting — matches mockup */}
       <div className="mb-5">

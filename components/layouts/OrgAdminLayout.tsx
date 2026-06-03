@@ -9,6 +9,8 @@ import { type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import UserMenu from "@/components/ui/UserMenu";
+import { useUser } from "@/hooks/useUser";
 import {
   Squares2X2Icon,
   UsersIcon,
@@ -49,6 +51,8 @@ export default function OrgAdminLayout({
   plan = "Pro Plan",
 }: OrgAdminLayoutProps) {
   const pathname = usePathname();
+  const { user, role, orgName: realOrgName, displayName, avatarUrl, isOrgAdmin, isSuperAdmin } = useUser();
+  const resolvedOrgName = realOrgName ?? orgName;
 
   const isActive = (href: string) =>
     href === "/org/admin" ? pathname === "/org/admin" : pathname.startsWith(href);
@@ -110,15 +114,21 @@ export default function OrgAdminLayout({
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top bar */}
         <header className="flex items-center justify-between h-14 px-6 bg-white border-b border-gray-100 shadow-sm flex-shrink-0">
-          <p className="text-sm font-semibold text-gray-700">{orgName}</p>
+          <p className="text-sm font-semibold text-gray-700">{resolvedOrgName}</p>
           <div className="flex items-center gap-3">
             <NetworkBadge />
             <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2.5 py-1 rounded-full border border-primary-100">
               {plan}
             </span>
-            <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-bold">
-              {orgName.charAt(0)}
-            </div>
+            <UserMenu
+              displayName={displayName}
+              email={user?.email}
+              avatarUrl={avatarUrl}
+              role={role}
+              orgName={resolvedOrgName}
+              isOrgAdmin={isOrgAdmin}
+              isSuperAdmin={isSuperAdmin}
+            />
           </div>
         </header>
 
