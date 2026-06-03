@@ -1,18 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
-  // Allow Next.js <Image> to serve images from the symlinked public/ directories
   images: {
-    // Remote images (Stellar Explorer, Supabase Storage, etc.)
     remotePatterns: [
       { protocol: "https", hostname: "stellar.expert" },
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "horizon-testnet.stellar.org" },
     ],
-    // Disable image optimization for local static images during development
     unoptimized: process.env.NODE_ENV === "development",
   },
+
+  // Mark @stellar/stellar-sdk as external so Vercel/Turbopack doesn't
+  // try to statically bundle it (it uses Node.js native APIs).
+  // At runtime on Vercel serverless, Node.js is available so it works fine.
+  serverExternalPackages: ["@stellar/stellar-sdk"],
 };
 
 export default nextConfig;
