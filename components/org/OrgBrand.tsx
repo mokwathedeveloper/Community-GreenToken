@@ -25,20 +25,20 @@ const SIZE_MAP = {
 };
 
 export default function OrgBrand({ showName = true, size = "md", className }: OrgBrandProps) {
-  const { org, isLoading } = useOrg();
+  const orgConfig = useOrg();
   const s = SIZE_MAP[size];
 
-  if (isLoading) {
+  // useOrg() may return null if not inside OrgProvider (e.g. public pages)
+  if (!orgConfig) {
     return (
-      <div className={cn("flex items-center gap-2 animate-pulse", className)}>
-        <div className="rounded-full bg-gray-200" style={{ width: s.img, height: s.img }} />
-        {showName && <div className="h-4 w-24 bg-gray-200 rounded" />}
+      <div className={cn("flex items-center gap-2", className)}>
+        <div className="rounded-full bg-primary-100" style={{ width: s.img, height: s.img }} />
       </div>
     );
   }
 
   // Apply the org's primary_color as a CSS variable for theme overrides
-  const orgColor = org?.primary_color ?? "#22c55e";
+  const orgColor = orgConfig.primaryColor ?? "#22c55e";
 
   return (
     <div
@@ -46,10 +46,10 @@ export default function OrgBrand({ showName = true, size = "md", className }: Or
       style={{ "--org-color": orgColor } as React.CSSProperties}
     >
       {/* Logo: use org logo if available, fall back to initials avatar */}
-      {org?.logo_url ? (
+      {orgConfig.logoUrl ? (
         <Image
-          src={org.logo_url}
-          alt={`${org.name} logo`}
+          src={orgConfig.logoUrl}
+          alt={`${orgConfig.orgName} logo`}
           width={s.img}
           height={s.img}
           className="rounded-full object-cover"
@@ -66,18 +66,18 @@ export default function OrgBrand({ showName = true, size = "md", className }: Or
           }}
           aria-hidden="true"
         >
-          {(org?.name ?? "G").charAt(0).toUpperCase()}
+          {(orgConfig.orgName ?? "G").charAt(0).toUpperCase()}
         </div>
       )}
 
-      {showName && org && (
+      {showName && (
         <div className="min-w-0">
           <p className={cn("font-semibold text-gray-900 truncate leading-tight", s.text)}>
-            {org.name}
+            {orgConfig.orgName}
           </p>
-          {org.token_symbol && (
+          {orgConfig.tokenSymbol && (
             <p className="text-xs text-gray-400 leading-tight truncate">
-              {org.token_symbol} · {org.plan ?? "free"}
+              {orgConfig.tokenSymbol} · {orgConfig.plan ?? "free"}
             </p>
           )}
         </div>
