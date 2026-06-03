@@ -1,23 +1,22 @@
 # Rust smart contracts — not needed for Next.js build
 contracts/
 
-# Supabase CLI temp files
-supabase/
+# Supabase CLI temp files — use exact path so it doesn't match lib/supabase/
+/supabase/
 
 # Dev / build artifacts
 .next/
 node_modules/
 tsconfig.tsbuildinfo
 
-# Documentation folders — not needed at build time
-architecture/
-foundation/
-implementation/
-saas/
-ux_ui/
-database/
+# Documentation folders — use exact root paths to avoid matching app/ routes
+/architecture/
+/foundation/
+/implementation/
+/saas/
+/ux_ui/
+/database/
 
-# Root-level source image folders with messy names
-# NOTE: Use exact paths from root so they don't accidentally match app/ routes
-assets/image/architecture/
-assets/image/saas/roi-business/
+# Root-level source image folders
+/assets/image/architecture/
+/assets/image/saas/roi-business/
