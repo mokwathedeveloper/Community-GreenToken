@@ -3,12 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 /**
- * Supabase server client for API Route Handlers (Next.js 16).
+ * Supabase server client for API Route Handlers (Next.js 16 / Vercel).
  *
- * Why not createRouteHandlerClient?
- * @supabase/auth-helpers-nextjs v0.10.0 was built for Next.js 13/14.
- * In Next.js 15+, cookies() is async — createRouteHandlerClient breaks.
- * This implementation reads the session cookie directly, which works in all versions.
+ * Handles ALL cookie formats used by @supabase/auth-helpers-nextjs:
+ *   1. sb-{ref}-auth-token          — full session JSON (local dev)
+ *   2. sb-{ref}-auth-token.0/.1/... — chunked (large tokens)
+ *   3. sb-access-token + sb-refresh-token — separate cookies (some versions)
  *
  * Rule R-SEC-01: uses anon key + RLS, not service_role key.
  */
@@ -20,38 +20,50 @@ export async function createServerSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        autoRefreshToken:  false,
-        persistSession:    false,
+        autoRefreshToken:   false,
+        persistSession:     false,
         detectSessionInUrl: false,
       },
     }
   );
 
-  // Read session from the Supabase cookie.
-  // auth-helpers stores it as: sb-[project-ref]-auth-token
-  // Long tokens are chunked: .0, .1, .2 …
-  const ref      = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace("https://", "").split(".")[0];
+  const ref      = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+    .replace("https://", "")
+    .split(".")[0];
   const baseName = `sb-${ref}-auth-token`;
 
-  // Try single cookie first
+  // ── Strategy 1: full JSON cookie ────────────────────────────────────
   let raw = cookieStore.get(baseName)?.value ?? "";
 
-  // If empty, try chunked cookies (.0, .1, …)
+  // ── Strategy 2: chunked cookies (.0, .1, .2 …) ──────────────────────
   if (!raw) {
-    let chunk = "";
-    let i = 0;
-    while (true) {
+    let chunks = "";
+    for (let i = 0; i < 10; i++) {
       const part = cookieStore.get(`${baseName}.${i}`)?.value;
       if (!part) break;
-      chunk += part;
-      i++;
+      chunks += part;
     }
-    raw = chunk;
+    raw = chunks;
   }
 
+  // ── Strategy 3: separate access + refresh token cookies ─────────────
+  if (!raw) {
+    const accessToken  = cookieStore.get("sb-access-token")?.value;
+    const refreshToken = cookieStore.get("sb-refresh-token")?.value;
+    if (accessToken) {
+      try {
+        await supabase.auth.setSession({
+          access_token:  accessToken,
+          refresh_token: refreshToken ?? "",
+        });
+      } catch { /* not valid — continue */ }
+      return supabase;
+    }
+  }
+
+  // ── Parse the raw cookie value ───────────────────────────────────────
   if (raw) {
     try {
-      // Cookie may be URI-encoded
       const decoded = decodeURIComponent(raw);
       const session = JSON.parse(decoded);
       if (session?.access_token) {
@@ -61,7 +73,7 @@ export async function createServerSupabaseClient() {
         });
       }
     } catch {
-      // Malformed cookie — continue without session
+      // Malformed cookie — user is not authenticated, continue without session
     }
   }
 
@@ -70,7 +82,7 @@ export async function createServerSupabaseClient() {
 
 /**
  * Supabase admin client — bypasses RLS entirely.
- * Use ONLY in server-side admin operations.
+ * Use ONLY for server-side admin operations.
  * Rule R-SEC-01: NEVER expose SUPABASE_SERVICE_ROLE_KEY to the frontend.
  */
 export function createAdminClient() {

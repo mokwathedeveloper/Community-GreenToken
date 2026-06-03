@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: "/leaderboard",  label: "Leaderboard" },
   { href: "/redeem",       label: "Redeem" },
   { href: "/about",        label: "About Us" },
+  { href: "/feature",      label: "★ Feature"    },
 ];
 
 export default function Navbar() {
