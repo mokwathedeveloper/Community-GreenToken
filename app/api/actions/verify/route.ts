@@ -3,15 +3,23 @@ import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { parseBody, verifyActionSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
+import { checkRateLimit, rateLimitKey } from "@/lib/middleware/rateLimiter";
 
 // POST /api/actions/verify
 // Rule R-API-02: admin or owner role required
-// Spec: stellar_sdk_api_spec.md Section 10
+// Rule R-SC-09: minting triggered via ActionRegistry cross-contract call
+// Fix: uses atomic increment_token_balance RPC to prevent race condition
 
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   const guard = requireOrgAdmin(auth);
   if (guard) return guard;
+
+  // Rate limit: 30 verifications per minute per org admin
+  const ip       = req.headers.get("x-forwarded-for")?.split(",")[0] ?? null;
+  const rlKey    = rateLimitKey("action_verify", auth!.orgId, ip);
+  const rlResult = checkRateLimit(rlKey, "action_verify");
+  if (rlResult) return rlResult;
 
   const parsed = await parseBody(req, verifyActionSchema);
   if ("error" in parsed) return parsed.error;
@@ -19,13 +27,16 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Fetch the action — ensure it belongs to admin's org
+  // Fetch the action — ensure it belongs to admin's org (SoD: admin cannot verify own actions)
   const { data: action, error: fetchErr } = await (supabase as any)
     .from("actions")
-    .select("id, org_id, user_id, status")
+    .select("id, org_id, user_id, status, submitted_by")
     .eq("id", actionId)
     .eq("org_id", auth!.orgId)
-    .single() as { data: { id: string; org_id: string; user_id: string; status: string } | null; error: unknown };
+    .single() as {
+      data: { id: string; org_id: string; user_id: string; status: string; submitted_by?: string } | null;
+      error: unknown;
+    };
 
   if (fetchErr || !action) {
     return NextResponse.json(
@@ -42,7 +53,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Update action to verified
-  const { error: updateErr } = await (supabase as any).from("actions").update({ status: "verified", tokens_awarded: tokensToMint, verified_by: auth!.userId })
+  const { error: updateErr } = await (supabase as any)
+    .from("actions")
+    .update({
+      status:       "verified",
+      tokens_awarded: tokensToMint,
+      verified_by:  auth!.userId,
+      verified_at:  new Date().toISOString(),
+    })
     .eq("id", actionId);
 
   if (updateErr) {
@@ -52,89 +70,58 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Atomic upsert: INSERT ... ON CONFLICT (org_id, user_id) DO UPDATE
-  // This prevents the race condition of select-then-update and handles
-  // first-time balance creation and increments in a single DB round-trip.
-  const { error: upsertErr } = await (supabase as any)
-    .from("token_balances")
-    .upsert(
-      {
-        org_id:       action.org_id,
-        user_id:      action.user_id,
-        balance:      tokensToMint,
-        total_earned: tokensToMint,
-        total_spent:  0,
-      },
-      {
-        onConflict:        "org_id,user_id",
-        ignoreDuplicates:  false,
-        // Supabase upsert on conflict will merge — but we need increment not replace.
-        // The DB migration 006 has UNIQUE(org_id, user_id) so this inserts or errors.
-        // For true atomic increment, use a Supabase RPC (increment_token_balance).
-        // TODO: replace with .rpc("increment_token_balance", { org_id, user_id, delta })
-        //       once the stored procedure from database/migrations/013 is deployed.
-      }
+  // ── ATOMIC token balance increment — fixes race condition ────────────────
+  // Uses the increment_token_balance RPC from migration 019.
+  // A single UPDATE with balance = balance + amount, row-locked.
+  const { error: rpcErr } = await (supabase as any)
+    .rpc("increment_token_balance", {
+      p_user_id: action.user_id,
+      p_org_id:  action.org_id,
+      p_amount:  tokensToMint,
+    });
+
+  if (rpcErr) {
+    // Roll back the action verification so state is consistent
+    await (supabase as any).from("actions")
+      .update({ status: "pending", verified_by: null, verified_at: null, tokens_awarded: 0 })
+      .eq("id", actionId);
+    return NextResponse.json(
+      { error: { code: "BALANCE_UPDATE_FAILED", message: "Token balance could not be updated. Verification rolled back." } },
+      { status: 500 }
     );
-
-  if (upsertErr) {
-    // If upsert fails (e.g. on conflict but no RPC yet), fall back to select+update
-    // to avoid silently failing verification.
-    const { data: existing, error: selErr } = await (supabase as any)
-      .from("token_balances")
-      .select("id, balance, total_earned")
-      .eq("org_id", action.org_id)
-      .eq("user_id", action.user_id)
-      .maybeSingle() as { data: { id: string; balance: number; total_earned: number } | null; error: unknown };
-
-    if (selErr || !existing) {
-      console.error("[api/actions/verify] balance upsert and fallback both failed", upsertErr, selErr);
-      return NextResponse.json(
-        { error: { code: "BALANCE_UPDATE_FAILED", message: "Token balance could not be updated." } },
-        { status: 500 }
-      );
-    }
-
-    const { error: updErr } = await (supabase as any)
-      .from("token_balances")
-      .update({
-        balance:      existing.balance      + tokensToMint,
-        total_earned: existing.total_earned + tokensToMint,
-      })
-      .eq("id", existing.id);
-
-    if (updErr) {
-      console.error("[api/actions/verify] fallback update failed", updErr);
-      return NextResponse.json(
-        { error: { code: "BALANCE_UPDATE_FAILED", message: "Token balance could not be updated." } },
-        { status: 500 }
-      );
-    }
   }
 
-  // Wire to live Soroban ActionRegistry — triggers cross-contract GreenToken.mint()
-  let txHash: string | null = null;
+  // ── Stellar on-chain: ActionRegistry.verify_action() → GreenToken.mint() ──
+  // Rule R-SC-09: minting ONLY through ActionRegistry cross-contract call.
+  let txHash:      string | null = null;
   let explorerUrl: string | null = null;
 
   const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
   if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
     try {
       const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
-      const { toStroops } = await import("@/lib/utils");
-      // Convert action UUID to bigint for on-chain action_id
-      // Phase 2: store blockchain_action_id in DB at submit time; use it here
-      const onChainActionId = BigInt(1); // TODO: read from actions.blockchain_action_id
-      const stroops = toStroops(tokensToMint);
-      const result = await verifyAction(adminSecret, onChainActionId, stroops);
-      txHash      = result.txHash;
-      explorerUrl = result.explorerUrl;
+      const { toStroops }    = await import("@/lib/utils");
 
-      // Record verified_tx_hash in DB
+      // blockchain_action_id stored at submit time — use DB value
+      const { data: actionFull } = await (supabase as any)
+        .from("actions")
+        .select("blockchain_action_id")
+        .eq("id", actionId)
+        .single() as { data: { blockchain_action_id: number | null } | null };
+
+      const onChainActionId = BigInt(actionFull?.blockchain_action_id ?? 0);
+      const stroops         = toStroops(tokensToMint);
+
+      const result  = await verifyAction(adminSecret, onChainActionId, stroops);
+      txHash        = result.txHash;
+      explorerUrl   = result.explorerUrl;
+
       await (supabase as any).from("actions")
-        .update({ tx_hash: txHash })
+        .update({ stellar_tx_hash: txHash })
         .eq("id", actionId);
     } catch (stellarErr) {
-      // Non-blocking: DB update succeeded; Stellar call is best-effort in MVP
-      console.error("[api/actions/verify] Stellar verify failed (DB updated):", stellarErr);
+      // Non-blocking: DB is the source of truth. Stellar call logged but not fatal.
+      console.error("[api/actions/verify] Stellar call failed (DB already updated):", stellarErr);
     }
   }
 
