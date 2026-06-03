@@ -1,10 +1,10 @@
-// Rule R-SDK-03: MUST use SorobanRpc.Server for contract calls, Horizon.Server for accounts
+// Rule R-SDK-03: MUST use rpc.Server for contract calls, Horizon.Server for accounts
 // Rule R-SDK-04: MUST simulate before submitting
 // Spec: architecture/stellar_sdk_api_spec.md Section 2
 
 import {
   Horizon,
-  SorobanRpc,
+  rpc,
   TransactionBuilder,
   Networks,
   BASE_FEE,
@@ -15,12 +15,12 @@ import {
 import { STELLAR_CONFIG } from "./config";
 
 // ── Server instances (lazily initialized) ─────────────────────────────────────
-let _sorobanServer: SorobanRpc.Server | null = null;
+let _sorobanServer: rpc.Server | null = null;
 let _horizonServer: Horizon.Server  | null = null;
 
-export function getSorobanServer(): SorobanRpc.Server {
+export function getSorobanServer(): rpc.Server {
   if (!_sorobanServer) {
-    _sorobanServer = new SorobanRpc.Server(STELLAR_CONFIG.sorobanRpcUrl, {
+    _sorobanServer = new rpc.Server(STELLAR_CONFIG.sorobanRpcUrl, {
       allowHttp: STELLAR_CONFIG.network === "testnet",
     });
   }
@@ -63,7 +63,7 @@ export async function buildBaseTx(sourcePublicKey: string): Promise<TransactionB
  */
 export async function simulateTx(
   tx: Transaction | FeeBumpTransaction
-): Promise<SorobanRpc.Api.SimulateTransactionResponse> {
+): Promise<rpc.Api.SimulateTransactionResponse> {
   const server = getSorobanServer();
   return server.simulateTransaction(tx);
 }
@@ -74,12 +74,12 @@ export async function simulateTx(
  */
 export function assembleTx(
   tx: Transaction,
-  simResult: SorobanRpc.Api.SimulateTransactionResponse
+  simResult: rpc.Api.SimulateTransactionResponse
 ): Transaction {
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Simulation failed: ${simResult.error}`);
   }
-  return SorobanRpc.assembleTransaction(tx, simResult).build();
+  return rpc.assembleTransaction(tx, simResult).build();
 }
 
 // ── Submit ────────────────────────────────────────────────────────────────────
@@ -112,10 +112,10 @@ export async function submitAndWait(signedXdr: string): Promise<TxResult> {
     await new Promise((r) => setTimeout(r, delay));
     const result = await server.getTransaction(hash);
 
-    if (result.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+    if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
       return { txHash: hash, status: "SUCCESS", ledger: result.ledger };
     }
-    if (result.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+    if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
       return { txHash: hash, status: "FAILED", ledger: result.ledger, errorMessage: "Transaction failed on-chain" };
     }
     // Still pending — exponential backoff up to 8s
