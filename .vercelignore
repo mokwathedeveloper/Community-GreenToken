@@ -1,0 +1,39 @@
+# Rust smart contracts — not needed for Next.js build
+contracts/
+
+# Large raw asset source directories
+# (images are served from public/ symlinks — original source dirs not needed)
+assets/image/pages/herosection/
+assets/image/pages/org-admin/
+assets/image/saas/roi-business/
+assets/image/architecture/
+
+# Supabase CLI temp files
+supabase/
+
+# Dev / build artifacts
+.next/
+node_modules/
+tsconfig.tsbuildinfo
+
+# Documentation (not needed at runtime)
+architecture/
+foundation/
+implementation/
+saas/
+ux_ui/
+database/
+
+# Source image originals with spaces in names
+"about page"
+"Admin Dashboard Page"
+"billing page"
+howitworks
+"Org Member Managementpage"
+"Org Settings Page"
+"Pricing Page"
+siginpage
+signuppage
+super_admin_dashboard
+org_onboarding_page
+impact
