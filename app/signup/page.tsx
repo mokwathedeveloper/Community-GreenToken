@@ -3,8 +3,9 @@
 // Rules: R-FE-01, R-FE-02, R-COLOR-02, R-A11Y-01, R-A11Y-03, R-FE-07, R-FE-08
 // Spec: ux_ui/feature_specv2/signup_page_md.md
 // Mockup: mockup/signup_page_mockup.png
+// Note: Suspense wraps the form — required for useSearchParams in Next.js App Router
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -32,7 +33,7 @@ const TRUST_BADGES = [
   { icon: "🌍", title: "Global Community",    desc: "Join changemakers worldwide" },
 ];
 
-export default function SignUpPage() {
+function SignUpPage() {
   const params     = useSearchParams();
   const inviteToken = params?.get("token");
   const orgName     = params?.get("org");
@@ -219,5 +220,18 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrap in Suspense — required by Next.js App Router for useSearchParams
+export default function SignUpPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <SignUpPage />
+    </Suspense>
   );
 }
