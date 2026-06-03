@@ -3,12 +3,19 @@
 
 export * from "./config";
 export * from "./client";
-export * from "./types";
 
-// Freighter (browser-only — imported dynamically where needed)
-// export * from "./freighter";
+// types.ts exports — exclude TxResult to avoid conflict with client.ts
+export type {
+  StellarNetwork,
+  ActionStatus,
+  TransactionStatus,
+  WalletState,
+  OnChainAction,
+  OnChainReward,
+} from "./types";
+export { ActionType, ACTION_TOKEN_REWARDS } from "./types";
 
 // Contract clients
-export * as GreenTokenContract    from "./contracts/green-token";
+export * as GreenTokenContract     from "./contracts/green-token";
 export * as ActionRegistryContract from "./contracts/action-registry";
 export * as RewardManagerContract  from "./contracts/reward-manager";
