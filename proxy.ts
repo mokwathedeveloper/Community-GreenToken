@@ -17,6 +17,9 @@ const PUBLIC_ROUTES = new Set([
   "/signup",
 ]);
 
+// /join/[token] is public — the page handles its own auth
+const isJoinRoute = (p: string) => p.startsWith("/join/");
+
 const AUTH_ROUTES = new Set(["/signin", "/signup"]);
 
 // Next.js 16: export as `proxy` (renamed from `middleware`)
@@ -43,7 +46,7 @@ export async function proxy(req: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
 
   // ── 3. Protect authenticated routes ───────────────────────────────
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/api/");
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/api/") || isJoinRoute(pathname);
   const isAuthRoute   = AUTH_ROUTES.has(pathname);
 
   if (!session && !isPublicRoute) {
