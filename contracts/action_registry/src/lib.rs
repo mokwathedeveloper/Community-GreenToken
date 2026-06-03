@@ -206,7 +206,7 @@ impl ActionRegistry {
                 &env,
                 admin.to_val(),
                 action.user.to_val(),
-                tokens.into(),
+                soroban_sdk::IntoVal::into_val(&tokens, &env),
             ],
         );
 
