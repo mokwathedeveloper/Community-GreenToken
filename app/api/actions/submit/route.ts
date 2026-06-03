@@ -39,18 +39,21 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Insert action into Supabase
-  const { data: action, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const insertResult = await (supabase as any)
     .from("actions")
     .insert({
-      org_id:      orgId,
-      user_id:     auth.userId,
-      type:        actionType,
-      description: `[hash:${evidenceHash}] ${description}`,
-      status:      "pending",
+      org_id:         orgId,
+      user_id:        auth.userId,
+      type:           actionType,
+      description:    `[hash:${evidenceHash}] ${description}`,
+      status:         "pending",
       tokens_awarded: 0,
     })
     .select("id, type, status, created_at")
     .single();
+  const action = insertResult.data as { id: string; type: string; status: string; created_at: string } | null;
+  const error  = insertResult.error;
 
   if (error || !action) {
     console.error("[api/actions/submit]", error);
