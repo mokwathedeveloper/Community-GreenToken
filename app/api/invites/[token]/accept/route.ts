@@ -7,12 +7,12 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
-  const { token } = params;
+  const { token } = await params; // Next.js 16: params is async
   const supabase  = createAdminClient();
 
   const { data: invite } = await (supabase as any)
