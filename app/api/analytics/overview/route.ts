@@ -19,11 +19,31 @@ export async function GET(req: NextRequest) {
   // Parallel queries for overview stats
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any;
-  const [actionsRes, balancesRes, donationsRes] = await Promise.all([
-    db.from("actions").select("status, tokens_awarded").eq("org_id", auth.orgId),
-    db.from("token_balances").select("balance, total_earned").eq("org_id", auth.orgId),
-    db.from("donation_records").select("tokens_donated").eq("org_id", auth.orgId),
-  ]);
+
+  let actionsRes, balancesRes, donationsRes;
+  try {
+    [actionsRes, balancesRes, donationsRes] = await Promise.all([
+      db.from("actions").select("status, tokens_awarded").eq("org_id", auth.orgId),
+      db.from("token_balances").select("balance, total_earned").eq("org_id", auth.orgId),
+      db.from("donation_records").select("tokens_donated").eq("org_id", auth.orgId),
+    ]);
+  } catch (err) {
+    console.error("[api/analytics/overview] parallel query threw", err);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to fetch analytics." } },
+      { status: 500 }
+    );
+  }
+
+  // Surface individual query errors
+  if (actionsRes.error || balancesRes.error || donationsRes.error) {
+    console.error("[api/analytics/overview] query errors",
+      actionsRes.error, balancesRes.error, donationsRes.error);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to fetch analytics data." } },
+      { status: 500 }
+    );
+  }
 
   const actions    = (actionsRes.data   ?? []) as { status: string; tokens_awarded: number }[];
   const balances   = (balancesRes.data  ?? []) as { balance: number; total_earned: number }[];

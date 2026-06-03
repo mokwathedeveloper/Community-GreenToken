@@ -11,8 +11,12 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = req.nextUrl;
   const status = searchParams.get("status") ?? undefined;
-  const limit  = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
-  const page   = Math.max(1, parseInt(searchParams.get("page")  ?? "1"));
+
+  // NaN-safe parsing: parseInt("abc") returns NaN, clamp to safe defaults
+  const parsedLimit = parseInt(searchParams.get("limit") ?? "20", 10);
+  const parsedPage  = parseInt(searchParams.get("page")  ?? "1",  10);
+  const limit  = Math.min(50, Number.isNaN(parsedLimit) ? 20 : parsedLimit);
+  const page   = Math.max(1,  Number.isNaN(parsedPage)  ? 1  : parsedPage);
   const offset = (page - 1) * limit;
 
   const supabase = createAdminClient();
