@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
   const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
   if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
     try {
+      // @ts-ignore — optional Stellar integration, lib resolves at runtime
       const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
       const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 

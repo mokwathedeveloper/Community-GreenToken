@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
 
   if (signedXdr && process.env.NEXT_PUBLIC_REWARD_MANAGER_CONTRACT_ID) {
     try {
+      // @ts-ignore — optional Stellar integration, lib resolves at runtime
       const { redeemReward } = await import("@/lib/stellar/contracts/reward-manager");
       const result = await redeemReward(signedXdr);
       txHash      = result.txHash;

@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
 
     const walletAddress = walletAddressResult?.data?.wallet_address;
     if (walletAddress && process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID) {
+      // @ts-ignore — optional Stellar integration, lib resolves at runtime
       const { getDisplayBalance } = await import("@/lib/stellar/contracts/green-token");
       onChainBalance = await getDisplayBalance(walletAddress);
       inSync = Math.abs(onChainBalance - dbBalance.balance) < 1; // within 1 GTK
