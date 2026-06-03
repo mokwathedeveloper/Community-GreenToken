@@ -52,3 +52,9 @@ coverage/
 
 # ── Vercel ───────────────────────────────────────────────────
 .vercel
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo

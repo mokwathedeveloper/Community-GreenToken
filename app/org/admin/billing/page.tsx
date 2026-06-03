@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import AppLayout from "@/components/layouts/AppLayout";
+import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
 import ProgressBar from "@/components/ui/ProgressBar";
 import Badge from "@/components/ui/Badge";
@@ -67,7 +67,7 @@ export default function BillingPage() {
   const plan = PLAN_LABELS[status?.plan ?? "free"] ?? PLAN_LABELS.free;
 
   return (
-    <AppLayout title="Billing">
+    <OrgAdminLayout orgName="GreenFuture Org" plan="Pro Plan">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Billing &amp; Subscription</h2>
         <p className="text-sm text-gray-500 mt-1">Manage your plan, payment method, and invoices.</p>
@@ -142,6 +142,6 @@ export default function BillingPage() {
         </Button>
         <p className="text-xs text-gray-400 mt-3">Opens Stripe&apos;s secure customer portal</p>
       </div>
-    </AppLayout>
+    </OrgAdminLayout>
   );
 }
