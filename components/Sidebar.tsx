@@ -129,7 +129,7 @@ export default function Sidebar() {
             width={120}
             height={120}
             className="w-28 h-auto object-contain"
-            loading="lazy"
+            loading="eager"
           />
         </div>
         <p className="text-xs text-gray-500 text-center mb-2 leading-snug">
