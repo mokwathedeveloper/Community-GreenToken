@@ -96,6 +96,12 @@ export async function checkPlanFeature(
   return null; // allowed
 }
 
+/** Alias — checkPlanAccess is the public-facing name used in API routes */
+export const checkPlanAccess = (
+  auth: { orgId: string },
+  feature: PlanFeature
+): Promise<NextResponse | null> => checkPlanFeature(auth.orgId, feature);
+
 /**
  * Check if adding a new member would exceed the plan limit.
  */
