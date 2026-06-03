@@ -3,7 +3,11 @@ import Image from "next/image";
 
 // Spec: DESIGN_SPEC.md — dark green footer background (primary-900)
 
-const FOOTER_LINKS = {
+// Define explicit type so `external` is consistently optional across all link groups
+type FooterLink = { href: string; label: string; external?: boolean };
+type FooterLinkGroups = Record<string, FooterLink[]>;
+
+const FOOTER_LINKS: FooterLinkGroups = {
   Product: [
     { href: "/how-it-works", label: "How It Works" },
     { href: "/impact",       label: "Impact" },
