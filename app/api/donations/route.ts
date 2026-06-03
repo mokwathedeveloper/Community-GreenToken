@@ -52,23 +52,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Deduct balance
-  await (supabase as any).from("token_balances")
+  // Step 1: Deduct balance — check for errors before proceeding
+  const { error: deductErr } = await (supabase as any)
+    .from("token_balances")
     .update({ balance: bal.balance - tokensDonated, total_spent: bal.total_spent + tokensDonated })
     .eq("id", bal.id);
 
-  // Record donation
-  const { data: donation, error } = await (supabase as any).from("donation_records")
+  if (deductErr) {
+    console.error("[api/donations] balance deduction failed", deductErr);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to deduct tokens. Donation not recorded." } },
+      { status: 500 }
+    );
+  }
+
+  // Step 2: Record donation — if this fails, restore the balance to prevent token loss
+  const { data: donation, error: insertErr } = await (supabase as any)
+    .from("donation_records")
     .insert({ org_id: auth.orgId, user_id: auth.userId, project_name: projectName, tokens_donated: tokensDonated })
     .select("id, project_name, tokens_donated, created_at")
     .single();
 
-  if (error || !donation) {
+  if (insertErr || !donation) {
+    console.error("[api/donations] donation insert failed — restoring balance", insertErr);
+    // Compensating transaction: restore the deducted tokens
+    await (supabase as any)
+      .from("token_balances")
+      .update({ balance: bal.balance, total_spent: bal.total_spent })
+      .eq("id", bal.id);
+
     return NextResponse.json(
-      { error: { code: "DB_ERROR", message: "Failed to record donation." } },
+      { error: { code: "DB_ERROR", message: "Failed to record donation. Tokens have been restored." } },
       { status: 500 }
     );
   }
+  // TODO Phase 2: replace with supabase.rpc("process_donation", { p_org_id, p_user_id, p_project, p_amount })
+  //              for a true single-transaction atomic operation once the stored proc is deployed.
 
   return NextResponse.json({ data: donation, meta: { org_id: auth.orgId } }, { status: 201 });
 }
