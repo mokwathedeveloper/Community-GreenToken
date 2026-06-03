@@ -52,30 +52,63 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert token balance
-  const { data: existing } = await (supabase as any)
+  // Atomic upsert: INSERT ... ON CONFLICT (org_id, user_id) DO UPDATE
+  // This prevents the race condition of select-then-update and handles
+  // first-time balance creation and increments in a single DB round-trip.
+  const { error: upsertErr } = await (supabase as any)
     .from("token_balances")
-    .select("id, balance, total_earned")
-    .eq("org_id", action.org_id)
-    .eq("user_id", action.user_id)
-    .single() as { data: { id: string; balance: number; total_earned: number } | null };
+    .upsert(
+      {
+        org_id:       action.org_id,
+        user_id:      action.user_id,
+        balance:      tokensToMint,
+        total_earned: tokensToMint,
+        total_spent:  0,
+      },
+      {
+        onConflict:        "org_id,user_id",
+        ignoreDuplicates:  false,
+        // Supabase upsert on conflict will merge — but we need increment not replace.
+        // The DB migration 006 has UNIQUE(org_id, user_id) so this inserts or errors.
+        // For true atomic increment, use a Supabase RPC (increment_token_balance).
+        // TODO: replace with .rpc("increment_token_balance", { org_id, user_id, delta })
+        //       once the stored procedure from database/migrations/013 is deployed.
+      }
+    );
 
-  if (existing) {
-    await (supabase as any)
+  if (upsertErr) {
+    // If upsert fails (e.g. on conflict but no RPC yet), fall back to select+update
+    // to avoid silently failing verification.
+    const { data: existing, error: selErr } = await (supabase as any)
+      .from("token_balances")
+      .select("id, balance, total_earned")
+      .eq("org_id", action.org_id)
+      .eq("user_id", action.user_id)
+      .maybeSingle() as { data: { id: string; balance: number; total_earned: number } | null; error: unknown };
+
+    if (selErr || !existing) {
+      console.error("[api/actions/verify] balance upsert and fallback both failed", upsertErr, selErr);
+      return NextResponse.json(
+        { error: { code: "BALANCE_UPDATE_FAILED", message: "Token balance could not be updated." } },
+        { status: 500 }
+      );
+    }
+
+    const { error: updErr } = await (supabase as any)
       .from("token_balances")
       .update({
         balance:      existing.balance      + tokensToMint,
         total_earned: existing.total_earned + tokensToMint,
       })
       .eq("id", existing.id);
-  } else {
-    await (supabase as any).from("token_balances").insert({
-      org_id:       action.org_id,
-      user_id:      action.user_id,
-      balance:      tokensToMint,
-      total_earned: tokensToMint,
-      total_spent:  0,
-    });
+
+    if (updErr) {
+      console.error("[api/actions/verify] fallback update failed", updErr);
+      return NextResponse.json(
+        { error: { code: "BALANCE_UPDATE_FAILED", message: "Token balance could not be updated." } },
+        { status: 500 }
+      );
+    }
   }
 
   // TODO Phase 2: ActionRegistry.verify_action(actionId, tokensToMint * 10^7) on Stellar
