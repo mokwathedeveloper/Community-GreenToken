@@ -1,37 +1,39 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
 /**
- * Supabase server client — use in Server Components and API Routes (App Router).
- * Uses service-level access but honors RLS through JWT in Authorization header.
+ * Supabase server client for API Route Handlers.
+ * Uses createRouteHandlerClient so it can read session cookies
+ * from the incoming HTTP request (Next.js App Router).
  *
- * Rule R-API-01: ALL API routes MUST extract org_id from JWT before querying.
+ * Rule R-API-01: ALL API routes MUST extract org_id before querying.
+ * Rule R-SEC-01: NEVER use service_role key here — uses anon key + RLS.
  */
 export async function createServerSupabaseClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession:   false,
-        detectSessionInUrl: false,
-      },
-    }
-  );
+  // cookies() returns a Promise in Next.js 15+ — pass it directly so
+  // auth-helpers can await it internally when reading the cookie store.
+  return createRouteHandlerClient<Database>({
+    cookies,
+  });
 }
 
 /**
  * Supabase admin client — bypasses RLS entirely.
- * Use ONLY in server-side admin operations (billing webhooks, super admin).
+ * Use ONLY for server-side admin operations:
+ *   - billing webhooks
+ *   - auth triggers / migrations
+ *   - super admin API routes
  *
  * Rule R-SEC-01: NEVER expose SUPABASE_SERVICE_ROLE_KEY to the frontend.
- * Rule R-SAAS-04: Super admin routes MUST validate role server-side.
  */
 export function createAdminClient() {
   return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+    }
   );
 }
