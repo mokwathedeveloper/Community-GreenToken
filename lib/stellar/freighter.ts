@@ -28,7 +28,7 @@ export async function checkWalletStatus(): Promise<WalletStatus> {
     const {
       isConnected,
       isAllowed,
-      getPublicKey,
+      getAddress,
       getNetwork,
     } = await import("@stellar/freighter-api");
 
@@ -39,7 +39,7 @@ export async function checkWalletStatus(): Promise<WalletStatus> {
       return { isInstalled: true, isConnected: false, isAllowed: false, publicKey: null, network: null };
     }
 
-    const publicKey = allowed.isAllowed ? (await getPublicKey()).publicKey : null;
+    const publicKey = allowed.isAllowed ? (await getAddress()).address : null;
     const network   = (await getNetwork()).network ?? null;
 
     return {
@@ -62,7 +62,7 @@ export async function checkWalletStatus(): Promise<WalletStatus> {
 export async function connectWallet(): Promise<{ publicKey: string }> {
   if (typeof window === "undefined") throw new Error("Cannot connect wallet on server.");
 
-  const { isConnected, setAllowed, getPublicKey } = await import("@stellar/freighter-api");
+  const { isConnected, setAllowed, getAddress } = await import("@stellar/freighter-api");
   const connected = await isConnected();
 
   if (!connected.isConnected) {
@@ -70,10 +70,10 @@ export async function connectWallet(): Promise<{ publicKey: string }> {
   }
 
   await setAllowed();
-  const { publicKey } = await getPublicKey();
-  if (!publicKey) throw new Error("Could not get public key from Freighter.");
+  const { address } = await getAddress();
+  if (!address) throw new Error("Could not get address from Freighter.");
 
-  return { publicKey };
+  return { publicKey: address };
 }
 
 /**
