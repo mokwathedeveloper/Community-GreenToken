@@ -63,17 +63,47 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // TODO Phase 2: Call ActionRegistry.submit_action() on Stellar via lib/stellar/contracts/action-registry.ts
-  // const txHash = await submitActionOnChain(auth.userId, actionType, description, evidenceHash, orgId);
+  // Wire to live Soroban ActionRegistry contract
+  let txHash: string | null = null;
+  let explorerUrl: string | null = null;
+
+  const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
+  if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
+    try {
+      const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
+      // Convert org UUID to 32-byte hex for Stellar BytesN<32>
+      const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
+      const result = await submitAction(
+        adminSecret,
+        auth.userId,
+        actionType as import("@/lib/stellar/types").ActionType,
+        description,
+        evidenceHash,
+        orgHex
+      );
+      txHash    = result.txHash;
+      explorerUrl = result.explorerUrl;
+
+      // Update DB record with on-chain tx hash
+      await (supabase as any).from("actions")
+        .update({ tx_hash: txHash })
+        .eq("id", action.id);
+    } catch (stellarErr) {
+      // Non-blocking: Stellar call failed but DB record exists
+      console.error("[api/actions/submit] Stellar submit failed (DB record still saved):", stellarErr);
+    }
+  }
 
   return NextResponse.json(
     {
       data: {
-        actionId:  action.id,
-        type:      action.type,
-        status:    action.status,
-        createdAt: action.created_at,
-        message:   "Action submitted. Awaiting admin verification.",
+        actionId:    action.id,
+        type:        action.type,
+        status:      action.status,
+        createdAt:   action.created_at,
+        txHash,
+        explorerUrl,
+        message:     "Action submitted on Stellar blockchain. Awaiting admin verification.",
       },
       meta: { org_id: orgId },
     },

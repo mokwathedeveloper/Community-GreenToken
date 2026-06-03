@@ -163,7 +163,7 @@ impl RewardManager {
             soroban_sdk::vec![
                 &env,
                 user.to_val(),
-                reward.token_cost.into(),
+                soroban_sdk::IntoVal::into_val(&reward.token_cost, &env),
             ],
         );
 
