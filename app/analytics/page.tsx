@@ -45,9 +45,10 @@ export default function AnalyticsPage() {
           <div className="text-6xl mb-4">🔒</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Analytics requires Starter+</h2>
           <p className="text-gray-500 text-sm mb-6">Upgrade your plan to access detailed analytics and impact metrics.</p>
-          <Button variant="primary" size="lg" asChild>
-            <Link href="/pricing">View Plans</Link>
-          </Button>
+          <Link href="/pricing"
+            className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+            View Plans
+          </Link>
         </div>
       </AppLayout>
     );
