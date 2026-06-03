@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+
   // Allow Next.js <Image> to serve images from the symlinked public/ directories
   images: {
     // Remote images (Stellar Explorer, Supabase Storage, etc.)
@@ -11,12 +12,6 @@ const nextConfig: NextConfig = {
     ],
     // Disable image optimization for local static images during development
     unoptimized: process.env.NODE_ENV === "development",
-  },
-
-  // Allow following symlinks (public/assets → assets, public/branding → branding, etc.)
-  webpack: (config) => {
-    config.resolve.symlinks = true;
-    return config;
   },
 };
 
