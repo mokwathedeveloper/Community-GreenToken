@@ -228,8 +228,7 @@ mod test {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env, BytesN};
 
-    #[test]
-    fn test_add_reward() {
+    fn setup() -> (Env, Address, Address, RewardManagerClient<'static>) {
         let env = Env::default();
         env.mock_all_auths();
         let admin      = Address::generate(&env);
@@ -237,32 +236,86 @@ mod test {
         let contract_id = env.register_contract(None, RewardManager);
         let client = RewardManagerClient::new(&env, &contract_id);
         client.initialize(&admin, &token_addr);
+        (env, admin, token_addr, client)
+    }
 
-        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+    fn add_test_reward(env: &Env, client: &RewardManagerClient, admin: &Address) {
+        let org_id = BytesN::from_array(env, &[1u8; 32]);
         client.add_reward(
-            &admin, &1u32,
-            &String::from_str(&env, "Tree Planting"),
-            &String::from_str(&env, "Plant a tree"),
-            &500_000_000i128,  // 50 GTK
-            &(-1i64),          // unlimited
+            admin, &1u32,
+            &String::from_str(env, "Tree Planting"),
+            &String::from_str(env, "Plant a tree"),
+            &500_000_000i128,
+            &(-1i64),
             &org_id,
         );
+    }
 
+    #[test]
+    fn test_add_reward() {
+        let (env, admin, _, client) = setup();
+        add_test_reward(&env, &client, &admin);
         let reward = client.get_reward(&1u32);
         assert_eq!(reward.token_cost, 500_000_000i128);
         assert!(reward.is_active);
         assert_eq!(reward.redeemed, 0);
+        assert_eq!(reward.total_supply, -1i64);
     }
 
     #[test]
     fn test_total_burned_starts_at_zero() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let admin = Address::generate(&env);
-        let token_addr = Address::generate(&env);
-        let contract_id = env.register_contract(None, RewardManager);
-        let client = RewardManagerClient::new(&env, &contract_id);
-        client.initialize(&admin, &token_addr);
+        let (_, _, _, client) = setup();
         assert_eq!(client.total_burned(), 0i128);
+        assert_eq!(client.redemption_count(), 0u64);
+    }
+
+    #[test]
+    fn test_get_all_rewards_returns_active() {
+        let (env, admin, _, client) = setup();
+        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+        client.add_reward(&admin, &1u32, &String::from_str(&env, "R1"),
+            &String::from_str(&env, "desc"), &100_000_000i128, &(-1i64), &org_id);
+        client.add_reward(&admin, &2u32, &String::from_str(&env, "R2"),
+            &String::from_str(&env, "desc"), &200_000_000i128, &(-1i64), &org_id);
+        let all = client.get_all_rewards();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn test_update_reward_deactivate() {
+        let (env, admin, _, client) = setup();
+        add_test_reward(&env, &client, &admin);
+        client.update_reward(&admin, &1u32, &500_000_000i128, &false);
+        let reward = client.get_reward(&1u32);
+        assert!(!reward.is_active);
+    }
+
+    #[test]
+    fn test_update_reward_change_cost() {
+        let (env, admin, _, client) = setup();
+        add_test_reward(&env, &client, &admin);
+        client.update_reward(&admin, &1u32, &999_000_000i128, &true);
+        let reward = client.get_reward(&1u32);
+        assert_eq!(reward.token_cost, 999_000_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "reward id taken")]
+    fn test_duplicate_reward_id_rejected() {
+        let (env, admin, _, client) = setup();
+        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+        client.add_reward(&admin, &1u32, &String::from_str(&env, "R"),
+            &String::from_str(&env, "d"), &100_000_000i128, &(-1i64), &org_id);
+        client.add_reward(&admin, &1u32, &String::from_str(&env, "R2"),
+            &String::from_str(&env, "d"), &200_000_000i128, &(-1i64), &org_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "token cost must be positive")]
+    fn test_zero_cost_reward_rejected() {
+        let (env, admin, _, client) = setup();
+        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+        client.add_reward(&admin, &1u32, &String::from_str(&env, "R"),
+            &String::from_str(&env, "d"), &0i128, &(-1i64), &org_id);
     }
 }
