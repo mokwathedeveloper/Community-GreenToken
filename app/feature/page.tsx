@@ -64,17 +64,44 @@ export default function ActionSubmissionPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!actionType)   { setError("Please select an action type."); return; }
+    if (!actionType)        { setError("Please select an action type."); return; }
     if (!description.trim()) { setError("Please describe your action."); return; }
-    if (!evidence)     { setError("Please upload photo evidence."); return; }
+    if (!evidence)           { setError("Please upload photo evidence."); return; }
+    if (!evidenceHash)       { setError("Evidence hash not ready. Please re-upload."); return; }
+
+    // Validate hash format before submitting (must be 64-char hex)
+    if (!/^[0-9a-f]{64}$/.test(evidenceHash)) {
+      setError("Invalid evidence hash. Please re-upload your photo.");
+      return;
+    }
+
     setLoading(true); setError(null);
     try {
-      // Phase 2: POST /api/actions/submit with { actionType, description, evidenceHash }
-      await new Promise((r) => setTimeout(r, 1000));
+      const res = await fetch("/api/actions/submit", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actionType,
+          description: description.trim(),
+          evidenceHash,  // SHA-256 hex computed client-side via crypto.subtle.digest
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error?.message ?? "Submission failed. Please try again.");
+        return;
+      }
+
       setSuccess(true);
-      setActionType(""); setDescription(""); setEvidence(null); setEvidenceHash(null);
+      setActionType("");
+      setDescription("");
+      setEvidence(null);
+      setEvidenceHash(null);
+      if (fileRef.current) fileRef.current.value = "";
     } catch {
-      setError("Submission failed. Please try again.");
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
