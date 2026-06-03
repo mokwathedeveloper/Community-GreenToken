@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (!auth) return unauthorized();
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("token_balances")
     .select("balance, total_earned, total_spent")
     .eq("org_id", auth.orgId)
