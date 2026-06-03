@@ -29,7 +29,7 @@ pub enum ActionType {
 }
 
 #[contracttype]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ActionStatus {
     Pending,
     Verified,
@@ -252,57 +252,102 @@ mod test {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env, BytesN};
 
-    #[test]
-    fn test_submit_action() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let admin      = Address::generate(&env);
-        let user       = Address::generate(&env);
-        let token_addr = Address::generate(&env); // mock token address
-
-        let contract_id = env.register_contract(None, ActionRegistry);
-        let client = ActionRegistryClient::new(&env, &contract_id);
-        client.initialize(&admin, &token_addr);
-
-        let hash   = BytesN::from_array(&env, &[1u8; 32]);
-        let org_id = BytesN::from_array(&env, &[2u8; 32]);
-
-        let id = client.submit_action(
-            &user,
-            &ActionType::Recycling,
-            &String::from_str(&env, "Recycled 5 bags"),
-            &hash,
-            &org_id,
-        );
-
-        assert_eq!(id, 1);
-        let action = client.get_action(&id);
-        assert_eq!(action.status, ActionStatus::Pending);
-        assert_eq!(action.tokens_awarded, 0);
-    }
-
-    #[test]
-    #[should_panic(expected = "evidence already used")]
-    fn test_duplicate_evidence_rejected() {
+    fn setup() -> (Env, Address, Address, Address, ActionRegistryClient<'static>) {
         let env = Env::default();
         env.mock_all_auths();
         let admin      = Address::generate(&env);
         let user       = Address::generate(&env);
         let token_addr = Address::generate(&env);
-
         let contract_id = env.register_contract(None, ActionRegistry);
         let client = ActionRegistryClient::new(&env, &contract_id);
         client.initialize(&admin, &token_addr);
+        (env, admin, user, token_addr, client)
+    }
 
+    #[test]
+    fn test_submit_action_increments_count() {
+        let (env, _, user, _, client) = setup();
+        let hash   = BytesN::from_array(&env, &[1u8; 32]);
+        let org_id = BytesN::from_array(&env, &[2u8; 32]);
+        assert_eq!(client.action_count(), 0);
+        let id = client.submit_action(&user, &ActionType::Recycling,
+            &String::from_str(&env, "Recycled 5 bags"), &hash, &org_id);
+        assert_eq!(id, 1);
+        assert_eq!(client.action_count(), 1);
+    }
+
+    #[test]
+    fn test_submit_action_stored_correctly() {
+        let (env, _, user, _, client) = setup();
+        let hash   = BytesN::from_array(&env, &[1u8; 32]);
+        let org_id = BytesN::from_array(&env, &[2u8; 32]);
+        let id = client.submit_action(&user, &ActionType::TreePlanting,
+            &String::from_str(&env, "Planted 3 trees"), &hash, &org_id);
+        let action = client.get_action(&id);
+        assert_eq!(action.status, ActionStatus::Pending);
+        assert_eq!(action.tokens_awarded, 0);
+        assert_eq!(action.user, user);
+    }
+
+    #[test]
+    fn test_user_actions_list() {
+        let (env, _, user, _, client) = setup();
+        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+        client.submit_action(&user, &ActionType::Recycling,
+            &String::from_str(&env, "a"), &BytesN::from_array(&env, &[1u8; 32]), &org_id);
+        client.submit_action(&user, &ActionType::Carpooling,
+            &String::from_str(&env, "b"), &BytesN::from_array(&env, &[2u8; 32]), &org_id);
+        let user_actions = client.get_user_actions(&user);
+        assert_eq!(user_actions.len(), 2);
+    }
+
+    #[test]
+    fn test_reject_action() {
+        let (env, admin, user, _, client) = setup();
+        let hash   = BytesN::from_array(&env, &[5u8; 32]);
+        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+        let id = client.submit_action(&user, &ActionType::BeachCleanup,
+            &String::from_str(&env, "Cleaned beach"), &hash, &org_id);
+        client.reject_action(&admin, &id);
+        let action = client.get_action(&id);
+        assert_eq!(action.status, ActionStatus::Rejected);
+    }
+
+    #[test]
+    fn test_set_custom_token_reward() {
+        let (env, admin, _, _, client) = setup();
+        client.set_token_reward(&admin, &ActionType::Recycling, &500_000_000i128);
+        assert_eq!(client.get_token_reward(&ActionType::Recycling), 500_000_000i128);
+    }
+
+    #[test]
+    fn test_default_token_rewards() {
+        let (_, _, _, _, client) = setup();
+        assert_eq!(client.get_token_reward(&ActionType::TreePlanting), 200_000_000i128);
+        assert_eq!(client.get_token_reward(&ActionType::BeachCleanup), 300_000_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "evidence already used")]
+    fn test_duplicate_evidence_rejected() {
+        let (env, _, user, _, client) = setup();
         let hash   = BytesN::from_array(&env, &[42u8; 32]);
         let org_id = BytesN::from_array(&env, &[1u8; 32]);
-
-        // Submit once — succeeds
         client.submit_action(&user, &ActionType::Recycling,
             &String::from_str(&env, "test"), &hash, &org_id);
-
-        // Submit again with same hash — should panic
         client.submit_action(&user, &ActionType::Recycling,
             &String::from_str(&env, "test2"), &hash, &org_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "action not pending")]
+    fn test_cannot_reject_already_rejected() {
+        let (env, admin, user, _, client) = setup();
+        let hash   = BytesN::from_array(&env, &[9u8; 32]);
+        let org_id = BytesN::from_array(&env, &[1u8; 32]);
+        let id = client.submit_action(&user, &ActionType::Recycling,
+            &String::from_str(&env, "x"), &hash, &org_id);
+        client.reject_action(&admin, &id);
+        client.reject_action(&admin, &id); // second reject should panic
     }
 }
