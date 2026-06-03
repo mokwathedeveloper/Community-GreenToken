@@ -17,24 +17,17 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
 
   // Parallel queries for overview stats
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
   const [actionsRes, balancesRes, donationsRes] = await Promise.all([
-    supabase
-      .from("actions")
-      .select("status, tokens_awarded", { count: "exact" })
-      .eq("org_id", auth.orgId),
-    supabase
-      .from("token_balances")
-      .select("balance, total_earned")
-      .eq("org_id", auth.orgId),
-    supabase
-      .from("donation_records")
-      .select("tokens_donated")
-      .eq("org_id", auth.orgId),
+    db.from("actions").select("status, tokens_awarded").eq("org_id", auth.orgId),
+    db.from("token_balances").select("balance, total_earned").eq("org_id", auth.orgId),
+    db.from("donation_records").select("tokens_donated").eq("org_id", auth.orgId),
   ]);
 
-  const actions    = actionsRes.data   ?? [];
-  const balances   = balancesRes.data  ?? [];
-  const donations  = donationsRes.data ?? [];
+  const actions    = (actionsRes.data   ?? []) as { status: string; tokens_awarded: number }[];
+  const balances   = (balancesRes.data  ?? []) as { balance: number; total_earned: number }[];
+  const donations  = (donationsRes.data ?? []) as { tokens_donated: number }[];
 
   const totalActions  = actions.length;
   const verifiedCount = actions.filter((a) => a.status === "verified").length;

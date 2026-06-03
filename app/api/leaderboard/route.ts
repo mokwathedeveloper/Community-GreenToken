@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
 
   // Compute rankings from token_balances (live, no cache needed for MVP)
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("token_balances")
     .select("user_id, balance, total_earned")
     .eq("org_id", auth.orgId)
@@ -30,7 +30,8 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const rankings = (data ?? []).map((row, index) => ({
+  type LeaderRow = { user_id: string; balance: number; total_earned: number };
+  const rankings = ((data ?? []) as LeaderRow[]).map((row, index) => ({
     rank:        index + 1,
     userId:      row.user_id,
     balance:     row.balance,
