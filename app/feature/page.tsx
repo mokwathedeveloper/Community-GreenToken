@@ -150,12 +150,14 @@ export default function ActionSubmissionPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        // Provide a friendlier message for session expiry
-        const msg = json.error?.message ?? "Submission failed.";
+        const err = json.error;
         if (res.status === 401) {
-          setError("Your session has expired. Please sign out and sign back in, then try again.");
+          setError("Your session has expired. Please sign out and sign back in.");
+        } else if (err?.code === "NO_ORGANIZATION") {
+          setError("You need to create your organization first before submitting actions.");
+          setTimeout(() => { window.location.href = "/org/setup"; }, 2500);
         } else {
-          setError(msg);
+          setError(err?.message ?? "Submission failed. Please try again.");
         }
         return;
       }

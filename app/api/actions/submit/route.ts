@@ -26,6 +26,21 @@ export async function POST(req: NextRequest) {
   const { actionType, description, evidenceHash } = parsed.data;
 
   const orgId   = auth.orgId;  // Rule R-SAAS-01: always from JWT, never from body
+
+  // User must belong to an org before submitting actions
+  if (!orgId) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "NO_ORGANIZATION",
+          message: "You need to set up your organization before submitting actions.",
+          redirect: "/org/setup",
+        },
+      },
+      { status: 422 }
+    );
+  }
+
   const supabase = createAdminClient();
 
   // 4. Check duplicate evidence hash using dedicated column (not description text)
@@ -45,24 +60,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 5. Insert action with evidence_hash in its own column
+  // 5. Insert action — use both `type` (original column) and `action_type` (migration 020)
   const insertResult = await (supabase as any)
     .from("actions")
     .insert({
       org_id:         orgId,
       user_id:        auth.userId,
-      action_type:    actionType,
+      type:           actionType,   // original column (NOT NULL)
+      action_type:    actionType,   // added in migration 020
       description,
-      evidence_hash:  evidenceHash,   // dedicated column — not embedded in description
+      evidence_hash:  evidenceHash,
       status:         "pending",
       tokens_awarded: 0,
       submitted_at:   new Date().toISOString(),
     })
-    .select("id, action_type, status, submitted_at")
+    .select("id, action_type, status, submitted_at, created_at")
     .single();
 
   const action = insertResult.data as {
-    id: string; action_type: string; status: string; submitted_at: string;
+    id: string; action_type: string; status: string; submitted_at: string; created_at: string;
   } | null;
   const dbError = insertResult.error;
 

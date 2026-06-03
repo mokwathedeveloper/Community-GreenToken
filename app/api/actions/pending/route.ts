@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     .from("actions")
     .select(`
       id, action_type, description, evidence_hash,
-      stellar_tx_hash, token_reward, status,
+      stellar_tx_hash, tokens_awarded, status,
       submitted_at, verified_at,
       users(display_name, email, wallet_address)
     `, { count: "exact" })
