@@ -22,14 +22,14 @@ export async function POST(req: NextRequest) {
 
   // 3. Check duplicate evidence hash (prevent replay)
   const supabase = createAdminClient();
+  // Use .maybeSingle() so it returns null (not PGRST116 error) when no row exists
   const { data: existing } = await (supabase as any)
     .from("actions")
     .select("id")
     .eq("org_id", orgId)
-    // Store evidence hash in description field until we add a dedicated column
     .eq("description", `[hash:${evidenceHash}] ${description}`)
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     return NextResponse.json(
