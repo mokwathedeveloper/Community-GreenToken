@@ -1,6 +1,6 @@
 "use client";
 
-import { createBrowserClient } from "@supabase/auth-helpers-nextjs";
+import { createPagesBrowserClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/types/database";
 
 /**
@@ -11,8 +11,8 @@ import type { Database } from "@/types/database";
  * Rule R-SEC-01: NEVER expose service role key here.
  */
 export function createClient() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return createPagesBrowserClient<Database>({
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  });
 }
