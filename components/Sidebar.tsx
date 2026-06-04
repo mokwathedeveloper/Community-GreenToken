@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Dashboard",   href: "/dashboard",   Icon: DashboardIcon,   ActiveIcon: DashboardIconSolid },
-  { label: "Actions",     href: "/feature",     Icon: BoltIcon,        ActiveIcon: BoltIconSolid      },
+  { label: "Actions",     href: "/submit-action",     Icon: BoltIcon,        ActiveIcon: BoltIconSolid      },
   { label: "Rewards",     href: "/redeem",      Icon: GiftIcon,        ActiveIcon: GiftIconSolid      },
   { label: "Donations",   href: "/donations",   Icon: HeartIcon,       ActiveIcon: HeartIconSolid     },
   { label: "Leaderboard", href: "/leaderboard", Icon: TrophyIcon,      ActiveIcon: TrophyIconSolid    },
@@ -78,7 +78,7 @@ export default function Sidebar() {
       {/* ── Submit Action button (matches mockup green CTA) ──────────── */}
       <div className="px-3 pt-3 pb-1">
         <Link
-          href="/feature"
+          href="/submit-action"
           className={cn(
             "flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold",
             "bg-primary-600 hover:bg-primary-700 text-white transition-colors duration-150",

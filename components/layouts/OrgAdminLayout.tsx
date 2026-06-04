@@ -29,7 +29,7 @@ import NetworkBadge from "@/components/stellar/NetworkBadge";
 const ORG_NAV = [
   { label: "Overview",               href: "/org/admin",           Icon: Squares2X2Icon    },
   { label: "Members",                href: "/org/admin/members",   Icon: UsersIcon         },
-  { label: "Actions",                href: "/feature",             Icon: BoltIcon          },
+  { label: "Actions",                href: "/submit-action",             Icon: BoltIcon          },
   { label: "Rewards",                href: "/redeem",              Icon: GiftIcon          },
   { label: "Analytics",              href: "/analytics",           Icon: ChartBarIcon      },
   { label: "Billing",                href: "/org/admin/billing",   Icon: CreditCardIcon    },
