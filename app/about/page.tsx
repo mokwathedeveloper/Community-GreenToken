@@ -85,23 +85,23 @@ export default function AboutUsPage() {
   return (
     <PublicLayout>
 
-      {/* ── Hero — full-width background image with text overlay ── */}
-      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[560px] flex items-center overflow-hidden bg-white">
+      {/* ── Hero — image covers full section, text overlaid on left ── */}
+      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[560px] flex items-center overflow-hidden">
 
-        {/* Background image — object-contain shows the full image (it has natural white edges) */}
+        {/* Background image covers the full hero — object-cover fills edge to edge */}
         <Image
           src="/assets/image/pages/about-us/about_us_hero.png"
           alt="Hands gently holding a young plant seedling in sunlit forest"
           fill
-          className="object-contain object-right"
+          className="object-cover object-[70%_center]"
           priority
           sizes="100vw"
         />
 
-        {/* Left-to-right gradient so dark text stays readable over the light-left image */}
+        {/* Left-to-right gradient — white on left keeps text crisp, fades to transparent so image shows on right */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.75) 45%, rgba(255,255,255,0.05) 100%)" }}
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.30) 60%, rgba(255,255,255,0) 100%)" }}
           aria-hidden="true"
         />
 
