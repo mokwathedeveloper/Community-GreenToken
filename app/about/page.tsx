@@ -86,14 +86,14 @@ export default function AboutUsPage() {
     <PublicLayout>
 
       {/* ── Hero — full-width background image with text overlay ── */}
-      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[540px] flex items-center overflow-hidden">
+      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[560px] flex items-center overflow-hidden bg-white">
 
-        {/* Background image fills entire hero */}
+        {/* Background image — object-contain shows the full image (it has natural white edges) */}
         <Image
           src="/assets/image/pages/about-us/about_us_hero.png"
           alt="Hands gently holding a young plant seedling in sunlit forest"
           fill
-          className="object-cover object-center"
+          className="object-contain object-right"
           priority
           sizes="100vw"
         />
@@ -191,7 +191,7 @@ export default function AboutUsPage() {
       </section>
 
       {/* ── CTA Banner ── */}
-      <section aria-label="Call to action" className="relative h-52 sm:h-64 overflow-hidden">
+      <section aria-label="Call to action" className="relative h-80 sm:h-96 lg:h-[420px] overflow-hidden">
         <Image
           src="/assets/image/pages/about-us/about_us_cta_banner.png"
           alt="Green forest background"
