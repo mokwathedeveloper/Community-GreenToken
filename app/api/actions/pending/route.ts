@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  const { data, count, error } = await (supabase as any)
+  // Try with users join first; if the FK relationship isn't registered in Supabase
+  // (common in fresh projects), fall back to a plain query without the join.
+  let data: Record<string, unknown>[] | null = null;
+  let count: number | null = null;
+
+  const joinRes = await (supabase as any)
     .from("actions")
     .select(`
       id, action_type, description, evidence_hash,
@@ -34,18 +39,38 @@ export async function GET(req: NextRequest) {
     `, { count: "exact" })
     .eq("org_id", auth!.orgId)
     .eq("status", "pending")
-    .order("submitted_at", { ascending: true })    // oldest first (FIFO)
+    .order("submitted_at", { ascending: true })
     .range(offset, offset + limit - 1) as {
       data: Record<string, unknown>[] | null;
       count: number | null;
       error: unknown;
     };
 
-  if (error) {
-    return NextResponse.json(
-      { error: { code: "DB_ERROR", message: "Failed to fetch pending actions." } },
-      { status: 500 }
-    );
+  if (joinRes.error) {
+    // Fallback: query without the users join
+    const plainRes = await (supabase as any)
+      .from("actions")
+      .select("id, action_type, description, evidence_hash, stellar_tx_hash, tokens_awarded, status, submitted_at, verified_at", { count: "exact" })
+      .eq("org_id", auth!.orgId)
+      .eq("status", "pending")
+      .order("submitted_at", { ascending: true })
+      .range(offset, offset + limit - 1) as {
+        data: Record<string, unknown>[] | null;
+        count: number | null;
+        error: unknown;
+      };
+
+    if (plainRes.error) {
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Failed to fetch pending actions." } },
+        { status: 500 }
+      );
+    }
+    data  = plainRes.data;
+    count = plainRes.count;
+  } else {
+    data  = joinRes.data;
+    count = joinRes.count;
   }
 
   return NextResponse.json({
