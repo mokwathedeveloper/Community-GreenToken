@@ -67,26 +67,47 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // all_time: use cumulative token_balances joined with display name
-  const { data, error } = await (supabase as any)
+  // all_time: token_balances joined with public.users for display names.
+  // If the join fails (foreign key not registered in Supabase), fall back to
+  // querying without the join so the leaderboard still loads.
+  let data: Record<string, unknown>[] | null = null;
+  let withJoin = true;
+
+  const joinResult = await (supabase as any)
     .from("token_balances")
     .select("user_id, balance, total_earned, users(display_name, email)")
     .eq("org_id", auth.orgId)
     .order("balance", { ascending: false })
     .limit(limit);
 
-  if (error) {
-    return NextResponse.json(
-      { error: { code: "DB_ERROR", message: "Failed to fetch leaderboard." } },
-      { status: 500 }
-    );
+  if (joinResult.error) {
+    // Join failed (relationship not found) — retry without join
+    withJoin = false;
+    const plainResult = await (supabase as any)
+      .from("token_balances")
+      .select("user_id, balance, total_earned")
+      .eq("org_id", auth.orgId)
+      .order("balance", { ascending: false })
+      .limit(limit);
+
+    if (plainResult.error) {
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Failed to fetch leaderboard." } },
+        { status: 500 }
+      );
+    }
+    data = plainResult.data ?? [];
+  } else {
+    data = joinResult.data ?? [];
   }
 
-  type LeaderRow = { user_id: string; balance: number; total_earned: number; users: { display_name: string | null; email: string | null } | null };
-  const rankings = ((data ?? []) as LeaderRow[]).map((row, index) => ({
+  type LeaderRow = { user_id: string; balance: number; total_earned: number; users?: { display_name: string | null; email: string | null } | null };
+  const rankings = (data as LeaderRow[]).map((row, index) => ({
     rank:        index + 1,
     userId:      row.user_id,
-    displayName: row.users?.display_name ?? row.users?.email?.split("@")[0] ?? `User${index + 1}`,
+    displayName: withJoin
+      ? (row.users?.display_name ?? row.users?.email?.split("@")[0] ?? `User${index + 1}`)
+      : `User${index + 1}`,
     balance:     row.balance,
     totalEarned: row.total_earned,
   }));
