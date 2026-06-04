@@ -6,6 +6,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
@@ -89,7 +90,12 @@ export default function OrgSetupPage() {
           }),
         });
         const json = await res.json();
-        if (json.data?.id) setOrgId(json.data.id);
+        if (json.data?.id) {
+          setOrgId(json.data.id);
+          // Refresh JWT so useUser() picks up the new org_id + owner role immediately
+          const supabase = createClient();
+          await supabase.auth.refreshSession();
+        }
       } catch {/* continue */}
       setSaving(false);
     }
