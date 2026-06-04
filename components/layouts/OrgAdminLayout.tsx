@@ -18,22 +18,20 @@ import {
   GiftIcon,
   ChartBarIcon,
   CreditCardIcon,
-  Cog6ToothIcon,
-  ShieldCheckIcon,
-  DocumentTextIcon,
   BuildingOfficeIcon,
+  UserPlusIcon,
 } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils";
 import NetworkBadge from "@/components/stellar/NetworkBadge";
 
-// ownerOnly: true means only visible to org owner (not admin/member)
+// ownerOnly: true → only org owner and superadmin can see
 const ORG_NAV = [
   { label: "Overview",              href: "/org/admin",          Icon: Squares2X2Icon,    ownerOnly: false },
   { label: "Members",               href: "/org/admin/members",  Icon: UsersIcon,         ownerOnly: false },
-  { label: "Actions",               href: "/submit-action",      Icon: BoltIcon,          ownerOnly: false },
+  { label: "Verify Actions",        href: "/org/admin/actions",  Icon: BoltIcon,          ownerOnly: false }, // admin verification queue
   { label: "Rewards",               href: "/redeem",             Icon: GiftIcon,          ownerOnly: false },
   { label: "Analytics",             href: "/analytics",          Icon: ChartBarIcon,      ownerOnly: false },
-  { label: "Billing",               href: "/org/admin/billing",  Icon: CreditCardIcon,    ownerOnly: true  }, // owner-only — RBAC
+  { label: "Billing",               href: "/org/admin/billing",  Icon: CreditCardIcon,    ownerOnly: true  }, // owner-only RBAC
   { label: "Organization Settings", href: "/org/admin/settings", Icon: BuildingOfficeIcon,ownerOnly: false },
 ];
 
@@ -95,8 +93,19 @@ export default function OrgAdminLayout({
           })}
         </nav>
 
-        {/* Plan indicator + Org name */}
-        <div className="px-3 pb-4 mt-auto border-t border-gray-100 pt-3">
+        {/* Persistent + Invite Member CTA — always visible for admin/owner */}
+        <div className="px-3 py-3 border-t border-gray-100">
+          <Link
+            href="/org/admin/members"
+            className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          >
+            <UserPlusIcon className="w-3.5 h-3.5" aria-hidden="true" />
+            + Invite Member
+          </Link>
+        </div>
+
+        {/* Plan indicator */}
+        <div className="px-3 pb-4 border-t border-gray-100 pt-3">
           <div className="bg-primary-50 rounded-xl p-3">
             <p className="text-xs font-bold text-primary-700">{plan}</p>
             <p className="text-xs text-gray-500 mt-0.5 truncate">{orgName}</p>
