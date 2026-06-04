@@ -10,6 +10,11 @@ export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
+  // Guard: user has not completed org setup
+  if (!auth.orgId) {
+    return NextResponse.json({ data: { balance: 0, totalEarned: 0, totalSpent: 0, onChainBalance: null, inSync: true, displayBalance: 0 }, meta: { org_id: "" } });
+  }
+
   const supabase = createAdminClient();
 
   // Fetch balance row and wallet address in parallel — was two sequential round-trips

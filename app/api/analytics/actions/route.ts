@@ -13,6 +13,12 @@ export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
+  if (!auth.orgId) {
+    return NextResponse.json(
+      { data: { trend: [], by_type: [], total_actions: 0 }, meta: { org_id: "" } }
+    );
+  }
+
   const guard = requireOrgAdmin(auth);
   if (guard) return guard;
 

@@ -12,6 +12,11 @@ export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
+  // Guard: user has not completed org setup
+  if (!auth.orgId) {
+    return NextResponse.json({ data: [], meta: { page: 1, limit: 20, org_id: "" } });
+  }
+
   const { searchParams } = req.nextUrl;
   const page   = Math.max(1, Number(searchParams.get("page")  ?? 1));
   const limit  = Math.min(50,  Number(searchParams.get("limit") ?? 20));

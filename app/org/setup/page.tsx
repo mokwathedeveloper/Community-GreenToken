@@ -125,6 +125,10 @@ export default function OrgSetupPage() {
 
   async function generateInvite() {
     try {
+      // Ensure JWT is fresh before calling invite API (orgId must be present)
+      const supabase = createClient();
+      await supabase.auth.refreshSession();
+
       const res  = await fetch("/api/invites/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -132,8 +136,12 @@ export default function OrgSetupPage() {
       });
       const json = await res.json();
       if (json.data?.inviteUrl) setInviteLink(json.data.inviteUrl);
+      else if (json.data?.token) {
+        const base = typeof window !== "undefined" ? window.location.origin : "";
+        setInviteLink(`${base}/join/${json.data.token}`);
+      }
     } catch {
-      setInviteLink(`${form.slug}.greentoken.app/join/demo-token`);
+      setInviteLink(`${typeof window !== "undefined" ? window.location.origin : ""}/join/pending`);
     }
   }
 
