@@ -20,51 +20,29 @@ export async function GET(_req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Total members by role
-  const { data: members } = await (supabase as any)
-    .from("org_members")
-    .select("role, joined_at")
-    .eq("org_id", auth.orgId)
-    .order("joined_at", { ascending: true }) as {
-      data: { role: string; joined_at: string }[] | null;
+  // Single RPC — role grouping, 6-month growth, and active-member count all in Postgres (migration 021)
+  const { data, error } = await (supabase as any)
+    .rpc("get_member_analytics", { p_org_id: auth.orgId }) as {
+      data: {
+        total_members:     number;
+        by_role:           Record<string, number>;
+        monthly_growth:    { month: string; count: number }[];
+        active_this_month: number;
+        activity_rate_pct: number;
+      } | null;
+      error: unknown;
     };
 
-  const rows = members ?? [];
-  const byRole: Record<string, number> = {};
-  rows.forEach((m) => { byRole[m.role] = (byRole[m.role] ?? 0) + 1; });
-
-  // Monthly growth (new members per month for last 6 months)
-  const growth: Record<string, number> = {};
-  rows.forEach((m) => {
-    const month = m.joined_at.slice(0, 7); // YYYY-MM
-    growth[month] = (growth[month] ?? 0) + 1;
-  });
-
-  // Active members — those with at least one action this month
-  const monthStart = new Date();
-  monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-
-  const { data: activeThisMonth } = await (supabase as any)
-    .from("actions")
-    .select("user_id")
-    .eq("org_id", auth.orgId)
-    .gte("submitted_at", monthStart.toISOString()) as { data: { user_id: string }[] | null };
-
-  const activeUserIds = new Set((activeThisMonth ?? []).map((a) => a.user_id));
+  if (error || !data) {
+    console.error("[api/analytics/members] rpc error", error);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to fetch member analytics." } },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({
-    data: {
-      total_members:   rows.length,
-      by_role:         byRole,
-      monthly_growth:  Object.entries(growth)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-6)
-        .map(([month, count]) => ({ month, count })),
-      active_this_month: activeUserIds.size,
-      activity_rate_pct: rows.length > 0
-        ? Math.round((activeUserIds.size / rows.length) * 100)
-        : 0,
-    },
+    data,
     meta: { org_id: auth.orgId },
   });
 }
