@@ -15,7 +15,6 @@ import {
   Squares2X2Icon,
   UsersIcon,
   BoltIcon,
-  GiftIcon,
   ChartBarIcon,
   CreditCardIcon,
   BuildingOfficeIcon,
@@ -24,14 +23,15 @@ import {
 import { cn } from "@/lib/utils";
 import NetworkBadge from "@/components/stellar/NetworkBadge";
 
+// Admin-only navigation — NO member pages (submit action, rewards, withdraw, donate, leaderboard)
+// Those live in the member Sidebar (Sidebar.tsx).
 // ownerOnly: true → only org owner and superadmin can see
 const ORG_NAV = [
   { label: "Overview",              href: "/org/admin",          Icon: Squares2X2Icon,    ownerOnly: false },
   { label: "Members",               href: "/org/admin/members",  Icon: UsersIcon,         ownerOnly: false },
-  { label: "Verify Actions",        href: "/org/admin/actions",  Icon: BoltIcon,          ownerOnly: false }, // admin verification queue
-  { label: "Rewards",               href: "/redeem",             Icon: GiftIcon,          ownerOnly: false },
+  { label: "Verify Actions",        href: "/org/admin/actions",  Icon: BoltIcon,          ownerOnly: false },
   { label: "Analytics",             href: "/analytics",          Icon: ChartBarIcon,      ownerOnly: false },
-  { label: "Billing",               href: "/org/admin/billing",  Icon: CreditCardIcon,    ownerOnly: true  }, // owner-only RBAC
+  { label: "Billing",               href: "/org/admin/billing",  Icon: CreditCardIcon,    ownerOnly: true  },
   { label: "Organization Settings", href: "/org/admin/settings", Icon: BuildingOfficeIcon,ownerOnly: false },
 ];
 
