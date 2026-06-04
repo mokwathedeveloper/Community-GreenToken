@@ -3,17 +3,14 @@
 // Rebuilt to match mockup/analytics_metrics_page_mockup.png exactly
 // Real SVG line chart + SVG donut chart — no external charting library needed
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import Link from "next/link";
 
-const PLAN_CAN_ACCESS = true;
-
-const STATS = [
-  { icon: "🪙", label: "Total Tokens",    value: "5,000",  change: "+42.8% in last 30 days", bg: "bg-primary-50", iconColor: "text-primary-600" },
-  { icon: "❤️", label: "Total Donations", value: "1,200",  change: "+14.8% in last 30 days", bg: "bg-red-50",     iconColor: "text-red-500"     },
-  { icon: "✅", label: "Total Actions",   value: "850",    change: "+15.7% in last 30 days", bg: "bg-blue-50",    iconColor: "text-blue-600"    },
-];
+type OverviewData = {
+  totalActions: number; verifiedActions: number; pendingActions: number;
+  tokensMinted: number; activeMembers: number;   tokensDonated: number;
+};
 
 const GROWTH_DATA = [
   { month: "Jan '23", value: 10 },
@@ -92,9 +89,36 @@ function DonutChart({ data }: { data: typeof DISTRIBUTION }) {
 }
 
 export default function AnalyticsPage() {
-  const [period, setPeriod] = useState("all_time");
+  const [period,    setPeriod]    = useState("all_time");
+  const [overview,  setOverview]  = useState<OverviewData | null>(null);
+  const [planOk,    setPlanOk]    = useState<boolean | null>(null);
+  const [loading,   setLoading]   = useState(true);
 
-  if (!PLAN_CAN_ACCESS) {
+  useEffect(() => {
+    fetch("/api/analytics/overview")
+      .then((r) => {
+        if (r.status === 422) { setPlanOk(false); return null; }
+        setPlanOk(true);
+        return r.json();
+      })
+      .then((res) => { if (res?.data) setOverview(res.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const stats = overview
+    ? [
+        { icon: "🪙", label: "Total Tokens",    value: overview.tokensMinted.toLocaleString(),  change: `${overview.activeMembers} active members`,  bg: "bg-primary-50", iconColor: "text-primary-600" },
+        { icon: "❤️", label: "Tokens Donated",  value: overview.tokensDonated.toLocaleString(), change: "To green projects",                          bg: "bg-red-50",     iconColor: "text-red-500"     },
+        { icon: "✅", label: "Total Actions",   value: overview.totalActions.toLocaleString(),  change: `${overview.verifiedActions} verified`,       bg: "bg-blue-50",    iconColor: "text-blue-600"    },
+      ]
+    : [
+        { icon: "🪙", label: "Total Tokens",    value: "—", change: "Loading…", bg: "bg-primary-50", iconColor: "text-primary-600" },
+        { icon: "❤️", label: "Tokens Donated",  value: "—", change: "Loading…", bg: "bg-red-50",     iconColor: "text-red-500"     },
+        { icon: "✅", label: "Total Actions",   value: "—", change: "Loading…", bg: "bg-blue-50",    iconColor: "text-blue-600"    },
+      ];
+
+  if (!loading && planOk === false) {
     return (
       <AppLayout title="Analytics">
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -132,7 +156,7 @@ export default function AnalyticsPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {STATS.map(({ icon, label, value, change, bg, iconColor }) => (
+        {stats.map(({ icon, label, value, change, bg, iconColor }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-xl ${bg}`} aria-hidden="true">
               <span className={iconColor}>{icon}</span>
