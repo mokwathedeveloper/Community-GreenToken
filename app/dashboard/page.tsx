@@ -1,107 +1,121 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/layouts/AppLayout";
 import StatCard from "@/components/StatCard";
 import MiniLeaderboard from "@/components/dashboard/MiniLeaderboard";
 import DonationProgress from "@/components/dashboard/DonationProgress";
 import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
+import { useUser } from "@/hooks/useUser";
 
-// Rebuilt to exactly match mockup/dashboard_page_mockup.png
-export const metadata: Metadata = { title: "Dashboard" };
-
-const MOCK_STATS = [
-  {
-    icon: "🪙",
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
-    label: "Token Balance",
-    value: "1,250",
-    change: "12%",
-    changeType: "up" as const,
-    sublabel: "Free Balance",
-  },
-  {
-    icon: "✅",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-    label: "Actions Completed",
-    value: "24",
-    change: "8%",
-    changeType: "up" as const,
-    sublabel: "Free Balance",
-  },
-  {
-    icon: "💝",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-500",
-    label: "Total Donations",
-    value: "$320",
-    change: "3%",
-    changeType: "down" as const,
-    sublabel: "Free Balance",
-  },
-  {
-    icon: "🌿",
-    iconBg: "bg-teal-100",
-    iconColor: "text-teal-600",
-    label: "CO₂ Offset",
-    value: "24.6 kg",
-    change: "15%",
-    changeType: "up" as const,
-    sublabel: "Free Balance",
-  },
-];
-
-const MOCK_LEADERBOARD = [
-  { rank: 1, name: "Alice Green",  handle: "@alicegreen",  tokens: 3450 },
-  { rank: 2, name: "Bob Earth",    handle: "@bobearth",    tokens: 2890 },
-  { rank: 3, name: "Charlie Leaf", handle: "@charlieleaf", tokens: 2500 },
-  { rank: 4, name: "Diana Nature", handle: "@dianature",   tokens: 2100 },
-  { rank: 5, name: "Ethan Planet", handle: "@ethanplanet", tokens: 1960 },
-];
-
-const MOCK_DONATIONS = [
-  { id: "1", name: "Tree Planting Initiative", status: "Ongoing" as const, raised: 80,  goal: 120 },
-  { id: "2", name: "Recycling Drive",          status: "Ongoing" as const, raised: 62,  goal: 100 },
-];
+type LeaderEntry = { rank: number; name: string; handle: string; tokens: number };
+type DonationEntry = { id: string; name: string; status: "Ongoing" | "Completed"; raised: number; goal: number };
 
 export default function DashboardPage() {
-  return (
-    <AppLayout title="Dashboard" tokenBalance={BigInt(12500000000)}>
+  const { displayName, isLoading: userLoading } = useUser();
 
-      {/* Greeting — matches mockup */}
+  const [balance,     setBalance]     = useState(0);
+  const [totalEarned, setTotalEarned] = useState(0);
+  const [actions,     setActions]     = useState({ verified: 0, pending: 0 });
+  const [leaders,     setLeaders]     = useState<LeaderEntry[]>([]);
+  const [myRank,      setMyRank]      = useState<number | null>(null);
+  const [donations,   setDonations]   = useState<DonationEntry[]>([]);
+  const [loading,     setLoading]     = useState(true);
+
+  useEffect(() => {
+    if (userLoading) return;
+    Promise.all([
+      fetch("/api/tokens/balance").then((r) => r.json()),
+      fetch("/api/actions?limit=100").then((r) => r.json()),
+      fetch("/api/leaderboard?limit=5").then((r) => r.json()),
+      fetch("/api/donations?limit=3").then((r) => r.json()),
+    ]).then(([balRes, actRes, lbRes, donRes]) => {
+      if (balRes.data) {
+        setBalance(balRes.data.balance ?? 0);
+        setTotalEarned(balRes.data.totalEarned ?? 0);
+      }
+      if (actRes.data) {
+        const rows = actRes.data as { status: string }[];
+        setActions({
+          verified: rows.filter((a) => a.status === "verified").length,
+          pending:  rows.filter((a) => a.status === "pending").length,
+        });
+      }
+      if (lbRes.data) {
+        setLeaders(
+          (lbRes.data as { rank: number; displayName: string; balance: number }[]).map((r) => ({
+            rank:   r.rank,
+            name:   r.displayName,
+            handle: `@${r.displayName.toLowerCase().replace(/\s+/g, "")}`,
+            tokens: r.balance,
+          }))
+        );
+        setMyRank(lbRes.meta?.my_rank ?? null);
+      }
+      if (donRes.data) {
+        setDonations(
+          (donRes.data as { id: string; project_name: string; tokens_donated: number }[])
+            .slice(0, 2)
+            .map((d) => ({
+              id:     d.id,
+              name:   d.project_name,
+              status: "Ongoing" as const,
+              raised: d.tokens_donated,
+              goal:   Math.ceil(d.tokens_donated * 1.5),
+            }))
+        );
+      }
+    }).catch(console.error).finally(() => setLoading(false));
+  }, [userLoading]);
+
+  const stats = [
+    {
+      icon: "🪙", iconBg: "bg-green-100", iconColor: "text-green-600",
+      label: "Token Balance",  value: loading ? "—" : balance.toLocaleString(),
+      change: "", changeType: "up" as const, sublabel: "GTK",
+    },
+    {
+      icon: "✅", iconBg: "bg-blue-100", iconColor: "text-blue-600",
+      label: "Actions Verified", value: loading ? "—" : String(actions.verified),
+      change: "", changeType: "up" as const, sublabel: `${actions.pending} pending`,
+    },
+    {
+      icon: "💝", iconBg: "bg-rose-100", iconColor: "text-rose-500",
+      label: "Total Earned",  value: loading ? "—" : totalEarned.toLocaleString(),
+      change: "", changeType: "up" as const, sublabel: "GTK lifetime",
+    },
+    {
+      icon: "🌿", iconBg: "bg-teal-100", iconColor: "text-teal-600",
+      label: "Your Rank",  value: loading ? "—" : (myRank ? `#${myRank}` : "—"),
+      change: "", changeType: "up" as const, sublabel: "Community rank",
+    },
+  ];
+
+  return (
+    <AppLayout title="Dashboard" tokenBalance={BigInt(balance * 10_000_000)}>
       <div className="mb-5">
         <h2 className="text-2xl font-bold text-gray-900">
-          Welcome back, GreenUser! 🌿
+          Welcome back, {userLoading ? "..." : (displayName ?? "GreenUser")}! 🌿
         </h2>
         <p className="text-sm text-gray-500 mt-0.5">
           Here&apos;s what&apos;s happening in your journey today.
         </p>
       </div>
 
-      {/* 4 Stat Cards — exactly matches mockup row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        {MOCK_STATS.map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
+        {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
 
-      {/* Two-column content: Leaderboard (1/3) + Analytics Chart (2/3) */}
-      {/* Exact column ratio matches mockup */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-
-        {/* Leaderboard — left column */}
         <div className="lg:col-span-1">
-          <MiniLeaderboard entries={MOCK_LEADERBOARD} myRank={8} />
+          <MiniLeaderboard entries={leaders} myRank={myRank ?? 0} />
         </div>
-
-        {/* Analytics Chart — right column, larger */}
         <div className="lg:col-span-2">
           <AnalyticsChart />
         </div>
       </div>
 
-      {/* Donation Progress — full width */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">❤️ Donation Progress</h3>
@@ -109,9 +123,11 @@ export default function DashboardPage() {
             View All Projects →
           </Link>
         </div>
-        <DonationProgress projects={MOCK_DONATIONS} />
+        {donations.length > 0
+          ? <DonationProgress projects={donations} />
+          : <p className="text-xs text-gray-400 text-center py-4">No donations yet. <Link href="/donations" className="text-primary-600 hover:underline">Support a project →</Link></p>
+        }
       </div>
-
     </AppLayout>
   );
 }
