@@ -151,7 +151,7 @@ export default function OrgAdminPage() {
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { icon: "🌿", label: "Record Actions",  href: "/feature"           },
+                { icon: "🌿", label: "Record Actions",  href: "/submit-action"           },
                 { icon: "📤", label: "Export Reports",  href: "#"                  },
                 { icon: "👥", label: "Member Invite",   href: "/org/admin/members" },
               ].map(({ icon, label, href }) => (
