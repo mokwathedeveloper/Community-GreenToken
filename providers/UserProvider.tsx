@@ -78,30 +78,32 @@ export function UserProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Fetch org membership — single query, no retry on failure
-        let membership: { role: string; org_id: string; organizations: { id: string; name: string; slug: string } | null } | null = null;
-        try {
-          const { data } = await supabase
-            .from("org_members")
-            .select("role, org_id, organizations(id, name, slug)")
-            .eq("user_id", user.id)
-            .order("joined_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          membership = data as typeof membership;
-        } catch {
-          // DB query failed (401 / network) — use defaults, do NOT retry
-        }
+        // Fetch org + role via our own API (admin key server-side — no RLS issues)
+        // Previously queried org_members directly from client → RLS blocked it → 401 spam
+        let role: AppRole = "member";
+        let orgId: string | null = null;
+        let orgName: string | null = null;
+        let orgSlug: string | null = null;
 
-        const role: AppRole = (membership?.role as AppRole) ?? "member";
-        const org = membership?.organizations ?? null;
+        try {
+          const meRes = await fetch("/api/auth/me");
+          if (meRes.ok) {
+            const me = await meRes.json();
+            role    = (me.data?.role as AppRole) ?? "member";
+            orgId   = me.data?.org?.id   ?? null;
+            orgName = me.data?.org?.name ?? null;
+            orgSlug = me.data?.org?.slug ?? null;
+          }
+        } catch {
+          // Network error — use defaults, do not retry
+        }
 
         if (mountedRef.current) setState({
           user,
           role,
-          orgId:       org?.id   ?? null,
-          orgName:     org?.name ?? null,
-          orgSlug:     org?.slug ?? null,
+          orgId,
+          orgName,
+          orgSlug,
           displayName: user.user_metadata?.display_name ?? user.email?.split("@")[0] ?? "User",
           avatarUrl:   user.user_metadata?.avatar_url   ?? null,
           isLoading:   false,

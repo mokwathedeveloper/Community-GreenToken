@@ -40,10 +40,12 @@ export async function POST(req: NextRequest) {
       token_name:   tokenName   ?? "GreenToken",
       token_symbol: tokenSymbol ?? "GTK",
       primary_color: primaryColor ?? "#22c55e",
-      plan:         "free",
+      // Spec: all new orgs start with a 14-day Pro trial (billing_and_subscriptions.md §5)
+      // After trial expires (cron job), downgrades to free.
+      plan:         "pro",
       subscription_status: "trialing",
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      member_limit: 50,
+      member_limit: 5000, // Pro limit during trial
     })
     .select("id, name, slug, token_name, token_symbol, plan, trial_ends_at")
     .single();
