@@ -128,6 +128,15 @@ export default function AnalyticsPage() {
     ? trend.map((d) => ({ month: d.date, value: d.total }))
     : [{ month: "Today", value: 0 }, { month: "Now", value: 0 }];
 
+  // Impact estimates derived from verified action count (1 action ≈ 1 tree / 5 kg CO₂ / 50 L water / 2 kg waste)
+  const verified = overview?.verifiedActions ?? 0;
+  const impactStats = [
+    { icon: "🌳", value: verified > 0 ? verified.toLocaleString()              : "—", label: "Trees Equivalent" },
+    { icon: "💨", value: verified > 0 ? `${(verified * 5 / 1000).toFixed(1)} t` : "—", label: "CO₂ Avoided"    },
+    { icon: "💧", value: verified > 0 ? `${(verified * 50).toLocaleString()} L` : "—", label: "Water Saved"    },
+    { icon: "♻️", value: verified > 0 ? `${(verified * 2).toLocaleString()} kg` : "—", label: "Waste Diverted" },
+  ];
+
   // Build real distribution from action types
   const totalByType = byType.reduce((s, t) => s + t.count, 0);
   const distribution = byType.length > 0
@@ -270,7 +279,7 @@ export default function AnalyticsPage() {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <h3 className="text-sm font-semibold text-gray-900 mb-5">Projected Impact Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {IMPACT_STATS.map(({ icon, value, label }) => (
+          {impactStats.map(({ icon, value, label }) => (
             <div key={label} className="text-center">
               <div className="text-3xl mb-2" aria-hidden="true">{icon}</div>
               <p className="text-2xl font-bold text-gray-900">{value}</p>
