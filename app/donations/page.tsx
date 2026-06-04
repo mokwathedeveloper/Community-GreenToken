@@ -35,11 +35,22 @@ export default function DonationsPage() {
                    PROJECTS.filter((p) => p.status === filter);
 
   async function handleDonate() {
+    if (!donatingProject) return;
     setDonating(true);
     try {
-      // Phase 2: POST /api/donations { projectName, tokensDonated }
-      await new Promise((r) => setTimeout(r, 900));
+      const res = await fetch("/api/donations", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ projectName: donatingProject.name, tokensDonated: donateAmount }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(json.error?.message ?? "Donation failed. Please try again.");
+        return;
+      }
       setDonateModal(null);
+    } catch {
+      alert("Network error — please try again.");
     } finally {
       setDonating(false);
     }
