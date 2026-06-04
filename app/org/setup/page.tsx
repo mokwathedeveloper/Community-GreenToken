@@ -4,9 +4,10 @@
 // Spec: ux_ui/feature_specv2/org_onboarding_page_md.md
 // Mockup: assets/image/saas/org_onboarding_wizard.png
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/hooks/useUser";
 import Link from "next/link";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
@@ -45,13 +46,23 @@ interface OrgForm {
 
 export default function OrgSetupPage() {
   const router  = useRouter();
+  const { orgId: existingOrgId, isLoading: userLoading } = useUser();
+
   const [step,  setStep]   = useState(1);
   const [saving, setSaving] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "ok" | "taken">("idle");
   const [contractDeploying, setContractDeploying] = useState(false);
   const [contractDeployed,  setContractDeployed]  = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
+
+  // Redirect to org admin if user already has an org — no need to re-setup
+  useEffect(() => {
+    if (!userLoading && existingOrgId) {
+      router.replace("/org/admin");
+    }
+  }, [userLoading, existingOrgId, router]);
 
   const [form, setForm] = useState<OrgForm>({
     name: "", slug: "", type: "school", tokenName: "", tokenSymbol: "",
@@ -76,29 +87,60 @@ export default function OrgSetupPage() {
 
   async function handleNext(e: FormEvent) {
     e.preventDefault();
+    setSetupError(null);
+
     if (step === 1) {
-      // Create org in Supabase
+      // Client-side validation before hitting the API
+      if (!form.name.trim() || form.name.trim().length < 2) {
+        setSetupError("Organization name must be at least 2 characters.");
+        return;
+      }
+      if (!form.slug || form.slug.length < 3) {
+        setSetupError("Subdomain must be at least 3 characters. It auto-fills from the org name.");
+        return;
+      }
+      if (slugStatus === "taken") {
+        setSetupError("That subdomain is already taken. Please choose another.");
+        return;
+      }
+
       setSaving(true);
       try {
         const res  = await fetch("/api/orgs/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: form.name, slug: form.slug, type: form.type,
-            tokenName: form.tokenName || "GreenToken",
-            tokenSymbol: form.tokenSymbol || "GTK",
+            name:        form.name.trim(),
+            slug:        form.slug,
+            type:        form.type || "other",
+            tokenName:   form.tokenName.trim()   || "GreenToken",
+            tokenSymbol: form.tokenSymbol.trim().toUpperCase() || "GTK",
           }),
         });
         const json = await res.json();
+
+        if (!res.ok) {
+          // API validation failed — show error and STOP (do not advance)
+          setSetupError(json.error?.message ?? "Failed to create organization. Please check your inputs.");
+          setSaving(false);
+          return;
+        }
+
         if (json.data?.id) {
           setOrgId(json.data.id);
           // Refresh JWT so useUser() picks up the new org_id + owner role immediately
           const supabase = createClient();
           await supabase.auth.refreshSession();
         }
-      } catch {/* continue */}
+      } catch {
+        setSetupError("Network error. Please check your connection and try again.");
+        setSaving(false);
+        return;
+      }
       setSaving(false);
     }
+
+    // Only advance if step 1 succeeded (orgId set) or it's not step 1
     setStep((s) => Math.min(s + 1, STEPS.length));
   }
 
@@ -184,8 +226,25 @@ export default function OrgSetupPage() {
         {/* ── Step 1: Org Profile ── */}
         {step === 1 && (
           <form onSubmit={handleNext} noValidate className="space-y-5">
-            <Input id="org-name" label="Organization Name *" placeholder="Cape Town City Council"
-              value={form.name} onChange={(e) => update("name", e.target.value)} required />
+            {/* Inline error — shown when API returns 400 or validation fails */}
+            {setupError && (
+              <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                <span aria-hidden="true">⚠️</span>
+                <span>{setupError}</span>
+              </div>
+            )}
+            <Input id="org-name" label="Organization Name *" placeholder="e.g. Cape Town City Council"
+              value={form.name}
+              onChange={(e) => {
+                const name = e.target.value;
+                update("name", name);
+                // Auto-generate slug from name if slug is still empty or matches previous auto-slug
+                const autoSlug = name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 30);
+                if (!form.slug || form.slug === form.name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 30)) {
+                  update("slug", autoSlug);
+                }
+              }}
+              required />
             <div>
               <label htmlFor="org-slug" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Subdomain *
