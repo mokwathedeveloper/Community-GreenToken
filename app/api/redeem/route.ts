@@ -11,6 +11,7 @@ import { getTxExplorerUrl } from "@/lib/stellar/config";
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
+  if (!auth.orgId) return NextResponse.json({ error: { code: "NO_ORGANIZATION", message: "Complete org setup first." } }, { status: 422 });
 
   const parsed = await parseBody(req, redeemSchema);
   if ("error" in parsed) return parsed.error;

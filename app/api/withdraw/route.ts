@@ -33,6 +33,7 @@ const withdrawSchema = z.object({
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
+  if (!auth.orgId) return NextResponse.json({ error: { code: "NO_ORGANIZATION", message: "Complete org setup first." } }, { status: 422 });
 
   let body: unknown;
   try { body = await req.json(); }
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
 export async function GET(_req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
+  if (!auth.orgId) return NextResponse.json({ data: [], meta: { org_id: "" } });
 
   const supabase = createAdminClient();
 

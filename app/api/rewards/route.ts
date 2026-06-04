@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 export async function GET(_req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
+  if (!auth.orgId) return NextResponse.json({ data: [], meta: { org_id: "" } });
 
   const supabase = createAdminClient();
   const { data, error } = await (supabase as any)
