@@ -38,56 +38,37 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Check balance
-  const { data: bal } = await (supabase as any).from("token_balances")
-    .select("id, balance, total_spent")
-    .eq("org_id", auth.orgId)
-    .eq("user_id", auth.userId)
-    .single() as { data: { id: string; balance: number; total_spent: number } | null };
+  // Atomic deduct-and-insert in a single Postgres transaction (migration 021 process_donation RPC).
+  // Eliminates the previous two-step compensating pattern — no window where tokens can be lost.
+  const { data: result, error: rpcErr } = await (supabase as any)
+    .rpc("process_donation", {
+      p_org_id:  auth.orgId,
+      p_user_id: auth.userId,
+      p_project: projectName,
+      p_tokens:  tokensDonated,
+    }) as { data: { error?: string; id?: string; project_name?: string; tokens_donated?: number; created_at?: string } | null; error: unknown };
 
-  if (!bal || bal.balance < tokensDonated) {
+  if (rpcErr || !result) {
+    console.error("[api/donations] process_donation rpc error", rpcErr);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Donation failed." } },
+      { status: 500 }
+    );
+  }
+
+  if (result.error === "INSUFFICIENT_BALANCE") {
     return NextResponse.json(
       { error: { code: "INSUFFICIENT_BALANCE", message: "Not enough tokens to donate." } },
       { status: 409 }
     );
   }
 
-  // Step 1: Deduct balance — check for errors before proceeding
-  const { error: deductErr } = await (supabase as any)
-    .from("token_balances")
-    .update({ balance: bal.balance - tokensDonated, total_spent: bal.total_spent + tokensDonated })
-    .eq("id", bal.id);
-
-  if (deductErr) {
-    console.error("[api/donations] balance deduction failed", deductErr);
+  if (result.error === "NO_BALANCE") {
     return NextResponse.json(
-      { error: { code: "DB_ERROR", message: "Failed to deduct tokens. Donation not recorded." } },
-      { status: 500 }
+      { error: { code: "INSUFFICIENT_BALANCE", message: "Not enough tokens to donate." } },
+      { status: 409 }
     );
   }
 
-  // Step 2: Record donation — if this fails, restore the balance to prevent token loss
-  const { data: donation, error: insertErr } = await (supabase as any)
-    .from("donation_records")
-    .insert({ org_id: auth.orgId, user_id: auth.userId, project_name: projectName, tokens_donated: tokensDonated })
-    .select("id, project_name, tokens_donated, created_at")
-    .single();
-
-  if (insertErr || !donation) {
-    console.error("[api/donations] donation insert failed — restoring balance", insertErr);
-    // Compensating transaction: restore the deducted tokens
-    await (supabase as any)
-      .from("token_balances")
-      .update({ balance: bal.balance, total_spent: bal.total_spent })
-      .eq("id", bal.id);
-
-    return NextResponse.json(
-      { error: { code: "DB_ERROR", message: "Failed to record donation. Tokens have been restored." } },
-      { status: 500 }
-    );
-  }
-  // TODO Phase 2: replace with supabase.rpc("process_donation", { p_org_id, p_user_id, p_project, p_amount })
-  //              for a true single-transaction atomic operation once the stored proc is deployed.
-
-  return NextResponse.json({ data: donation, meta: { org_id: auth.orgId } }, { status: 201 });
+  return NextResponse.json({ data: result, meta: { org_id: auth.orgId } }, { status: 201 });
 }
