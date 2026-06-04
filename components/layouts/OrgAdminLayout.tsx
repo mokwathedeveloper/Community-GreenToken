@@ -26,17 +26,15 @@ import {
 import { cn } from "@/lib/utils";
 import NetworkBadge from "@/components/stellar/NetworkBadge";
 
+// ownerOnly: true means only visible to org owner (not admin/member)
 const ORG_NAV = [
-  { label: "Overview",               href: "/org/admin",           Icon: Squares2X2Icon    },
-  { label: "Members",                href: "/org/admin/members",   Icon: UsersIcon         },
-  { label: "Actions",                href: "/submit-action",             Icon: BoltIcon          },
-  { label: "Rewards",                href: "/redeem",              Icon: GiftIcon          },
-  { label: "Analytics",              href: "/analytics",           Icon: ChartBarIcon      },
-  { label: "Billing",                href: "/org/admin/billing",   Icon: CreditCardIcon    },
-  { label: "Organization Settings",  href: "/org/admin/settings",  Icon: BuildingOfficeIcon },
-  { label: "Team & Roles",           href: "/org/admin/members",   Icon: ShieldCheckIcon   },
-  { label: "Audit Logs",             href: "/org/admin",           Icon: DocumentTextIcon  },
-  { label: "Statistics",             href: "/analytics",           Icon: ChartBarIcon      },
+  { label: "Overview",              href: "/org/admin",          Icon: Squares2X2Icon,    ownerOnly: false },
+  { label: "Members",               href: "/org/admin/members",  Icon: UsersIcon,         ownerOnly: false },
+  { label: "Actions",               href: "/submit-action",      Icon: BoltIcon,          ownerOnly: false },
+  { label: "Rewards",               href: "/redeem",             Icon: GiftIcon,          ownerOnly: false },
+  { label: "Analytics",             href: "/analytics",          Icon: ChartBarIcon,      ownerOnly: false },
+  { label: "Billing",               href: "/org/admin/billing",  Icon: CreditCardIcon,    ownerOnly: true  }, // owner-only — RBAC
+  { label: "Organization Settings", href: "/org/admin/settings", Icon: BuildingOfficeIcon,ownerOnly: false },
 ];
 
 interface OrgAdminLayoutProps {
@@ -75,9 +73,9 @@ export default function OrgAdminLayout({
           </div>
         </div>
 
-        {/* Nav */}
+        {/* Nav — Billing hidden from admin role (owner-only per RBAC) */}
         <nav aria-label="Organization admin menu" className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-          {ORG_NAV.map(({ label, href, Icon }) => {
+          {ORG_NAV.filter(item => !item.ownerOnly || role === "owner" || role === "superadmin").map(({ label, href, Icon }) => {
             const active = isActive(href);
             return (
               <Link
