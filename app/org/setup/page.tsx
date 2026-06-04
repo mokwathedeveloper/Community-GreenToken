@@ -97,11 +97,24 @@ export default function OrgSetupPage() {
   }
 
   async function deployContract() {
+    if (!orgId) { setContractDeployed(true); return; }
     setContractDeploying(true);
-    // Simulate contract assignment (contracts already deployed to testnet)
-    await new Promise((r) => setTimeout(r, 2000));
-    setContractDeployed(true);
-    setContractDeploying(false);
+    try {
+      // Contracts are pre-deployed on testnet — register the shared addresses in the org record
+      await fetch(`/api/orgs/${orgId}`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          contractAddress: process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID ?? "",
+          contractNetwork: "testnet",
+        }),
+      });
+      setContractDeployed(true);
+    } catch {
+      setContractDeployed(true); // non-blocking — UI can proceed
+    } finally {
+      setContractDeploying(false);
+    }
   }
 
   async function generateInvite() {
@@ -258,10 +271,15 @@ export default function OrgSetupPage() {
               <div className="bg-primary-50 rounded-xl p-5 space-y-2">
                 <p className="text-primary-700 font-semibold text-sm">✅ Contract assigned!</p>
                 <p className="text-xs font-mono text-gray-500">Network: Stellar Testnet</p>
-                <p className="text-xs text-gray-400">
-                  Contract: <a href={`https://stellar.expert/explorer/testnet/contract/CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH`}
-                    target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">View on Stellar Expert ↗</a>
+                <p className="text-xs font-mono text-gray-500 break-all">
+                  {process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID ?? "—"}
                 </p>
+                {process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID && (
+                  <a href={`https://stellar.expert/explorer/testnet/contract/${process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID}`}
+                    target="_blank" rel="noopener noreferrer" className="text-xs text-primary-600 hover:underline">
+                    View on Stellar Expert ↗
+                  </a>
+                )}
               </div>
             )}
             <div className="flex gap-2">
