@@ -27,11 +27,12 @@ const VERIFICATION_STEPS = [
 ];
 
 interface RecentAction {
-  action_type:    string;
-  description:    string;
-  submitted_at:   string;
-  status:         "pending" | "verified" | "rejected";
-  tokens_awarded: number;
+  action_type:     string;
+  description:     string;
+  submitted_at:    string;
+  status:          "pending" | "verified" | "rejected";
+  tokens_awarded:  number;
+  stellar_tx_hash: string | null;
 }
 
 export default function ActionSubmissionPage() {
@@ -379,28 +380,43 @@ export default function ActionSubmissionPage() {
             <caption className="sr-only">Your recent submitted actions</caption>
             <thead className="bg-gray-50">
               <tr>
-                {["Date", "Type", "Description", "Status", "Tokens"].map((h) => (
+                {["Date","Type","Description","Status","Tokens","⛓️ Blockchain Proof"].map((h) => (
                   <th key={h} scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {recentActions.map((r, i) => (
-                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                <tr key={i} className={cn("hover:bg-gray-50 transition-colors", r.status === "verified" && "bg-primary-50/20")}>
                   <td className="px-5 py-3.5 text-gray-400 text-xs font-mono whitespace-nowrap">
                     {r.submitted_at?.slice(0, 16).replace("T", " ")}
                   </td>
                   <td className="px-5 py-3.5 font-medium text-gray-900">{r.action_type}</td>
-                  <td className="px-5 py-3.5 text-gray-600 max-w-[180px] truncate">{r.description}</td>
+                  <td className="px-5 py-3.5 text-gray-600 max-w-[160px] truncate">{r.description}</td>
                   <td className="px-5 py-3.5">
-                    <Badge
-                      color={r.status === "verified" ? "green" : r.status === "rejected" ? "red" : "amber"}
-                      dot>
+                    <Badge color={r.status === "verified" ? "green" : r.status === "rejected" ? "red" : "amber"} dot>
                       {r.status}
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5 font-semibold text-primary-600">
                     {r.tokens_awarded > 0 ? `+${r.tokens_awarded} GTK` : "—"}
+                  </td>
+                  {/* Stellar blockchain proof — shows tx hash after admin verifies */}
+                  <td className="px-5 py-3.5">
+                    {r.stellar_tx_hash ? (
+                      <a
+                        href={`https://stellar.expert/explorer/testnet/tx/${r.stellar_tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary-600 hover:underline font-mono"
+                        title="View on Stellar Explorer">
+                        ⛓️ {r.stellar_tx_hash.slice(0,10)}…
+                      </a>
+                    ) : r.status === "verified" ? (
+                      <span className="text-xs text-gray-400 italic">pending tx…</span>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
