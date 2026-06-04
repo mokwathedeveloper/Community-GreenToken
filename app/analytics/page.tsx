@@ -12,30 +12,10 @@ type OverviewData = {
   tokensMinted: number; activeMembers: number;   tokensDonated: number;
 };
 
-const GROWTH_DATA = [
-  { month: "Jan '23", value: 10 },
-  { month: "Feb '23", value: 18 },
-  { month: "Mar '23", value: 14 },
-  { month: "Apr '23", value: 28 },
-  { month: "May '23", value: 38 },
-  { month: "Jun '23", value: 32 },
-  { month: "Jul '23", value: 50 },
-];
+type TrendPoint = { date: string; total: number; verified: number };
+type TypePoint  = { type: string; count: number };
 
-const DISTRIBUTION = [
-  { label: "Recycling",     pct: 45, tokens: "2,250", color: "#22c55e" },
-  { label: "Tree Planting", pct: 25, tokens: "1,250", color: "#4ade80" },
-  { label: "Cleanup",       pct: 15, tokens: "750",   color: "#60a5fa" },
-  { label: "Education",     pct: 10, tokens: "500",   color: "#fbbf24" },
-  { label: "Other",         pct: 5,  tokens: "250",   color: "#d1d5db" },
-];
-
-const IMPACT_STATS = [
-  { icon: "🌳", value: "2,450",    label: "Trees Planted"     },
-  { icon: "💨", value: "12.8 t",   label: "CO₂ Avoided"       },
-  { icon: "💧", value: "18,600 L", label: "Water Saved"       },
-  { icon: "♻️", value: "3,250 kg", label: "Waste Collected"   },
-];
+const CHART_COLORS = ["#22c55e","#4ade80","#60a5fa","#fbbf24","#f87171","#a78bfa","#d1d5db"];
 
 // Build SVG path from data
 function buildLinePath(data: { value: number }[], w: number, h: number, pad = 30): string {
@@ -58,7 +38,7 @@ function buildAreaPath(data: { value: number }[], w: number, h: number, pad = 30
 }
 
 // SVG donut chart
-function DonutChart({ data }: { data: typeof DISTRIBUTION }) {
+function DonutChart({ data, totalCount }: { data: { label: string; pct: number; tokens: string; color: string }[]; totalCount: number }) {
   const total = data.reduce((s, d) => s + d.pct, 0);
   let cursor = -90; // start at top
   const r = 52, cx = 68, cy = 68;
@@ -82,8 +62,8 @@ function DonutChart({ data }: { data: typeof DISTRIBUTION }) {
         <path key={s.label} d={s.path} fill={s.color} />
       ))}
       <circle cx={cx} cy={cy} r={r * 0.6} fill="white" />
-      <text x={cx} y={cy - 6} textAnchor="middle" className="text-sm font-bold" fontSize="13" fill="#111827" fontWeight="700">5,000</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fontSize="9" fill="#9ca3af">GTK</text>
+      <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#111827" fontWeight="700">{totalCount}</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fontSize="9" fill="#9ca3af">Actions</text>
     </svg>
   );
 }
@@ -91,19 +71,31 @@ function DonutChart({ data }: { data: typeof DISTRIBUTION }) {
 export default function AnalyticsPage() {
   const [period,    setPeriod]    = useState("all_time");
   const [overview,  setOverview]  = useState<OverviewData | null>(null);
+  const [trend,     setTrend]     = useState<TrendPoint[]>([]);
+  const [byType,    setByType]    = useState<TypePoint[]>([]);
   const [planOk,    setPlanOk]    = useState<boolean | null>(null);
   const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
-    fetch("/api/analytics/overview")
-      .then((r) => {
-        if (r.status === 422) { setPlanOk(false); return null; }
-        setPlanOk(true);
-        return r.json();
-      })
-      .then((res) => { if (res?.data) setOverview(res.data); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/analytics/overview"),
+      fetch("/api/analytics/actions"),
+    ]).then(async ([ovRes, actRes]) => {
+      if (ovRes.status === 422) { setPlanOk(false); return; }
+      setPlanOk(true);
+      const [ovJson, actJson] = await Promise.all([ovRes.json(), actRes.json()]);
+      if (ovJson.data)  setOverview(ovJson.data);
+      if (actJson.data) {
+        setTrend(
+          (actJson.data.trend ?? []).map((d: { date: string; total: number; verified: number }) => ({
+            date:     new Date(d.date).toLocaleDateString("en", { month: "short", day: "numeric" }),
+            total:    d.total,
+            verified: d.verified,
+          }))
+        );
+        setByType(actJson.data.by_type ?? []);
+      }
+    }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const stats = overview
@@ -131,13 +123,32 @@ export default function AnalyticsPage() {
     );
   }
 
+  // Use real trend data if available, fall back to a flat placeholder
+  const chartData = trend.length > 1
+    ? trend.map((d) => ({ month: d.date, value: d.total }))
+    : [{ month: "Today", value: 0 }, { month: "Now", value: 0 }];
+
+  // Build real distribution from action types
+  const totalByType = byType.reduce((s, t) => s + t.count, 0);
+  const distribution = byType.length > 0
+    ? byType
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6)
+        .map((t, i) => ({
+          label:  t.type,
+          pct:    totalByType > 0 ? Math.round((t.count / totalByType) * 100) : 0,
+          tokens: t.count.toLocaleString(),
+          color:  CHART_COLORS[i % CHART_COLORS.length],
+        }))
+    : [{ label: "No actions yet", pct: 100, tokens: "0", color: "#d1d5db" }];
+
   const W = 480, H = 180, PAD = 32;
-  const linePath = buildLinePath(GROWTH_DATA, W, H, PAD);
-  const areaPath = buildAreaPath(GROWTH_DATA, W, H, PAD);
-  const maxVal = Math.max(...GROWTH_DATA.map((d) => d.value));
-  const peakIdx = GROWTH_DATA.findIndex((d) => d.value === maxVal);
-  const peakX = PAD + (peakIdx / (GROWTH_DATA.length - 1)) * (W - PAD * 2);
-  const peakY = H - PAD - (maxVal / maxVal) * (H - PAD * 2);
+  const linePath = buildLinePath(chartData, W, H, PAD);
+  const areaPath = buildAreaPath(chartData, W, H, PAD);
+  const maxVal   = Math.max(...chartData.map((d) => d.value), 1);
+  const peakIdx  = chartData.findIndex((d) => d.value === maxVal);
+  const peakX    = PAD + (peakIdx / Math.max(chartData.length - 1, 1)) * (W - PAD * 2);
+  const peakY    = H - PAD - (maxVal / maxVal) * (H - PAD * 2);
 
   return (
     <AppLayout title="Analytics">
@@ -182,7 +193,7 @@ export default function AnalyticsPage() {
               className="w-full"
               style={{ minWidth: 280, height: 180 }}
               role="img"
-              aria-label={`Community growth line chart showing token increase from Jan '23 to ${GROWTH_DATA[GROWTH_DATA.length - 1].month}`}
+              aria-label={`Community growth line chart showing token increase from Jan '23 to ${chartData[chartData.length - 1].month}`}
             >
               <defs>
                 <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -211,8 +222,8 @@ export default function AnalyticsPage() {
               <path d={linePath} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
               {/* Data points */}
-              {GROWTH_DATA.map((d, i) => {
-                const x = PAD + (i / (GROWTH_DATA.length - 1)) * (W - PAD * 2);
+              {chartData.map((d, i) => {
+                const x = PAD + (i / (chartData.length - 1)) * (W - PAD * 2);
                 const y = H - PAD - (d.value / maxVal) * (H - PAD * 2);
                 return (
                   <g key={i}>
@@ -238,9 +249,9 @@ export default function AnalyticsPage() {
         {/* Token / Action Distribution — real SVG donut */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Token / Action Distribution</h3>
-          <DonutChart data={DISTRIBUTION} />
+          <DonutChart data={distribution} totalCount={totalByType} />
           <div className="space-y-2 mt-4">
-            {DISTRIBUTION.map(({ label, pct, tokens, color }) => (
+            {distribution.map(({ label, pct, tokens, color }) => (
               <div key={label} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: color }} aria-hidden="true" />
                 <span className="text-xs text-gray-600 flex-1">{label}</span>
