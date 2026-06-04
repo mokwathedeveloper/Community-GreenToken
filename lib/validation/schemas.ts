@@ -62,7 +62,7 @@ export const rejectActionSchema = z.object({
 // ── Token Redemption ──────────────────────────────────────────────────────
 export const redeemSchema = z.object({
   rewardId:  z.string().uuid(),
-  signedXdr: z.string().min(10), // Freighter-signed Stellar transaction XDR
+  signedXdr: z.string().min(10).optional(), // Freighter-signed XDR — optional until Phase 2 wallet signing
 });
 
 // ── Rewards ───────────────────────────────────────────────────────────────
