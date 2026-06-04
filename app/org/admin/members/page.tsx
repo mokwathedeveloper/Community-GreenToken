@@ -26,7 +26,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
@@ -35,17 +35,18 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
+import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 
 type MemberRole = "owner" | "admin" | "member";
 
-const MOCK_MEMBERS = [
-  { id: "1", name: "Alice Mokoena",  email: "alice@example.com",  role: "admin"  as MemberRole, balance: 1250, actions: 42, joined: "2026-01-15", last: "10 min ago" },
-  { id: "2", name: "Bob Khumalo",    email: "bob@example.com",    role: "member" as MemberRole, balance: 890,  actions: 31, joined: "2026-02-03", last: "2 hr ago"   },
-  { id: "3", name: "Carol Nkosi",    email: "carol@example.com",  role: "member" as MemberRole, balance: 640,  actions: 18, joined: "2026-03-12", last: "5 hr ago"   },
-  { id: "4", name: "David Sithole",  email: "david@example.com",  role: "member" as MemberRole, balance: 320,  actions: 9,  joined: "2026-04-20", last: "1 day ago"  },
-  { id: "5", name: "Emma Wilson",    email: "emma@example.com",   role: "member" as MemberRole, balance: 180,  actions: 5,  joined: "2026-05-01", last: "3 days ago" },
-];
+type Member = {
+  id:        string;
+  user_id:   string;
+  role:      MemberRole;
+  joined_at: string;
+  users:     { display_name: string | null; email: string | null } | null;
+};
 
 type PendingInvite = {
   id:         string;
@@ -54,13 +55,7 @@ type PendingInvite = {
   role:       MemberRole;
   expires_at: string;
   sent_at:    string;
-  status:     "pending" | "expired";
 };
-
-const MOCK_INVITES: PendingInvite[] = [
-  { id: "i1", token: "abc123", email: "fatima@example.com", role: "member", expires_at: "2026-06-10T00:00:00Z", sent_at: "2026-06-03T09:00:00Z", status: "pending" },
-  { id: "i2", token: "def456", email: "sipho@example.com",  role: "admin",  expires_at: "2026-05-28T00:00:00Z", sent_at: "2026-05-21T14:00:00Z", status: "expired" },
-];
 
 const ROLE_STYLE: Record<MemberRole, string> = {
   owner:  "bg-amber-100 text-amber-700",
@@ -70,9 +65,12 @@ const ROLE_STYLE: Record<MemberRole, string> = {
 
 export default function MembersPage() {
   const { show: showToast, node: toastNode } = useToast();
+  const { orgId, orgName, isLoading: userLoading } = useUser();
 
-  const [members,      setMembers]      = useState(MOCK_MEMBERS);
-  const [invites,      setInvites]      = useState(MOCK_INVITES);
+  const [members,      setMembers]      = useState<Member[]>([]);
+  const [invites,      setInvites]      = useState<PendingInvite[]>([]);
+  const [memberLimit,  setMemberLimit]  = useState<number | null>(500);
+  const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState("");
   const [showInvite,   setShowInvite]   = useState(false);
   const [inviteEmail,  setInviteEmail]  = useState("");
@@ -83,14 +81,46 @@ export default function MembersPage() {
 
   const appUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
 
-  const filtered = members.filter((m) =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const loadData = useCallback(() => {
+    if (!orgId) return;
+    Promise.all([
+      fetch(`/api/orgs/${orgId}/members?limit=50`).then((r) => r.json()),
+      fetch("/api/invites/email").then((r) => r.json()),
+      fetch(`/api/orgs/${orgId}/usage`).then((r) => r.json()),
+    ]).then(([membersRes, invitesRes, usageRes]) => {
+      setMembers(membersRes.data ?? []);
+      setInvites(invitesRes.data ?? []);
+      if (usageRes?.data?.member_limit) setMemberLimit(usageRes.data.member_limit);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, [orgId]);
 
-  function changeRole(id: string, role: MemberRole) {
-    setMembers((ms) => ms.map((m) => m.id === id ? { ...m, role } : m));
-    showToast("Role updated successfully.", "success");
+  useEffect(() => { if (!userLoading) loadData(); }, [userLoading, loadData]);
+
+  const filtered = members.filter((m) => {
+    const name  = m.users?.display_name ?? "";
+    const email = m.users?.email ?? "";
+    const q     = search.toLowerCase();
+    return name.toLowerCase().includes(q) || email.toLowerCase().includes(q);
+  });
+
+  async function changeRole(memberId: string, userId: string, role: MemberRole) {
+    if (!orgId) return;
+    try {
+      const res = await fetch(`/api/orgs/${orgId}/members/${userId}/role`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        showToast(err.error?.message ?? "Role change failed.", "error");
+        return;
+      }
+      setMembers((ms) => ms.map((m) => m.id === memberId ? { ...m, role } : m));
+      showToast("Role updated successfully.", "success");
+    } catch {
+      showToast("Network error. Please try again.", "error");
+    }
   }
 
   async function sendEmailInvite(e: React.FormEvent) {
@@ -161,7 +191,7 @@ export default function MembersPage() {
   }
 
   return (
-    <OrgAdminLayout orgName="GreenFuture Org" plan="Pro Plan">
+    <OrgAdminLayout orgName={orgName ?? "Your Org"} plan="Pro Plan">
       {toastNode}
 
       {/* Header */}
@@ -207,13 +237,13 @@ export default function MembersPage() {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5">
         <div className="flex justify-between items-center mb-2">
           <p className="text-sm font-medium text-gray-700">
-            <span className="font-bold text-gray-900">{members.length}</span> of 500 members used
+            <span className="font-bold text-gray-900">{members.length}</span> of {memberLimit ?? "∞"} members used
           </p>
           <Link href="/org/admin/billing">
             <Button variant="outline" size="xs">Upgrade Plan</Button>
           </Link>
         </div>
-        <ProgressBar value={members.length} max={500} size="sm" />
+        {memberLimit && <ProgressBar value={members.length} max={memberLimit} size="sm" />}
       </div>
 
       {/* Tabs */}
@@ -238,57 +268,66 @@ export default function MembersPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <caption className="sr-only">Organization member list</caption>
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  {["Member", "Role", "GTK Balance", "Actions", "Joined", "Last Active", "Manage"].map((h) => (
-                    <th key={h} scope="col" className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-bold flex-shrink-0">
-                          {m.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{m.name}</p>
-                          <p className="text-xs text-gray-400">{m.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium", ROLE_STYLE[m.role])}>
-                        {m.role === "admin" ? "🛡️ Admin" : m.role === "owner" ? "🏢 Owner" : "🌿 Member"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 font-semibold text-primary-600">{m.balance.toLocaleString()} GTK</td>
-                    <td className="px-4 py-3.5 text-gray-600">{m.actions}</td>
-                    <td className="px-4 py-3.5 text-xs text-gray-400">{m.joined}</td>
-                    <td className="px-4 py-3.5 text-xs text-gray-400">{m.last}</td>
-                    <td className="px-4 py-3.5">
-                      {m.role !== "owner" ? (
-                        <select value={m.role}
-                          onChange={(e) => changeRole(m.id, e.target.value as MemberRole)}
-                          aria-label={`Change role for ${m.name}`}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:ring-2 focus:ring-primary-500 focus:outline-none">
-                          <option value="admin">Make Admin</option>
-                          <option value="member">Make Member</option>
-                        </select>
-                      ) : (
-                        <span className="text-xs text-gray-400">Owner</span>
-                      )}
-                    </td>
+            {loading ? (
+              <p className="text-center text-sm text-gray-400 py-8">Loading members…</p>
+            ) : (
+              <table className="w-full text-sm">
+                <caption className="sr-only">Organization member list</caption>
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    {["Member", "Role", "Joined", "Manage"].map((h) => (
+                      <th key={h} scope="col" className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && (
-              <p className="text-center text-sm text-gray-400 py-8">No members found.</p>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filtered.map((m) => {
+                    const name  = m.users?.display_name ?? m.users?.email?.split("@")[0] ?? "Unknown";
+                    const email = m.users?.email ?? "";
+                    return (
+                      <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-bold flex-shrink-0">
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{name}</p>
+                              <p className="text-xs text-gray-400">{email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium", ROLE_STYLE[m.role])}>
+                            {m.role === "admin" ? "🛡️ Admin" : m.role === "owner" ? "🏢 Owner" : "🌿 Member"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-gray-400">
+                          {new Date(m.joined_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {m.role !== "owner" ? (
+                            <select value={m.role}
+                              onChange={(e) => changeRole(m.id, m.user_id, e.target.value as MemberRole)}
+                              aria-label={`Change role for ${name}`}
+                              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                              <option value="admin">Make Admin</option>
+                              <option value="member">Make Member</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs text-gray-400">Owner</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+            {!loading && filtered.length === 0 && (
+              <p className="text-center text-sm text-gray-400 py-8">
+                {search ? "No members match your search." : "No members yet. Send your first invite!"}
+              </p>
             )}
           </div>
         </>
@@ -336,7 +375,7 @@ export default function MembersPage() {
                         {new Date(inv.expires_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-gray-400">
-                        {new Date(inv.sent_at).toLocaleDateString()}
+                        {inv.sent_at ? new Date(inv.sent_at).toLocaleDateString() : "—"}
                       </td>
                       <td className="px-4 py-3.5 flex items-center gap-2">
                         {!isExpired && (

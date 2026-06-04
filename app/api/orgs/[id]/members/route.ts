@@ -30,7 +30,7 @@ export async function GET(
   const supabase = createAdminClient();
   const { data, count, error } = await (supabase as any)
     .from("org_members")
-    .select("id, user_id, role, joined_at", { count: "exact" })
+    .select("id, user_id, role, joined_at, users(display_name, email)", { count: "exact" })
     .eq("org_id", id)
     .order("joined_at", { ascending: false })
     .range(offset, offset + limit - 1);
