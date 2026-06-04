@@ -3,10 +3,11 @@
 // Rules: R-FE-01, R-A11Y-01, R-A11Y-03, R-SAAS-10 (slug read-only after creation)
 // Spec: ux_ui/feature_specv2/org_settings_page_md.md
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 
 type Tab = "profile" | "token" | "contract" | "danger";
@@ -21,6 +22,8 @@ const ACTION_TYPES = [
 ];
 
 export default function OrgSettingsPage() {
+  const { orgId, orgName, orgSlug } = useUser();
+
   const [tab,          setTab]          = useState<Tab>("profile");
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
@@ -28,26 +31,57 @@ export default function OrgSettingsPage() {
   const [actions,      setActions]      = useState(ACTION_TYPES);
 
   const [org, setOrg] = useState({
-    name:         "GreenFuture Org",
-    slug:         "greenfuture",        // R-SAAS-10: read-only after creation
-    email:        "admin@greenfuture.org",
+    name:         "",
+    slug:         "",
+    email:        "",
     tokenName:    "GreenToken",
     tokenSymbol:  "GTK",
     primaryColor: "#22c55e",
   });
 
+  // Load real org data once available
+  useEffect(() => {
+    if (!orgId) return;
+    fetch(`/api/orgs/${orgId}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.data) {
+          setOrg({
+            name:         res.data.name         ?? orgName ?? "",
+            slug:         res.data.slug         ?? orgSlug ?? "",
+            email:        res.data.email        ?? "",
+            tokenName:    res.data.token_name   ?? "GreenToken",
+            tokenSymbol:  res.data.token_symbol ?? "GTK",
+            primaryColor: res.data.primary_color ?? "#22c55e",
+          });
+        }
+      })
+      .catch(console.error);
+  }, [orgId, orgName, orgSlug]);
+
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (!orgId) return;
     setSaving(true);
     try {
-      await fetch("/api/orgs/update", {
-        method: "PUT",
+      const res = await fetch(`/api/orgs/${orgId}`, {
+        method:  "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(org),
+        body:    JSON.stringify({
+          name:         org.name,
+          tokenName:    org.tokenName,
+          tokenSymbol:  org.tokenSymbol,
+          primaryColor: org.primaryColor,
+        }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch {/* non-blocking */}
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        const err = await res.json();
+        alert(err.error?.message ?? "Save failed");
+      }
+    } catch { alert("Network error — please try again."); }
     setSaving(false);
   }
 
@@ -155,16 +189,19 @@ export default function OrgSettingsPage() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 max-w-xl space-y-4">
           <h3 className="font-semibold text-gray-900">Smart Contract Info</h3>
           <div className="bg-gray-50 rounded-xl p-4 font-mono text-xs text-gray-600 space-y-2">
-            <p><span className="text-gray-800 font-medium">Contract Address:</span> CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH</p>
+            <p><span className="text-gray-800 font-medium">GreenToken Contract:</span> {process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID ?? "—"}</p>
+            <p><span className="text-gray-800 font-medium">ActionRegistry Contract:</span> {process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID ?? "—"}</p>
             <p><span className="text-gray-800 font-medium">Network:</span> Stellar Testnet</p>
             <p><span className="text-gray-800 font-medium">Token Symbol:</span> {org.tokenSymbol}</p>
             <p><span className="text-gray-800 font-medium">Decimals:</span> 7</p>
           </div>
-          <a href="https://stellar.expert/explorer/testnet/contract/CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH"
-            target="_blank" rel="noopener noreferrer"
-            className="text-primary-600 text-sm hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
-            View on Stellar Expert ↗
-          </a>
+          {process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID && (
+            <a href={`https://stellar.expert/explorer/testnet/contract/${process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID}`}
+              target="_blank" rel="noopener noreferrer"
+              className="text-primary-600 text-sm hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
+              View on Stellar Expert ↗
+            </a>
+          )}
         </div>
       )}
 
