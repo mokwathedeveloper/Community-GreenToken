@@ -20,6 +20,7 @@ import {
   TrophyIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import {
   Squares2X2Icon as DashboardIconSolid,
@@ -29,16 +30,20 @@ import {
   TrophyIcon as TrophyIconSolid,
   ChartBarIcon as ChartBarIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
+  BanknotesIcon as BanknotesIconSolid,
 } from "@heroicons/react/24/solid";
 import { cn } from "@/lib/utils";
 
+// Member sidebar — NO billing (billing is owner-only in OrgAdminLayout)
+// RBAC: member sees personal finance (earn, redeem rewards, donate, withdraw cash)
 const NAV_ITEMS = [
-  { label: "Dashboard",   href: "/dashboard",   Icon: DashboardIcon,   ActiveIcon: DashboardIconSolid },
-  { label: "Actions",     href: "/submit-action",     Icon: BoltIcon,        ActiveIcon: BoltIconSolid      },
-  { label: "Rewards",     href: "/redeem",      Icon: GiftIcon,        ActiveIcon: GiftIconSolid      },
-  { label: "Donations",   href: "/donations",   Icon: HeartIcon,       ActiveIcon: HeartIconSolid     },
-  { label: "Leaderboard", href: "/leaderboard", Icon: TrophyIcon,      ActiveIcon: TrophyIconSolid    },
-  { label: "Analytics",   href: "/analytics",   Icon: ChartBarIcon,    ActiveIcon: ChartBarIconSolid  },
+  { label: "Dashboard",   href: "/dashboard",          Icon: DashboardIcon,  ActiveIcon: DashboardIconSolid },
+  { label: "Actions",     href: "/submit-action",      Icon: BoltIcon,       ActiveIcon: BoltIconSolid      },
+  { label: "Rewards",     href: "/redeem",             Icon: GiftIcon,       ActiveIcon: GiftIconSolid      },
+  { label: "Withdraw",    href: "/withdraw",           Icon: BanknotesIcon,  ActiveIcon: BanknotesIconSolid }, // GTK → KSH/USD cash-out
+  { label: "Donations",   href: "/donations",          Icon: HeartIcon,      ActiveIcon: HeartIconSolid     },
+  { label: "Leaderboard", href: "/leaderboard",        Icon: TrophyIcon,     ActiveIcon: TrophyIconSolid    },
+  { label: "Analytics",   href: "/analytics",          Icon: ChartBarIcon,   ActiveIcon: ChartBarIconSolid  },
   { label: "Settings",    href: "/org/admin/settings", Icon: Cog6ToothIcon,  ActiveIcon: Cog6ToothIconSolid },
 ];
 
