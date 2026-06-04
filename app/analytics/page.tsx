@@ -72,6 +72,7 @@ export default function AnalyticsPage() {
   const [trend,    setTrend]    = useState<TrendPoint[]>([]);
   const [byType,   setByType]   = useState<TypePoint[]>([]);
   const [planOk,   setPlanOk]   = useState<boolean|null>(null);
+  const [noOrg,    setNoOrg]    = useState(false);
   const [loading,  setLoading]  = useState(true);
 
   useEffect(()=>{
@@ -79,7 +80,16 @@ export default function AnalyticsPage() {
       fetch("/api/analytics/overview"),
       fetch("/api/analytics/actions"),
     ]).then(async([ovRes, actRes])=>{
-      if(ovRes.status===422){ setPlanOk(false); return; }
+      if(ovRes.status===422){
+        // Distinguish NO_ORGANIZATION (needs setup) from PLAN_LIMIT_EXCEEDED (needs upgrade)
+        const body = await ovRes.json().catch(()=>({}));
+        if(body?.error?.code === "NO_ORGANIZATION"){
+          setNoOrg(true);
+        } else {
+          setPlanOk(false);
+        }
+        return;
+      }
       setPlanOk(true);
       const [ovJson, actJson] = await Promise.all([ovRes.json(), actRes.json()]);
       if(ovJson.data)  setOverview(ovJson.data);
@@ -93,7 +103,23 @@ export default function AnalyticsPage() {
     }).catch(console.error).finally(()=>setLoading(false));
   },[]);
 
-  /* ── Plan gate ── */
+  /* ── No org yet — guide user to setup ── */
+  if(!loading && noOrg){
+    return (
+      <AppLayout title="Analytics">
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="text-6xl mb-4">🏢</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Set up your organization first</h2>
+          <p className="text-gray-500 text-sm mb-6">You need to complete org setup before you can view analytics.</p>
+          <Link href="/org/setup" className="px-7 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors">
+            Set Up Organization →
+          </Link>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  /* ── Plan gate — needs Starter+ ── */
   if(!loading && planOk===false){
     return (
       <AppLayout title="Analytics">
