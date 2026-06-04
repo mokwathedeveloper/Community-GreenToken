@@ -45,12 +45,13 @@ export default function PricingPage() {
 
     setLoadingPlan(plan.id);
     try {
-      const envKey = plan.priceId ?? "";
-      // The priceId env key is used to look up the actual Stripe price ID server-side
+      // Send planId ("starter" | "pro") — server maps it to the Stripe price ID
+      // from its own env vars (STRIPE_STARTER_PRICE_ID / STRIPE_PRO_PRICE_ID).
+      // Never send the raw Stripe price ID from the client.
       const res  = await fetch("/api/billing/create-checkout", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ priceId: envKey, orgId: "current" }),
+        body:    JSON.stringify({ planId: plan.id }),
       });
       const json = await res.json();
       if (json.data?.url) {
