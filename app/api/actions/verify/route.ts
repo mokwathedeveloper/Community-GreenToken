@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { parseBody, verifyActionSchema } from "@/lib/validation/schemas";
@@ -91,47 +92,44 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Stellar on-chain: ActionRegistry.verify_action() → GreenToken.mint() ──
+  // ── Stellar on-chain: fire after response so client isn't blocked ─────────
   // Rule R-SC-09: minting ONLY through ActionRegistry cross-contract call.
-  let txHash:      string | null = null;
-  let explorerUrl: string | null = null;
-
+  // after() runs the callback after the response is flushed — Stellar latency
+  // never adds to API response time. DB is the source of truth either way.
   const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
   if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
-    try {
-      // @ts-ignore — optional Stellar integration, lib resolves at runtime
-      const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
-      const { toStroops }    = await import("@/lib/utils");
+    after(async () => {
+      try {
+        // @ts-ignore — optional Stellar integration, lib resolves at runtime
+        const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
+        const { toStroops }    = await import("@/lib/utils");
 
-      // blockchain_action_id stored at submit time — use DB value
-      const { data: actionFull } = await (supabase as any)
-        .from("actions")
-        .select("blockchain_action_id")
-        .eq("id", actionId)
-        .single() as { data: { blockchain_action_id: number | null } | null };
+        const { data: actionFull } = await (supabase as any)
+          .from("actions")
+          .select("blockchain_action_id")
+          .eq("id", actionId)
+          .single() as { data: { blockchain_action_id: number | null } | null };
 
-      const onChainActionId = BigInt(actionFull?.blockchain_action_id ?? 0);
-      const stroops         = toStroops(tokensToMint);
+        const onChainActionId = BigInt(actionFull?.blockchain_action_id ?? 0);
+        const stroops         = toStroops(tokensToMint);
 
-      const result  = await verifyAction(adminSecret, onChainActionId, stroops);
-      txHash        = result.txHash;
-      explorerUrl   = result.explorerUrl;
+        const result = await verifyAction(adminSecret, onChainActionId, stroops);
 
-      await (supabase as any).from("actions")
-        .update({ stellar_tx_hash: txHash })
-        .eq("id", actionId);
-    } catch (stellarErr) {
-      // Non-blocking: DB is the source of truth. Stellar call logged but not fatal.
-      console.error("[api/actions/verify] Stellar call failed (DB already updated):", stellarErr);
-    }
+        await (supabase as any).from("actions")
+          .update({ stellar_tx_hash: result.txHash })
+          .eq("id", actionId);
+      } catch (stellarErr) {
+        console.error("[api/actions/verify] Stellar background call failed:", stellarErr);
+      }
+    });
   }
 
   return NextResponse.json({
     data: {
       actionId,
       tokensAwarded: tokensToMint,
-      txHash,
-      explorerUrl,
+      txHash:      null,   // populated asynchronously after response
+      explorerUrl: null,
       message: "Action verified. GTK tokens minted on Stellar blockchain.",
     },
     meta: { org_id: auth!.orgId },
