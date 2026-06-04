@@ -217,13 +217,17 @@ export default function SignInPage() {
           </p>
         </div>
 
-        {/* ── Trust badges — bottom of page, outside card, on hero ── */}
-        <div className="relative z-10 mt-8 w-full max-w-md grid grid-cols-3 gap-4 px-2">
+        {/* ── Trust badges — dark text + frosted pill background for visibility ── */}
+        {/* Hero bottom is very light so white text would be invisible — use dark text */}
+        <div className="relative z-10 mt-6 w-full max-w-md grid grid-cols-3 gap-3 px-2">
           {TRUST_BADGES.map(({ icon, title, desc }) => (
-            <div key={title} className="text-center">
-              <div className="text-xl mb-1" aria-hidden="true">{icon}</div>
-              <p className="text-xs font-semibold text-white drop-shadow-sm">{title}</p>
-              <p className="text-xs text-white/80 mt-0.5 leading-snug drop-shadow-sm">{desc}</p>
+            <div
+              key={title}
+              className="flex flex-col items-center text-center bg-white/75 backdrop-blur-sm rounded-2xl px-3 py-3 shadow-sm border border-white/60"
+            >
+              <div className="text-2xl mb-1.5" aria-hidden="true">{icon}</div>
+              <p className="text-xs font-bold text-gray-800 leading-tight">{title}</p>
+              <p className="text-[11px] text-gray-500 mt-1 leading-snug">{desc}</p>
             </div>
           ))}
         </div>
