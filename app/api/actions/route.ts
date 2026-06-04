@@ -12,24 +12,37 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const status = searchParams.get("status") ?? undefined;
 
-  // NaN-safe parsing: parseInt("abc") returns NaN, clamp to safe defaults
   const parsedLimit = parseInt(searchParams.get("limit") ?? "20", 10);
   const parsedPage  = parseInt(searchParams.get("page")  ?? "1",  10);
   const limit  = Math.min(50, Number.isNaN(parsedLimit) ? 20 : parsedLimit);
   const page   = Math.max(1,  Number.isNaN(parsedPage)  ? 1  : parsedPage);
   const offset = (page - 1) * limit;
 
+  // Guard: user has no org yet (just signed up, hasn't completed /org/setup)
+  if (!auth.orgId) {
+    return NextResponse.json({
+      data:       [],
+      pagination: { page, per_page: limit, total: 0 },
+      meta:       { org_id: "", hint: "Complete org setup to see actions." },
+    });
+  }
+
   const supabase = createAdminClient();
-  let query = supabase
+  // Use action_type (added in migration 020) and submitted_at — not the legacy type/created_at columns
+  let query = (supabase as any)
     .from("actions")
-    .select("id, type, description, status, tokens_awarded, created_at, user_id", { count: "exact" })
+    .select("id, action_type, description, status, tokens_awarded, submitted_at, stellar_tx_hash, user_id", { count: "exact" })
     .eq("org_id", auth.orgId)
-    .order("created_at", { ascending: false })
+    .order("submitted_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (status) query = query.eq("status", status);
 
-  const { data, count, error } = await query;
+  const { data, count, error } = await query as {
+    data: Record<string, unknown>[] | null;
+    count: number | null;
+    error: unknown;
+  };
 
   if (error) {
     return NextResponse.json(
@@ -39,8 +52,8 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
-    data,
+    data:       data ?? [],
     pagination: { page, per_page: limit, total: count ?? 0 },
-    meta: { org_id: auth.orgId },
+    meta:       { org_id: auth.orgId },
   });
 }

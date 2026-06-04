@@ -9,6 +9,11 @@ export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
+  // Guard: user has not completed org setup
+  if (!auth.orgId) {
+    return NextResponse.json({ data: [], meta: { org_id: "", period: "all_time", my_rank: null } });
+  }
+
   const { searchParams } = req.nextUrl;
   const period = searchParams.get("period") ?? "all_time";
 

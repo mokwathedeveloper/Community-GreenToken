@@ -10,6 +10,13 @@ export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
+  if (!auth.orgId) {
+    return NextResponse.json(
+      { error: { code: "NO_ORGANIZATION", message: "Complete org setup first." } },
+      { status: 422 }
+    );
+  }
+
   // Plan gate — analytics requires Starter+
   const blocked = await checkPlanFeature(auth.orgId, "analytics");
   if (blocked) return blocked;

@@ -29,6 +29,9 @@ interface PlanLimits {
  * Fetch plan limits for an org from the database.
  */
 export async function getOrgPlanLimits(orgId: string): Promise<PlanLimits | null> {
+  // Empty orgId — user hasn't completed org setup yet, no plan to enforce
+  if (!orgId) return null;
+
   const cached = planCache.get(orgId);
   if (cached && cached.expiresAt > Date.now()) return cached.limits;
 
