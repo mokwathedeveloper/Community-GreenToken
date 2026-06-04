@@ -85,33 +85,38 @@ export default function AboutUsPage() {
   return (
     <PublicLayout>
 
-      {/* ── Hero — two-column: text left, image right ── */}
-      <section aria-labelledby="about-hero-heading" className="bg-white py-16 lg:py-0 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 lg:grid lg:grid-cols-2 lg:items-center lg:min-h-[520px]">
+      {/* ── Hero — full-width background image with text overlay ── */}
+      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[540px] flex items-center overflow-hidden">
 
-          {/* Left: text */}
-          <div className="py-10 lg:py-20 lg:pr-12">
+        {/* Background image fills entire hero */}
+        <Image
+          src="/assets/image/pages/about-us/about_us_hero.png"
+          alt="Hands gently holding a young plant seedling in sunlit forest"
+          fill
+          className="object-cover object-center"
+          priority
+          sizes="100vw"
+        />
+
+        {/* Left-to-right gradient so dark text stays readable over the light-left image */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.75) 45%, rgba(255,255,255,0.05) 100%)" }}
+          aria-hidden="true"
+        />
+
+        {/* Text — sits on the light left portion */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full py-16 lg:py-24">
+          <div className="max-w-xl">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">About Us</p>
             <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
               Building a Sustainable{" "}
               <span className="text-primary-500">Future, Together.</span>
             </h1>
-            <p className="mt-5 text-base text-gray-500 leading-relaxed max-w-lg">
+            <p className="mt-5 text-base text-gray-600 leading-relaxed">
               Community GreenToken was born out of a simple belief: small actions can create big impact.
               We reward sustainable actions through transparent, blockchain-verified tokens.
             </p>
-          </div>
-
-          {/* Right: hero image */}
-          <div className="relative h-72 lg:h-full lg:min-h-[520px] rounded-2xl overflow-hidden lg:rounded-none">
-            <Image
-              src="/assets/image/pages/about-us/about_us_hero.png"
-              alt="Hands gently holding a young plant seedling in sunlit forest"
-              fill
-              className="object-cover object-center"
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
           </div>
         </div>
       </section>
