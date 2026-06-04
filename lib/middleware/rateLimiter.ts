@@ -13,13 +13,24 @@ interface Window {
   windowStart: number;
 }
 
+const MAX_STORE_SIZE = 10_000; // evict oldest entries above this to cap memory
 const store = new Map<string, Window>();
 
-// Clean stale entries every 5 minutes to prevent memory growth
+// Periodic cleanup: remove entries whose window has fully expired
 setInterval(() => {
   const now = Date.now();
   for (const [key, win] of store.entries()) {
     if (now - win.windowStart > 300_000) store.delete(key);
+  }
+  // Safety cap: if still over limit after TTL cleanup, evict oldest entries first
+  if (store.size > MAX_STORE_SIZE) {
+    const overflow = store.size - MAX_STORE_SIZE;
+    let evicted = 0;
+    for (const key of store.keys()) {
+      if (evicted >= overflow) break;
+      store.delete(key);
+      evicted++;
+    }
   }
 }, 300_000);
 
