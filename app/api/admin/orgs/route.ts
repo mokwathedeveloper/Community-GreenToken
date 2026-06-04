@@ -55,16 +55,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Enrich with member counts
-  const enriched = await Promise.all(
-    (orgs ?? []).map(async (org) => {
-      const { count: memberCount } = await (supabase as any)
-        .from("org_members")
-        .select("id", { count: "exact", head: true })
-        .eq("org_id", org.id);
-      return { ...org, member_count: memberCount ?? 0 };
-    })
-  );
+  // Fetch all member counts for this page in a single query (replaces N+1)
+  const orgIds = (orgs ?? []).map((o) => o.id as string);
+  const { data: memberRows } = orgIds.length
+    ? await (supabase as any).from("org_members").select("org_id").in("org_id", orgIds)
+    : { data: [] };
+
+  const memberCountMap = new Map<string, number>();
+  (memberRows ?? []).forEach((row: { org_id: string }) => {
+    memberCountMap.set(row.org_id, (memberCountMap.get(row.org_id) ?? 0) + 1);
+  });
+
+  const enriched = (orgs ?? []).map((org) => ({
+    ...org,
+    member_count: memberCountMap.get(org.id as string) ?? 0,
+  }));
 
   return NextResponse.json({
     data: enriched,
