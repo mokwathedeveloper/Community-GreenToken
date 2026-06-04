@@ -69,20 +69,19 @@ export default function SignInPage() {
         Trust badges sit at the very bottom outside the card.
         ─────────────────────────────────────────────────────────────────
       */}
-      <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-10">
+      {/* bg-[#f1f9f1] matches the image's natural light-green edge — no white bars visible */}
+      <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-[#f1f9f1]">
 
-        {/* ── Background: hero fills 100% of the screen ── */}
+        {/* ── Background: object-contain shows the FULL image with no cropping ── */}
+        {/* The hero image (1672×941) has natural light edges so bg-[#f1f9f1] is seamless */}
         <Image
           src="/assets/image/pages/auth/signin_hero.png"
           alt="People gardening in a sunlit eco-friendly garden"
           fill
-          className="object-cover object-center"
+          className="object-contain object-center"
           priority
           sizes="100vw"
         />
-
-        {/* ── Subtle overlay for readability only ── */}
-        <div className="absolute inset-0 bg-white/10" aria-hidden="true" />
 
         {/* ── White form card — centered on the hero ── */}
         <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl px-8 py-8">
