@@ -16,7 +16,20 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseBody(req, createCheckoutSchema);
   if ("error" in parsed) return parsed.error;
-  const { priceId } = parsed.data;
+
+  // Map planId → Stripe price ID server-side (env vars never exposed to client)
+  const PLAN_PRICE_MAP: Record<string, string | undefined> = {
+    starter: process.env.STRIPE_STARTER_PRICE_ID,
+    pro:     process.env.STRIPE_PRO_PRICE_ID,
+  };
+  const priceId = parsed.data.priceId ?? (parsed.data.planId ? PLAN_PRICE_MAP[parsed.data.planId] : undefined);
+
+  if (!priceId || !priceId.startsWith("price_")) {
+    return NextResponse.json(
+      { error: { code: "MISSING_PRICE_ID", message: "Stripe price ID not configured. Set STRIPE_STARTER_PRICE_ID / STRIPE_PRO_PRICE_ID in environment variables." } },
+      { status: 503 }
+    );
+  }
 
   // Always use orgId from JWT — never trust client-sent orgId (Rule R-SAAS-01)
   const orgId = auth!.orgId;

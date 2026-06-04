@@ -84,9 +84,11 @@ export const createDonationSchema = z.object({
 
 // ── Billing ───────────────────────────────────────────────────────────────
 export const createCheckoutSchema = z.object({
-  priceId: z.string().startsWith("price_"),
-  // orgId is optional — server uses auth.orgId from JWT as the authoritative source
-  orgId:   z.string().optional(),
+  // Accept planId (preferred: "starter" | "pro") OR a direct priceId for backwards compatibility
+  planId:  z.enum(["starter", "pro"]).optional(),
+  priceId: z.string().startsWith("price_").optional(),
+}).refine(d => d.planId || d.priceId, {
+  message: "Either planId or priceId is required.",
 });
 
 // ── Wallet ────────────────────────────────────────────────────────────────
