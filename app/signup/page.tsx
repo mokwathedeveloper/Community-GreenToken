@@ -1,9 +1,8 @@
 "use client";
 
-// Signup flow:
-//   Admin      → creates org → becomes org owner → invites members
-//   Super Admin → ONE singleton platform admin → option hidden after first is created
-//   Member     → NOT on this page → invited only (via /join/[token])
+// Spec: ux_ui/feature_specv2/signup_page_md.md
+// Mockup: mockup/signup_page_mockup.png
+// Layout: SPLIT — left hero (55%) + right form panel (45%)
 
 import { Suspense, useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
@@ -12,12 +11,14 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 
 type SignupRole = "admin" | "superadmin";
 type PasswordStrength = 0 | 1 | 2 | 3 | 4;
+
+const STRENGTH_LABELS = ["", "Weak", "Fair", "Good", "Strong"];
+const STRENGTH_COLORS = ["", "bg-red-400", "bg-amber-400", "bg-blue-400", "bg-primary-500"];
 
 function calcStrength(pw: string): PasswordStrength {
   let s = 0;
@@ -28,18 +29,11 @@ function calcStrength(pw: string): PasswordStrength {
   return s as PasswordStrength;
 }
 
-const STRENGTH_LABELS = ["", "Weak", "Fair", "Good", "Strong"];
-const STRENGTH_COLORS = ["", "bg-red-400", "bg-amber-400", "bg-blue-400", "bg-primary-500"];
-
 function friendlyError(msg: string): string {
   if (msg.includes("already registered") || msg.includes("User already registered"))
-    return "An account with this email already exists. Please sign in instead.";
+    return "An account with this email already exists. Please sign in.";
   if (msg.includes("Password should be"))
     return "Password must be at least 6 characters.";
-  if (msg.includes("Unable to validate") || msg.includes("invalid email"))
-    return "Please enter a valid email address.";
-  if (msg.includes("rate limit") || msg.includes("Too many"))
-    return "Too many attempts. Please wait a moment and try again.";
   return msg;
 }
 
@@ -58,71 +52,57 @@ function SignUpPage() {
   const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
+  const [invite,   setInvite]   = useState(inviteToken ?? "");
   const [agree,    setAgree]    = useState(false);
   const [loading,  setLoading]  = useState(false);
   const [showPwd,  setShowPwd]  = useState(false);
 
   const strength = calcStrength(password);
 
-  // Check if a super admin already exists (singleton guard)
   useEffect(() => {
     if (inviteToken) { setCheckingAdmin(false); return; }
     fetch("/api/auth/superadmin-exists")
       .then(r => r.json())
       .then(d => setSuperAdminExists(d.exists ?? false))
-      .catch(() => setSuperAdminExists(true)) // fail-safe: assume exists
+      .catch(() => setSuperAdminExists(true))
       .finally(() => setCheckingAdmin(false));
   }, [inviteToken]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!agree) {
-      showToast("Please accept the Terms of Service and Privacy Policy.", "error");
-      return;
-    }
-    if (strength < 2) {
-      showToast("Please choose a stronger password (8+ chars, mixed case & numbers).", "error");
-      return;
-    }
+    if (!agree) { showToast("Please accept the Terms of Service and Privacy Policy.", "error"); return; }
+    if (strength < 2) { showToast("Please choose a stronger password.", "error"); return; }
     if (selectedRole === "superadmin" && superAdminExists) {
-      showToast("A Super Admin already exists. Only one is allowed.", "error");
-      return;
+      showToast("A Super Admin already exists. Only one is allowed.", "error"); return;
     }
 
     setLoading(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email, password,
         options: { data: { display_name: name.trim() || email.split("@")[0] } },
       });
 
       if (error) { showToast(friendlyError(error.message), "error"); return; }
 
       if (data.user && !data.session) {
-        showToast("Check your inbox and click the confirmation link to continue.", "success");
-        return;
+        showToast("Check your inbox and click the confirmation link.", "success"); return;
       }
 
       if (data.session && data.user) {
-        // ── Super Admin path ──────────────────────────────────────────
         if (selectedRole === "superadmin") {
           const res  = await fetch("/api/auth/set-superadmin", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ userId: data.user.id }),
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: data.user.id }),
           });
           const json = await res.json();
           if (!res.ok) { showToast(json.error?.message ?? "Failed to set Super Admin role.", "error"); return; }
-          await supabase.auth.refreshSession(); // update JWT with new role
+          await supabase.auth.refreshSession();
           showToast("Super Admin account created! Welcome 🌿", "success");
           await new Promise(r => setTimeout(r, 800));
-          router.push("/admin");
-          return;
+          router.push("/admin"); return;
         }
-
-        // ── Admin path (with invite = member of existing org) ────────
         if (inviteToken) {
           showToast("Welcome to Community GreenToken! 🌿", "success");
           await new Promise(r => setTimeout(r, 800));
@@ -145,121 +125,143 @@ function SignUpPage() {
       {toastNode}
       <div className="flex min-h-screen">
 
-        {/* Hero side */}
-        <div className="hidden lg:block lg:w-1/2 relative">
-          <Image src="/assets/image/pages/auth/signup_hero.png" alt="Community planting trees together"
-            fill className="object-cover" priority sizes="50vw" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" aria-hidden="true" />
-          <div className="absolute bottom-12 left-10 right-10">
+        {/* ── LEFT: Hero (55%) — image + text overlay ── */}
+        <div className="hidden lg:flex lg:w-[55%] relative flex-col">
+          <Image
+            src="/assets/image/pages/auth/signup_hero.png"
+            alt="Family planting a tree together"
+            fill
+            className="object-cover"
+            style={{ objectPosition: "30% center" }}
+            priority
+            sizes="55vw"
+          />
+          {/* Dark gradient bottom for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" aria-hidden="true" />
+
+          {/* Bottom-left text overlay — matches mockup */}
+          <div className="absolute bottom-0 left-0 right-0 px-10 pb-10">
             <h2 className="text-4xl font-extrabold text-white leading-tight mb-3">
-              Grow a greener future, together.
+              Grow a greener<br />future, together.
             </h2>
-            <p className="text-white/80 text-base">Join a community that plants today and prospers tomorrow.</p>
+            <p className="text-white/80 text-sm mb-6">
+              Join a community that plants today and prospers tomorrow.
+            </p>
+
+            {/* Hero trust badges */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { icon: "🌱", title: "Eco Impact",          desc: "Every action creates a lasting impact"          },
+                { icon: "👥", title: "Community First",     desc: "Together we build a sustainable world"          },
+                { icon: "🔗", title: "Transparent & Secure",desc: "Blockchain-powered trust and accountability"    },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex items-start gap-2">
+                  <span className="text-white/80 flex-shrink-0 text-sm mt-0.5" aria-hidden="true">{icon}</span>
+                  <div>
+                    <p className="text-white text-xs font-semibold">{title}</p>
+                    <p className="text-white/60 text-xs leading-snug">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Form side */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white px-6 py-10 overflow-y-auto">
+        {/* ── RIGHT: Form panel (45%) ── */}
+        <div className="w-full lg:w-[45%] flex flex-col items-center justify-center bg-white px-6 py-8 overflow-y-auto">
           <div className="w-full max-w-sm">
 
             {/* Logo */}
             <div className="flex items-center justify-center gap-2 mb-5">
-              <Image src="/branding/community-greentoken-logo.png" alt="" width={36} height={36} />
-              <span className="font-bold text-gray-900">
+              <div className="relative w-9 h-9 flex-shrink-0">
+                <Image src="/branding/community-greentoken-logo.png" alt="Community GreenToken" fill className="object-contain" sizes="36px" />
+              </div>
+              <span className="font-bold text-gray-900 text-sm">
                 Community <span className="text-primary-600">GreenToken</span>
               </span>
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 text-center mb-1">Create your account</h1>
-            <p className="text-sm text-gray-500 text-center mb-5">
-              {inviteToken
-                ? `You're joining ${orgName ?? "an organization"} as a member.`
-                : "Choose your role to get started."}
+            <h1 className="text-2xl font-extrabold text-gray-900 text-center mb-1">Create your account</h1>
+            <p className="text-xs text-gray-500 text-center mb-5">
+              Join a global community building a sustainable and regenerative future.
             </p>
 
             {/* Invite banner */}
             {inviteToken && orgName && (
-              <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 text-center text-sm text-primary-700 font-medium mb-5">
-                🌿 You&apos;re joining <strong>{orgName}</strong> as a member
+              <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 text-center text-sm text-primary-700 font-medium mb-4">
+                🌿 You&apos;re joining <strong>{orgName}</strong>
               </div>
             )}
 
-            {/* ── Role selector (hidden when joining via invite) ── */}
+            {/* Role selector — only if NOT signing up via invite */}
             {!inviteToken && !checkingAdmin && (
-              <div className="mb-5">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">Who are you?</p>
-                <div className="grid grid-cols-2 gap-3">
-
-                  {/* Admin */}
+              <div className="mb-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Who are you?</p>
+                <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setSelectedRole("admin")}
-                    className={cn(
-                      "border-2 rounded-xl p-4 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
-                      selectedRole === "admin" ? "border-primary-500 bg-primary-50" : "border-gray-200 hover:border-gray-300"
-                    )}>
-                    <div className="text-2xl mb-1.5" aria-hidden="true">🏢</div>
-                    <p className="text-sm font-bold text-gray-900">Admin</p>
-                    <p className="text-xs text-gray-500 leading-snug mt-1">
-                      Create & manage an organization. Invite members.
-                    </p>
-                    {selectedRole === "admin" && (
-                      <span className="mt-2 inline-flex text-[10px] font-bold text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full">✓ Selected</span>
-                    )}
+                    className={cn("border-2 rounded-xl p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
+                      selectedRole === "admin" ? "border-primary-500 bg-primary-50" : "border-gray-200 hover:border-gray-300")}>
+                    <p className="text-sm font-bold text-gray-900">🏢 Admin</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Create & manage an org.</p>
+                    {selectedRole === "admin" && <span className="text-[10px] font-bold text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full mt-1 inline-block">✓ Selected</span>}
                   </button>
-
-                  {/* Super Admin — disabled once one exists */}
-                  <button type="button"
-                    disabled={superAdminExists === true}
+                  <button type="button" disabled={superAdminExists === true}
                     onClick={() => !superAdminExists && setSelectedRole("superadmin")}
-                    className={cn(
-                      "border-2 rounded-xl p-4 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
-                      superAdminExists
-                        ? "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
-                        : selectedRole === "superadmin"
-                          ? "border-purple-500 bg-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
-                    )}>
-                    <div className="text-2xl mb-1.5" aria-hidden="true">⚡</div>
-                    <p className="text-sm font-bold text-gray-900">Super Admin</p>
-                    <p className="text-xs text-gray-500 leading-snug mt-1">
-                      {superAdminExists ? "Already taken. One per platform." : "Platform-wide admin. One account only."}
-                    </p>
-                    {superAdminExists ? (
-                      <span className="mt-2 inline-flex text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">🔒 Taken</span>
-                    ) : selectedRole === "superadmin" ? (
-                      <span className="mt-2 inline-flex text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">✓ Selected</span>
-                    ) : null}
+                    className={cn("border-2 rounded-xl p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
+                      superAdminExists ? "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed" :
+                      selectedRole === "superadmin" ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300")}>
+                    <p className="text-sm font-bold text-gray-900">⚡ Super Admin</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{superAdminExists ? "Already taken." : "Platform admin (1 only)."}</p>
+                    {superAdminExists
+                      ? <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full mt-1 inline-block">🔒 Taken</span>
+                      : selectedRole === "superadmin" && <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full mt-1 inline-block">✓ Selected</span>
+                    }
                   </button>
                 </div>
-
-                {/* Member explanation */}
-                <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 flex items-start gap-2">
-                  <span className="text-amber-500 text-xs mt-0.5" aria-hidden="true">ℹ️</span>
-                  <p className="text-xs text-amber-700 leading-relaxed">
-                    <strong>Are you a member?</strong> Members join via an invite link sent by their admin — not through this page.
-                  </p>
-                </div>
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-2 flex gap-1.5 items-start">
+                  <span>ℹ️</span>
+                  <span><strong>Members</strong> join via an invite link from their admin.</span>
+                </p>
               </div>
             )}
 
-            {/* ── Form fields ── */}
+            {/* Form */}
             <form onSubmit={handleSubmit} noValidate className="space-y-3">
-              <Input id="signup-name" type="text" label="Full Name" placeholder="Alice Mokoena"
-                value={name} onChange={e => setName(e.target.value)} autoComplete="name" required />
 
-              <Input id="signup-email" type="email" label="Email Address" placeholder="you@example.com"
-                value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required />
+              {/* Full Name */}
+              <div>
+                <label htmlFor="signup-name" className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">👤</span>
+                  <input id="signup-name" type="text" placeholder="Alice Mokoena"
+                    value={name} onChange={e => setName(e.target.value)}
+                    autoComplete="name" required
+                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
+                </div>
+              </div>
 
+              {/* Email */}
+              <div>
+                <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">✉️</span>
+                  <input id="signup-email" type="email" placeholder="you@example.com"
+                    value={email} onChange={e => setEmail(e.target.value)}
+                    autoComplete="email" required
+                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
+                </div>
+              </div>
+
+              {/* Password + strength */}
               <div>
                 <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
                 <div className="relative">
-                  <input id="signup-password"
-                    type={showPwd ? "text" : "password"}
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">🔒</span>
+                  <input id="signup-password" type={showPwd ? "text" : "password"}
                     placeholder="Min. 8 characters"
                     value={password} onChange={e => setPassword(e.target.value)}
                     autoComplete="new-password" required minLength={8}
-                    aria-describedby="pwd-strength"
-                    className="w-full pl-4 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
-                  />
+                    className="w-full pl-9 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
                   <button type="button" onClick={() => setShowPwd(p => !p)}
                     aria-label={showPwd ? "Hide password" : "Show password"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
@@ -267,19 +269,38 @@ function SignUpPage() {
                   </button>
                 </div>
                 {password && (
-                  <div id="pwd-strength" aria-live="polite">
-                    <div className="flex gap-1 mt-2">
-                      {[1,2,3,4].map(i=>(
+                  <div className="mt-1.5" aria-live="polite">
+                    <div className="flex gap-1 mb-1">
+                      {[1,2,3,4].map(i => (
                         <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-all",
                           i <= strength ? STRENGTH_COLORS[strength] : "bg-gray-100")} />
                       ))}
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">{STRENGTH_LABELS[strength]} — 8+ chars with letters, numbers &amp; symbols.</p>
+                    <p className="text-xs text-gray-500">
+                      <span className={cn("font-semibold", strength >= 3 ? "text-primary-600" : strength >= 2 ? "text-blue-500" : "text-red-400")}>
+                        {STRENGTH_LABELS[strength]}
+                      </span>
+                      {" "}— Use 8+ characters with letters, numbers &amp; symbols.
+                    </p>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-start gap-2.5 pt-1">
+              {/* Invite token */}
+              {!inviteToken && (
+                <div>
+                  <label htmlFor="signup-invite" className="block text-sm font-medium text-gray-700 mb-1.5">Invite token <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">🏷️</span>
+                    <input id="signup-invite" type="text" placeholder="Paste invite token if you have one"
+                      value={invite} onChange={e => setInvite(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
+                  </div>
+                </div>
+              )}
+
+              {/* Terms */}
+              <div className="flex items-start gap-2.5 pt-0.5">
                 <input id="signup-terms" type="checkbox" checked={agree}
                   onChange={e => setAgree(e.target.checked)}
                   className="mt-0.5 w-4 h-4 accent-primary-600 flex-shrink-0" />
@@ -293,19 +314,57 @@ function SignUpPage() {
 
               <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}
                 disabled={!agree || (selectedRole === "superadmin" && !!superAdminExists)}
-                icon={<span>{selectedRole === "superadmin" ? "⚡" : "🏢"}</span>}>
-                {inviteToken
-                  ? "Join Organization"
-                  : selectedRole === "superadmin"
-                    ? "Create Super Admin Account"
-                    : "Create Admin Account"}
+                icon={<span>🌿</span>}>
+                {inviteToken ? "Join Organization" : selectedRole === "superadmin" ? "Create Super Admin" : "Create Account"}
               </Button>
             </form>
 
-            <p className="text-center text-sm text-gray-500 mt-5">
+            {/* Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+              <div className="relative flex justify-center text-xs text-gray-400 bg-white px-3">or continue with</div>
+            </div>
+
+            {/* Google + GitHub side by side */}
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button type="button" onClick={() => showToast("Google sign-up coming soon!", "info")}
+                className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+                <span className="text-red-500 font-bold">G</span> Continue with Google
+              </button>
+              <button type="button" onClick={() => showToast("GitHub sign-up coming soon!", "info")}
+                className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+                <span className="text-gray-900 font-bold text-base leading-none">⌥</span> Continue with GitHub
+              </button>
+            </div>
+
+            {/* Connect Wallet */}
+            <button type="button" onClick={() => showToast("Freighter wallet registration coming soon!", "info")}
+              className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-primary-300 text-sm font-semibold text-primary-700 rounded-xl hover:bg-primary-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+              🔗 Connect Crypto Wallet
+              <span className="ml-1 text-[10px] font-bold bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded">Web3</span>
+            </button>
+
+            {/* Sign in link */}
+            <p className="text-center text-sm text-gray-500 mt-4">
               Already have an account?{" "}
-              <Link href="/signin" className="text-primary-600 font-semibold hover:text-primary-700">Sign in →</Link>
+              <Link href="/signin" className="text-primary-600 font-semibold hover:text-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
+                Sign in →
+              </Link>
             </p>
+
+            {/* Bottom badges */}
+            <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-center gap-6">
+              {[
+                { icon: "🌿", label: "Eco-Focused" },
+                { icon: "🔒", label: "Secure & Private" },
+                { icon: "🌐", label: "Global Community" },
+              ].map(({ icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <span className="text-sm" aria-hidden="true">{icon}</span>
+                  <span className="text-xs text-gray-500 font-medium">{label}</span>
+                </div>
+              ))}
+            </div>
 
           </div>
         </div>
