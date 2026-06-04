@@ -62,10 +62,10 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // all_time: use cumulative token_balances
+  // all_time: use cumulative token_balances joined with display name
   const { data, error } = await (supabase as any)
     .from("token_balances")
-    .select("user_id, balance, total_earned")
+    .select("user_id, balance, total_earned, users(display_name, email)")
     .eq("org_id", auth.orgId)
     .order("balance", { ascending: false })
     .limit(limit);
@@ -77,10 +77,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  type LeaderRow = { user_id: string; balance: number; total_earned: number };
+  type LeaderRow = { user_id: string; balance: number; total_earned: number; users: { display_name: string | null; email: string | null } | null };
   const rankings = ((data ?? []) as LeaderRow[]).map((row, index) => ({
     rank:        index + 1,
     userId:      row.user_id,
+    displayName: row.users?.display_name ?? row.users?.email?.split("@")[0] ?? `User${index + 1}`,
     balance:     row.balance,
     totalEarned: row.total_earned,
   }));
