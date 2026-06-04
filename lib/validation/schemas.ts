@@ -19,12 +19,14 @@ export const createOrgSchema = z.object({
 });
 
 export const updateOrgSchema = z.object({
-  name:         z.string().min(2).max(100).optional(),
-  tokenName:    z.string().min(2).max(30).optional(),
-  tokenSymbol:  z.string().regex(/^[A-Z]{3,5}$/).optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  logoUrl:      z.string().url().optional(),
-  email:        z.string().email().optional(),
+  name:             z.string().min(2).max(100).optional(),
+  tokenName:        z.string().min(2).max(30).optional(),
+  tokenSymbol:      z.string().regex(/^[A-Z]{3,5}$/).optional(),
+  primaryColor:     z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  logoUrl:          z.string().url().optional(),
+  email:            z.string().email().optional(),
+  contractAddress:  z.string().optional(),
+  contractNetwork:  z.string().optional(),
 });
 
 // ── Invites ────────────────────────────────────────────────────────────────
@@ -62,7 +64,7 @@ export const rejectActionSchema = z.object({
 // ── Token Redemption ──────────────────────────────────────────────────────
 export const redeemSchema = z.object({
   rewardId:  z.string().uuid(),
-  signedXdr: z.string().min(10), // Freighter-signed Stellar transaction XDR
+  signedXdr: z.string().min(10).optional(), // Freighter-signed XDR — optional until Phase 2 wallet signing
 });
 
 // ── Rewards ───────────────────────────────────────────────────────────────

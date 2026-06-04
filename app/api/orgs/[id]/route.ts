@@ -64,11 +64,13 @@ export async function PUT(
   const { data, error } = await (supabase as any)
     .from("organizations")
     .update({
-      ...(parsed.data.name         && { name:          parsed.data.name         }),
-      ...(parsed.data.tokenName    && { token_name:    parsed.data.tokenName    }),
-      ...(parsed.data.tokenSymbol  && { token_symbol:  parsed.data.tokenSymbol  }),
-      ...(parsed.data.primaryColor && { primary_color: parsed.data.primaryColor }),
-      ...(parsed.data.logoUrl      && { logo_url:      parsed.data.logoUrl      }),
+      ...(parsed.data.name            && { name:              parsed.data.name            }),
+      ...(parsed.data.tokenName       && { token_name:        parsed.data.tokenName       }),
+      ...(parsed.data.tokenSymbol     && { token_symbol:      parsed.data.tokenSymbol     }),
+      ...(parsed.data.primaryColor    && { primary_color:     parsed.data.primaryColor    }),
+      ...(parsed.data.logoUrl         && { logo_url:          parsed.data.logoUrl         }),
+      ...(parsed.data.contractAddress && { contract_address:  parsed.data.contractAddress }),
+      ...(parsed.data.contractNetwork && { contract_network:  parsed.data.contractNetwork }),
     })
     .eq("id", id)
     .select("id, name, slug, token_name, token_symbol, primary_color")
