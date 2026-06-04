@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { UserProvider } from "@/providers/UserProvider";
 
 // Load Poppins via Next.js font optimization (self-hosted, no external CSS request needed)
 // The `variable` prop exposes --font-poppins CSS custom property on <html>
@@ -35,7 +36,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} h-full`}>
       <body className="min-h-full font-sans antialiased bg-white text-gray-900">
-        {children}
+        {/* Single UserProvider = one Supabase auth subscription for the whole app */}
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );
