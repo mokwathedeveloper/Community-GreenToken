@@ -4,6 +4,10 @@ import { createAdminClient } from "@/lib/supabase/server";
 // Rule R-API-05: Plan-gated endpoints MUST check org plan before processing
 // Rule: Return 422 with PLAN_LIMIT_EXCEEDED for blocked features
 
+// 5-minute cache — plan limits rarely change and are queried on every protected route
+const PLAN_CACHE_TTL_MS = 5 * 60 * 1000;
+const planCache = new Map<string, { limits: PlanLimits; expiresAt: number }>();
+
 export type PlanFeature =
   | "analytics"
   | "customToken"
@@ -25,6 +29,9 @@ interface PlanLimits {
  * Fetch plan limits for an org from the database.
  */
 export async function getOrgPlanLimits(orgId: string): Promise<PlanLimits | null> {
+  const cached = planCache.get(orgId);
+  if (cached && cached.expiresAt > Date.now()) return cached.limits;
+
   const supabase = createAdminClient();
 
   const { data: org } = await supabase
@@ -43,6 +50,8 @@ export async function getOrgPlanLimits(orgId: string): Promise<PlanLimits | null
     .select("*")
     .eq("plan", org.plan)
     .single();
+
+  if (limits) planCache.set(orgId, { limits, expiresAt: Date.now() + PLAN_CACHE_TTL_MS });
 
   return limits ?? null;
 }
