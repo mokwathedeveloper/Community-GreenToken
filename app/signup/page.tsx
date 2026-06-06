@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import {
   User, Mail, Lock, Tag, Eye, EyeOff, Wallet, Leaf, Globe, Github,
+  Users, ShieldCheck,
 } from "lucide-react";
 
 function GoogleIcon() {
@@ -138,50 +139,71 @@ function SignUpPage() {
     <>
       {toastNode}
       {/*
-        ── LAYOUT (borrowed from signin approach) ──────────────────────────
-        Hero image fills the full screen as background (object-cover, left-
-        anchored so all 5 people stay visible). A gradient darkens the left
-        half for text legibility and fades to transparent on the right.
-        The form lives in a floating white card (rounded-2xl shadow-2xl) on
-        the right — same card pattern as the signin page.
+        ── LAYOUT ──────────────────────────────────────────────────────────
+        True split: LEFT 55% = hero image (object-cover, left-anchored so
+        all 5 people are visible) + bottom text/icon overlay. RIGHT 45% =
+        clean bright white panel, form content centred inside. The two sides
+        are fully separated — no image bleeds behind the form.
         ────────────────────────────────────────────────────────────────────
       */}
-      <div className="relative min-h-screen flex items-center">
+      <div className="flex min-h-screen">
 
-        {/* ── Full-screen hero background ── */}
-        <Image
-          src="/assets/image/pages/auth/signup_hero.png"
-          alt="Family of five planting a tree together"
-          fill
-          className="object-cover"
-          style={{ objectPosition: "left center" }}
-          priority
-          sizes="100vw"
-        />
+        {/* ══ LEFT: hero image panel (55%) ══ */}
+        <div className="hidden lg:flex lg:w-[55%] relative flex-col overflow-hidden">
 
-        {/* Gradient: strong on left for text, fades out before the card */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" aria-hidden="true" />
+          {/* Vibrant hero — left-anchored so the family stays visible */}
+          <Image
+            src="/assets/image/pages/auth/signup_hero.png"
+            alt="Family of five planting a tree together"
+            fill
+            className="object-cover"
+            style={{ objectPosition: "left center" }}
+            priority
+            sizes="55vw"
+          />
 
-        {/* ── LEFT: hero text overlay ── */}
-        <div className="hidden lg:flex flex-1 relative z-10 flex-col justify-end self-stretch pb-16 pl-12 pr-6">
-          <div className="mt-auto">
-            <h2 className="text-4xl font-extrabold text-white leading-tight mb-3">
+          {/* Bottom-to-top gradient for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" aria-hidden="true" />
+
+          {/* Right-edge feather — clean transition into the white panel */}
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-white/10" aria-hidden="true" />
+
+          {/* ── Bottom-left overlay: headline + feature blocks ── */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-10 pb-10">
+            <h2 className="text-[2.6rem] font-extrabold text-white leading-tight mb-2">
               Grow a greener<br />future, together.
             </h2>
-            <p className="text-white/80 text-sm mb-8">
-              Join a community that plants today<br />and prospers tomorrow.
+            <p className="text-white/75 text-sm mb-7">
+              Join a community that plants today and prospers tomorrow.
             </p>
-            <div className="grid grid-cols-3 gap-3">
+
+            {/* Feature blocks — circular icon + title + description */}
+            <div className="flex items-start gap-5">
               {[
-                { icon: "🌱", title: "Eco Impact",           desc: "Every action creates a lasting impact"       },
-                { icon: "👥", title: "Community First",      desc: "Together we build a sustainable world"       },
-                { icon: "🔗", title: "Transparent & Secure", desc: "Blockchain-powered trust and accountability" },
+                {
+                  icon: <Leaf className="w-4 h-4 text-white" />,
+                  title: "Eco Impact",
+                  desc:  "Every action creates a lasting impact",
+                },
+                {
+                  icon: <Users className="w-4 h-4 text-white" />,
+                  title: "Community First",
+                  desc:  "Together we build a sustainable world",
+                },
+                {
+                  icon: <ShieldCheck className="w-4 h-4 text-white" />,
+                  title: "Transparent & Secure",
+                  desc:  "Blockchain-powered trust and accountability",
+                },
               ].map(({ icon, title, desc }) => (
-                <div key={title} className="flex items-start gap-2">
-                  <span className="text-white/80 flex-shrink-0 text-sm mt-0.5" aria-hidden="true">{icon}</span>
+                <div key={title} className="flex-1 flex items-start gap-2.5">
+                  {/* Circular icon container */}
+                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-white/30">
+                    {icon}
+                  </div>
                   <div>
-                    <p className="text-white text-xs font-semibold">{title}</p>
-                    <p className="text-white/60 text-xs leading-snug">{desc}</p>
+                    <p className="text-white text-xs font-semibold leading-tight">{title}</p>
+                    <p className="text-white/60 text-[11px] leading-snug mt-0.5">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -189,10 +211,9 @@ function SignUpPage() {
           </div>
         </div>
 
-        {/* ── RIGHT: floating white card (same pattern as signin) ── */}
-        <div className="relative z-10 w-full lg:w-auto flex items-center justify-center p-4 lg:p-8 lg:pr-12">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl px-8 py-7 overflow-y-auto"
-               style={{ maxHeight: "calc(100svh - 2rem)" }}>
+        {/* ══ RIGHT: clean white form panel (45%) ══ */}
+        <div className="w-full lg:w-[45%] flex flex-col items-center justify-center bg-white px-8 py-10 overflow-y-auto min-h-screen">
+          <div className="w-full max-w-sm">
 
             {/* Logo */}
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -387,6 +408,7 @@ function SignUpPage() {
     </>
   );
 }
+
 
 export default function SignUpPageWrapper() {
   return (
