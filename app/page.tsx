@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { MLeaf, MTrophy, MBolt } from "@/components/icons";
+import { MLeaf, MTrophy } from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 import HeroSection from "@/components/landing/HeroSection";
 import StatsRow from "@/components/landing/StatsRow";
@@ -68,10 +68,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Decorative GreenToken emblem — visible in mockup on right */}
-          <div aria-hidden="true" className="hidden lg:flex flex-shrink-0 w-44 h-44 rounded-full bg-primary-600/80 border-4 border-primary-400/60 shadow-2xl items-center justify-center backdrop-blur-sm">
-            <MLeaf className="w-20 h-20 text-white drop-shadow-lg" aria-hidden="true" />
-          </div>
         </div>
       </section>
     </PublicLayout>
