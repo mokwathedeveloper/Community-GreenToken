@@ -113,14 +113,20 @@ export default function AboutUsPage() {
           sizes="100vw"
         />
 
+        {/* Subtle white fade on left keeps dark text readable over the image */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.80) 28%, rgba(255,255,255,0.20) 55%, rgba(255,255,255,0) 100%)" }}
+          aria-hidden="true"
+        />
+
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full py-20 lg:py-28">
           <div className="max-w-xl">
-            <p className="text-xs font-bold text-primary-300 uppercase tracking-widest mb-3">About Us</p>
-            <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-5">
+            <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
               Building a Sustainable{" "}
-              <span className="text-primary-300">Future, Together.</span>
+              <span className="text-primary-500">Future, Together.</span>
             </h1>
-            <p className="text-base text-white/90 leading-relaxed">
+            <p className="text-base text-gray-600 leading-relaxed">
               Community GreenToken was born out of a simple belief: small actions can create a big
               impact. We reward and empower individuals and communities to take sustainable actions
               through transparent, blockchain-verified tokens.
