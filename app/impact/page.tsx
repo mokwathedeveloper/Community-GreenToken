@@ -169,12 +169,12 @@ export default function ImpactPage() {
           src="/assets/image/pages/impact/impact_hero.png"
           alt="Community members planting trees on a hillside"
           fill
-          className="object-cover opacity-40"
+          className="object-cover"
           priority
           sizes="100vw"
           style={{ objectPosition: "center 30%" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0b2e14]/90 via-[#0b2e14]/70 to-[#0b2e14]/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 w-full">
           <div className="max-w-xl">
