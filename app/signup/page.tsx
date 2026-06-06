@@ -385,20 +385,17 @@ function SignUpPage() {
               </Link>
             </p>
 
-            {/* Bottom trust badges */}
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-6">
-              <div className="flex items-center gap-1.5">
-                <Leaf className="w-3.5 h-3.5 text-primary-600" aria-hidden="true" />
-                <span className="text-xs text-gray-500 font-medium">Eco-Focused</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
-                <span className="text-xs text-gray-500 font-medium">Secure &amp; Private</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-blue-500" aria-hidden="true" />
-                <span className="text-xs text-gray-500 font-medium">Global Community</span>
-              </div>
+            {/* Bottom trust badges — coloured pill outlines */}
+            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border border-primary-300 bg-primary-50 text-primary-700">
+                <Leaf className="w-3 h-3" aria-hidden="true" /> Eco-Focused
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border border-slate-300 bg-slate-50 text-slate-600">
+                <Lock className="w-3 h-3" aria-hidden="true" /> Secure &amp; Private
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border border-blue-300 bg-blue-50 text-blue-700">
+                <Globe className="w-3 h-3" aria-hidden="true" /> Global Community
+              </span>
             </div>
 
           </div>
