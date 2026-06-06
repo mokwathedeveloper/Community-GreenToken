@@ -12,6 +12,7 @@ import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { MWarning, MGift, MSync } from "@/components/icons";
 
 interface BillingStatus {
   plan:                string;
@@ -113,7 +114,7 @@ export default function BillingPage() {
       {isPastDue && (
         <div role="alert" className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-6 py-4 mb-5">
           <div className="flex items-center gap-2">
-            <span className="text-red-500 text-lg" aria-hidden="true">⚠️</span>
+            <MWarning className="w-5 h-5 text-red-500 flex-shrink-0" aria-hidden="true" />
             <div>
               <p className="text-sm font-semibold text-red-700">Payment failed</p>
               <p className="text-xs text-red-600 mt-0.5">Update your payment method to avoid service interruption.</p>
@@ -129,7 +130,7 @@ export default function BillingPage() {
       {isCanceled && (
         <div role="alert" className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-6 py-4 mb-5">
           <div className="flex items-center gap-2">
-            <span className="text-amber-500 text-lg" aria-hidden="true">⚠️</span>
+            <MWarning className="w-5 h-5 text-amber-500 flex-shrink-0" aria-hidden="true" />
             <div>
               <p className="text-sm font-semibold text-amber-700">Subscription canceled — you&apos;re on Free</p>
               <p className="text-xs text-amber-600 mt-0.5">Upgrade to restore analytics, custom tokens, and more.</p>
@@ -146,7 +147,7 @@ export default function BillingPage() {
         <div role="status" className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm font-bold text-amber-800">🎁 Pro Trial — {trialDays} days remaining</p>
+              <p className="text-sm font-bold text-amber-800 flex items-center gap-1.5"><MGift className="w-4 h-4 text-amber-600" aria-hidden="true" /> Pro Trial — {trialDays} days remaining</p>
               <p className="text-xs text-amber-600 mt-0.5">
                 Your trial ends on {status?.trial_ends_at ? new Date(status.trial_ends_at).toLocaleDateString("en",{month:"long",day:"numeric",year:"numeric"}) : "—"}.
                 Upgrade to keep all Pro features.
@@ -188,7 +189,7 @@ export default function BillingPage() {
           {/* Renewal info */}
           {!isTrialing && status?.subscription_status === "active" && (
             <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-              <span>🔄</span>
+              <MSync className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
               <span>Renews automatically — manage via Stripe portal</span>
             </div>
           )}

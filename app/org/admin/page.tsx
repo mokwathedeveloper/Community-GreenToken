@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { MLeaf, MBarChart, MPeople } from "@/components/icons";
 
 type PendingAction = {
   id:             string;
@@ -86,7 +87,7 @@ export default function OrgAdminPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" aria-hidden="true" />
         <div className="absolute inset-0 flex items-center px-6 justify-between">
           <div>
-            <h1 className="text-xl font-bold text-white">Welcome back, {orgName ?? "Your Org"} 🌿</h1>
+            <h1 className="text-xl font-bold text-white">Welcome back, {orgName ?? "Your Org"}</h1>
             <p className="text-white/80 text-sm mt-1">Manage your community, verify actions, and grow your impact.</p>
           </div>
           <Link href="/org/admin/billing"><Button variant="primary" size="sm">Upgrade Plan</Button></Link>
@@ -128,7 +129,7 @@ export default function OrgAdminPage() {
           {loading ? (
             <p className="text-center text-sm text-gray-400 py-6">Loading…</p>
           ) : queue.length === 0 ? (
-            <p className="text-center text-sm text-gray-400 py-6">All caught up! 🎉</p>
+            <p className="text-center text-sm text-gray-400 py-6">All caught up!</p>
           ) : (
             <table className="w-full text-sm">
               <caption className="sr-only">Action verification queue</caption>
@@ -174,13 +175,13 @@ export default function OrgAdminPage() {
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { icon: "🌿", label: "Submit Action",  href: "/submit-action"    },
-              { icon: "📊", label: "Analytics",      href: "/analytics"         },
-              { icon: "👥", label: "Invite Members", href: "/org/admin/members" },
+              { icon: <MLeaf className="w-5 h-5 text-primary-600" />, label: "Submit Action",  href: "/submit-action"    },
+              { icon: <MBarChart className="w-5 h-5 text-blue-600" />, label: "Analytics",     href: "/analytics"        },
+              { icon: <MPeople className="w-5 h-5 text-indigo-600" />, label: "Invite Members", href: "/org/admin/members" },
             ].map(({ icon, label, href }) => (
               <Link key={label} href={href}
                 className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-gray-50 hover:bg-primary-50 border border-transparent hover:border-primary-200 transition-colors text-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-                <span className="text-xl" aria-hidden="true">{icon}</span>
+                <span aria-hidden="true">{icon}</span>
                 <p className="text-xs font-medium text-gray-700 leading-tight">{label}</p>
               </Link>
             ))}

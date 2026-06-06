@@ -12,39 +12,20 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Squares2X2Icon as DashboardIcon,
-  BoltIcon,
-  GiftIcon,
-  HeartIcon,
-  TrophyIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  BanknotesIcon,
-} from "@heroicons/react/24/outline";
-import {
-  Squares2X2Icon as DashboardIconSolid,
-  BoltIcon as BoltIconSolid,
-  GiftIcon as GiftIconSolid,
-  HeartIcon as HeartIconSolid,
-  TrophyIcon as TrophyIconSolid,
-  ChartBarIcon as ChartBarIconSolid,
-  Cog6ToothIcon as Cog6ToothIconSolid,
-  BanknotesIcon as BanknotesIconSolid,
-} from "@heroicons/react/24/solid";
+import { MDashboard, MBolt, MGift, MHeart, MTrophy, MBarChart, MSettings, MAttachMoney } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Member sidebar — NO billing (billing is owner-only in OrgAdminLayout)
 // RBAC: member sees personal finance (earn, redeem rewards, donate, withdraw cash)
 const NAV_ITEMS = [
-  { label: "Dashboard",   href: "/dashboard",          Icon: DashboardIcon,  ActiveIcon: DashboardIconSolid },
-  { label: "Actions",     href: "/submit-action",      Icon: BoltIcon,       ActiveIcon: BoltIconSolid      },
-  { label: "Rewards",     href: "/redeem",             Icon: GiftIcon,       ActiveIcon: GiftIconSolid      },
-  { label: "Withdraw",    href: "/withdraw",           Icon: BanknotesIcon,  ActiveIcon: BanknotesIconSolid }, // GTK → KSH/USD cash-out
-  { label: "Donations",   href: "/donations",          Icon: HeartIcon,      ActiveIcon: HeartIconSolid     },
-  { label: "Leaderboard", href: "/leaderboard",        Icon: TrophyIcon,     ActiveIcon: TrophyIconSolid    },
-  { label: "Analytics",   href: "/analytics",          Icon: ChartBarIcon,   ActiveIcon: ChartBarIconSolid  },
-  { label: "Settings",    href: "/org/admin/settings", Icon: Cog6ToothIcon,  ActiveIcon: Cog6ToothIconSolid },
+  { label: "Dashboard",   href: "/dashboard",          Icon: MDashboard    },
+  { label: "Actions",     href: "/submit-action",      Icon: MBolt         },
+  { label: "Rewards",     href: "/redeem",             Icon: MGift         },
+  { label: "Withdraw",    href: "/withdraw",           Icon: MAttachMoney  },
+  { label: "Donations",   href: "/donations",          Icon: MHeart        },
+  { label: "Leaderboard", href: "/leaderboard",        Icon: MTrophy       },
+  { label: "Analytics",   href: "/analytics",          Icon: MBarChart     },
+  { label: "Settings",    href: "/org/admin/settings", Icon: MSettings     },
 ];
 
 export default function Sidebar() {
@@ -97,9 +78,8 @@ export default function Sidebar() {
 
       {/* ── Primary Navigation ───────────────────────────────────────── */}
       <nav aria-label="Main navigation" className="px-3 py-2 space-y-0.5 overflow-y-auto flex-1">
-        {NAV_ITEMS.map(({ label, href, Icon, ActiveIcon }) => {
+        {NAV_ITEMS.map(({ label, href, Icon }) => {
           const active = isActive(href);
-          const DisplayIcon = active ? ActiveIcon : Icon;
           return (
             <Link
               key={href}
@@ -113,7 +93,7 @@ export default function Sidebar() {
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               )}
             >
-              <DisplayIcon
+              <Icon
                 className={cn("w-5 h-5 flex-shrink-0", active ? "text-primary-600" : "text-gray-400")}
                 aria-hidden="true"
               />

@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { MLink2, MAccessTime, MCheckCircle, MGift, MLeaf } from "@/components/icons";
 
 type InviteStatus = "loading" | "valid" | "expired" | "invalid" | "accepted" | "already_member";
 type AuthMode     = "signup" | "signin";
@@ -180,7 +181,7 @@ export default function JoinPage() {
           {/* ── Invalid ── */}
           {(status === "invalid") && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <div className="text-5xl mb-4">🔗</div>
+              <div className="flex justify-center mb-4"><MLink2 className="w-12 h-12 text-gray-400" /></div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Invite Not Found</h2>
               <p className="text-sm text-gray-500 mb-6">This invite link is invalid or has already been used.</p>
               <Link href="/signup"><Button variant="primary" size="md" fullWidth>Create a new account</Button></Link>
@@ -190,7 +191,7 @@ export default function JoinPage() {
           {/* ── Expired ── */}
           {status === "expired" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <div className="text-5xl mb-4">⏰</div>
+              <div className="flex justify-center mb-4"><MAccessTime className="w-12 h-12 text-amber-400" /></div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Invite Expired</h2>
               <p className="text-sm text-gray-500 mb-2">
                 This invite expired on{" "}
@@ -204,7 +205,7 @@ export default function JoinPage() {
           {/* ── Already a member ── */}
           {status === "already_member" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <div className="text-5xl mb-4">✅</div>
+              <div className="flex justify-center mb-4"><MCheckCircle className="w-12 h-12 text-primary-600" /></div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Already a member!</h2>
               <p className="text-sm text-gray-500">You are already in {invite?.orgName}. Redirecting to your dashboard…</p>
             </div>
@@ -213,7 +214,7 @@ export default function JoinPage() {
           {/* ── Accepted ── */}
           {status === "accepted" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <div className="text-5xl mb-4">🎉</div>
+              <div className="flex justify-center mb-4"><MGift className="w-12 h-12 text-primary-600" /></div>
               <h2 className="text-xl font-bold text-primary-700 mb-2">You're in!</h2>
               <p className="text-sm text-gray-500">Welcome to <strong>{invite?.orgName}</strong>. Taking you to your dashboard…</p>
               <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mt-4" />
@@ -226,7 +227,7 @@ export default function JoinPage() {
 
               {/* Invite header */}
               <div className="bg-gradient-to-br from-primary-600 to-primary-700 px-6 py-6 text-white text-center">
-                <div className="text-4xl mb-3">🌿</div>
+                <div className="flex justify-center mb-3"><MLeaf className="w-10 h-10 text-white" /></div>
                 <h2 className="text-xl font-bold mb-1">You've been invited!</h2>
                 <p className="text-primary-100 text-sm">
                   Join <strong className="text-white">{invite.orgName}</strong> on Community GreenToken
@@ -278,7 +279,7 @@ export default function JoinPage() {
                     />
                   </div>
 
-                  <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<span>🌿</span>}>
+                  <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<MLeaf className="w-4 h-4" />}>
                     {mode === "signup" ? `Join ${invite.orgName}` : `Sign In & Join ${invite.orgName}`}
                   </Button>
                 </form>

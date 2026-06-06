@@ -1,14 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Link2, Scale, Users } from "lucide-react";
+import { MLink, MScale, MPeople } from "@/components/icons";
 
 // Spec: landing_page_md.md — HeroCard section
 // Mockup: mockup/landing_page_mockup.png
 
 const TRUST_BADGES = [
-  { Icon: Link2,  label: "Blockchain Secured"  },
-  { Icon: Scale,  label: "Transparent & Fair"  },
-  { Icon: Users,  label: "Community Driven"    },
+  { Icon: MLink,   label: "Blockchain Secured" },
+  { Icon: MScale,  label: "Transparent & Fair" },
+  { Icon: MPeople, label: "Community Driven"   },
 ];
 
 export default function HeroSection() {
@@ -58,7 +58,7 @@ export default function HeroSection() {
                   key={label}
                   className="flex items-center gap-2 px-4 py-2 bg-primary-50 rounded-full border border-primary-100"
                 >
-                  <Icon className="w-4 h-4 text-primary-600" strokeWidth={1.75} aria-hidden="true" />
+                  <Icon className="w-4 h-4 text-primary-600" aria-hidden="true" />
                   <span className="text-xs font-semibold text-primary-700">{label}</span>
                 </div>
               ))}

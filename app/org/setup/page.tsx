@@ -13,6 +13,7 @@ import Image from "next/image";
 import Button from "@/components/ui/Button";
 import Input, { Select } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
+import { MWarning, MGift, MRocket, MCheckCircle, MLeaf, MContentCopy } from "@/components/icons";
 
 const STEPS = [
   "Organization Profile",
@@ -229,7 +230,7 @@ export default function OrgSetupPage() {
             {/* Inline error — shown when API returns 400 or validation fails */}
             {setupError && (
               <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-                <span aria-hidden="true">⚠️</span>
+                <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>{setupError}</span>
               </div>
             )}
@@ -309,7 +310,7 @@ export default function OrgSetupPage() {
         {/* ── Step 3: Plan Selection ── */}
         {step === 3 && (
           <div className="space-y-5">
-            <p className="text-xs text-gray-400">🎁 All plans include a 14-day Pro trial — no credit card required</p>
+            <p className="text-xs text-gray-400 flex items-center gap-1"><MGift className="w-3.5 h-3.5" /> All plans include a 14-day Pro trial — no credit card required</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {PLANS.map((p) => (
                 <button key={p.key} type="button" onClick={() => update("plan", p.key)}
@@ -337,12 +338,12 @@ export default function OrgSetupPage() {
           <div className="space-y-5 text-center">
             <p className="text-sm text-gray-500">Assign your organization&apos;s GreenToken smart contract on the Stellar Testnet.</p>
             {!contractDeployed ? (
-              <Button variant="primary" size="lg" loading={contractDeploying} onClick={deployContract} icon={<span>🚀</span>}>
+              <Button variant="primary" size="lg" loading={contractDeploying} onClick={deployContract} icon={<MRocket className="w-4 h-4" />}>
                 {contractDeploying ? "Deploying…" : "Deploy Contract"}
               </Button>
             ) : (
               <div className="bg-primary-50 rounded-xl p-5 space-y-2">
-                <p className="text-primary-700 font-semibold text-sm">✅ Contract assigned!</p>
+                <p className="text-primary-700 font-semibold text-sm flex items-center gap-1"><MCheckCircle className="w-4 h-4" /> Contract assigned!</p>
                 <p className="text-xs font-mono text-gray-500">Network: Stellar Testnet</p>
                 <p className="text-xs font-mono text-gray-500 break-all">
                   {process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID ?? "—"}
@@ -367,7 +368,7 @@ export default function OrgSetupPage() {
         {/* ── Step 5: Invite Members ── */}
         {step === 5 && (
           <div className="space-y-5 text-center">
-            <div className="text-4xl mb-2">🎉</div>
+            <div className="flex justify-center mb-2"><MGift className="w-10 h-10 text-primary-600" /></div>
             <h3 className="text-lg font-bold text-gray-900">Your program is ready!</h3>
             <p className="text-sm text-gray-500">Share this invite link with your members:</p>
             <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex items-center gap-2 justify-between">
@@ -378,12 +379,12 @@ export default function OrgSetupPage() {
                 onClick={() => inviteLink && navigator.clipboard?.writeText(inviteLink)}
                 className="text-primary-600 text-xs font-medium flex-shrink-0 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded"
                 aria-label="Copy invite link">
-                📋 Copy
+                <MContentCopy className="w-4 h-4 inline-block mr-1" />Copy
               </button>
             </div>
             <div className="flex flex-col gap-2 pt-2">
-              <Button variant="primary" size="lg" fullWidth onClick={() => router.push("/org/admin")} icon={<span>🌿</span>}>
-                🎉 Go Live — Open Admin Dashboard
+              <Button variant="primary" size="lg" fullWidth onClick={() => router.push("/org/admin")} icon={<MLeaf className="w-4 h-4" />}>
+                Go Live — Open Admin Dashboard
               </Button>
               <Button variant="ghost" size="sm" onClick={() => router.push("/org/admin")}>Skip for now</Button>
             </div>

@@ -3,9 +3,10 @@
 // Rebuilt to match mockup/super_admin_dashboard_mockup.png
 // Super Admin: platform-wide overview with revenue chart, plan distribution, top orgs, billing events
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { MLeaf, MAttachMoney, MBusiness, MPeople, MCircle } from "@/components/icons";
 
 type OrgStatus = "active" | "past_due" | "trialing" | "canceled";
 interface Org { id: string; name: string; plan: string; members: number; mrr: number; status: OrgStatus; }
@@ -18,11 +19,11 @@ const MOCK_ORGS: Org[] = [
   { id: "5", name: "EcoStart ZA",       plan: "Standard",     members: 178,  mrr: 49,  status: "active"   },
 ];
 
-const PLATFORM_STATS = [
-  { label: "Monthly Recurring Revenue", value: "$48,650", sub: "+16.7% vs. last month", icon: "💰", color: "text-primary-400" },
-  { label: "Total Organizations",       value: "128",     sub: "+12 this month",         icon: "🏢", color: "text-primary-400" },
-  { label: "Total Members",             value: "2,845",   sub: "+8.7% vs. last month",   icon: "👥", color: "text-blue-400"    },
-  { label: "Platform Uptime",           value: "99.98%",  sub: "+0.3% vs. last month",   icon: "🟢", color: "text-green-400"  },
+const PLATFORM_STATS: { label: string; value: string; sub: string; icon: ReactNode; color: string }[] = [
+  { label: "Monthly Recurring Revenue", value: "$48,650", sub: "+16.7% vs. last month", icon: <MAttachMoney className="w-5 h-5" />, color: "text-primary-400" },
+  { label: "Total Organizations",       value: "128",     sub: "+12 this month",         icon: <MBusiness className="w-5 h-5" />,    color: "text-primary-400" },
+  { label: "Total Members",             value: "2,845",   sub: "+8.7% vs. last month",   icon: <MPeople className="w-5 h-5" />,      color: "text-blue-400"    },
+  { label: "Platform Uptime",           value: "99.98%",  sub: "+0.3% vs. last month",   icon: <MCircle className="w-5 h-5" />,      color: "text-green-400"   },
 ];
 
 const REVENUE_DATA = [12, 18, 22, 19, 28, 35, 31, 42, 38, 46, 44, 48];
@@ -143,7 +144,7 @@ export default function SuperAdminPage() {
       {/* Dark sidebar */}
       <aside className="w-52 bg-gray-950 flex flex-col py-5 px-3 flex-shrink-0 overflow-y-auto" aria-label="Super Admin Navigation">
         <div className="flex items-center gap-2 mb-6 px-2">
-          <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center text-sm">🌿</div>
+          <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center text-sm"><MLeaf className="w-4 h-4 text-white" /></div>
           <div>
             <p className="text-xs font-bold text-white leading-tight">Community</p>
             <p className="text-xs font-bold text-primary-400 leading-tight">GreenToken</p>
@@ -193,7 +194,7 @@ export default function SuperAdminPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {PLATFORM_STATS.map(({ label, value, sub, icon, color }) => (
               <div key={label} className="bg-gray-800 rounded-xl p-4">
-                <div className="text-xl mb-2" aria-hidden="true">{icon}</div>
+                <div className={cn("mb-2", color)} aria-hidden="true">{icon}</div>
                 <div className={cn("text-2xl font-bold", color)}>{value}</div>
                 <p className="text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
                 <p className="text-xs text-gray-600 mt-1">{sub}</p>

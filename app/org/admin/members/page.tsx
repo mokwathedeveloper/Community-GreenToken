@@ -37,6 +37,7 @@ import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { MLink, MEmail, MInbox, MLock, MLeaf, MShield, MBusiness, MCheckCircle } from "@/components/icons";
 
 type MemberRole = "owner" | "admin" | "member";
 
@@ -148,7 +149,7 @@ export default function MembersPage() {
         sent_at:    new Date().toISOString(),
         status:     "pending" as const,
       }, ...inv]);
-      showToast(`Invite sent to ${inviteEmail}! They will receive a one-time login link. 📧`, "success");
+      showToast(`Invite sent to ${inviteEmail}! They will receive a one-time login link.`, "success");
       setInviteEmail("");
       setInviteRole("member");
       setShowInvite(false);
@@ -201,10 +202,10 @@ export default function MembersPage() {
           <p className="text-sm text-gray-500 mt-0.5">Manage your organization&apos;s team and send invitations.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={generateShareableLink} icon={<span>🔗</span>}>
+          <Button variant="outline" size="sm" onClick={generateShareableLink} icon={<MLink className="w-4 h-4" />}>
             {linkCopied ? "Copied!" : "Copy Invite Link"}
           </Button>
-          <Button variant="primary" size="sm" onClick={() => setShowInvite(true)} icon={<span>✉️</span>}>
+          <Button variant="primary" size="sm" onClick={() => setShowInvite(true)} icon={<MEmail className="w-4 h-4" />}>
             Invite by Email
           </Button>
         </div>
@@ -215,17 +216,17 @@ export default function MembersPage() {
         <h3 className="text-xs font-bold text-primary-800 uppercase tracking-wide mb-3">How User Admission Works</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { step: "1", icon: "✉️", title: "Admin Sends Invite",    desc: "Enter email + role → system sends a one-time magic link" },
-            { step: "2", icon: "📩", title: "User Gets Email",       desc: "User receives an email with a one-time secure link (OTP)" },
-            { step: "3", icon: "🔐", title: "User Signs Up/In",      desc: "User clicks link → signs up or logs in on the join page" },
-            { step: "4", icon: "✅", title: "Auto-Joined to Org",    desc: "User is automatically added to the org with assigned role" },
+            { step: "1", icon: <MEmail className="w-3.5 h-3.5 inline-block mr-1 text-primary-700" />, title: "Admin Sends Invite",    desc: "Enter email + role → system sends a one-time magic link" },
+            { step: "2", icon: <MInbox className="w-3.5 h-3.5 inline-block mr-1 text-primary-700" />, title: "User Gets Email",       desc: "User receives an email with a one-time secure link (OTP)" },
+            { step: "3", icon: <MLock  className="w-3.5 h-3.5 inline-block mr-1 text-primary-700" />, title: "User Signs Up/In",      desc: "User clicks link → signs up or logs in on the join page" },
+            { step: "4", icon: <MCheckCircle className="w-3.5 h-3.5 inline-block mr-1 text-primary-700" />, title: "Auto-Joined to Org",    desc: "User is automatically added to the org with assigned role" },
           ].map(({ step, icon, title, desc }) => (
             <div key={step} className="flex gap-2.5">
               <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                 {step}
               </div>
               <div>
-                <p className="text-xs font-semibold text-primary-800">{icon} {title}</p>
+                <p className="text-xs font-semibold text-primary-800">{icon}{title}</p>
                 <p className="text-xs text-primary-600 mt-0.5 leading-snug">{desc}</p>
               </div>
             </div>
@@ -298,8 +299,10 @@ export default function MembersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium", ROLE_STYLE[m.role])}>
-                            {m.role === "admin" ? "🛡️ Admin" : m.role === "owner" ? "🏢 Owner" : "🌿 Member"}
+                          <span className={cn("inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium", ROLE_STYLE[m.role])}>
+                            {m.role === "admin"  ? <><MShield className="w-3 h-3" /> Admin</>  :
+                             m.role === "owner"  ? <><MBusiness className="w-3 h-3" /> Owner</> :
+                             <><MLeaf className="w-3 h-3" /> Member</>}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-xs text-gray-400">
@@ -338,7 +341,7 @@ export default function MembersPage() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           {invites.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-4xl mb-3">✉️</div>
+              <div className="flex justify-center mb-3"><MEmail className="w-10 h-10 text-gray-300" /></div>
               <p className="text-sm text-gray-500">No invites sent yet.</p>
               <Button variant="primary" size="sm" className="mt-4" onClick={() => setShowInvite(true)}>Send First Invite</Button>
             </div>
@@ -414,8 +417,8 @@ export default function MembersPage() {
           {/* Role explanation */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { role: "member", icon: "🌿", label: "Member",   desc: "Submit actions, earn GTK, redeem rewards" },
-              { role: "admin",  icon: "🛡️", label: "Admin",    desc: "Verify actions, manage members, view analytics" },
+              { role: "member", icon: <MLeaf   className="w-4 h-4 inline-block mr-1 text-primary-600" />, label: "Member", desc: "Submit actions, earn GTK, redeem rewards" },
+              { role: "admin",  icon: <MShield className="w-4 h-4 inline-block mr-1 text-blue-600" />,   label: "Admin",  desc: "Verify actions, manage members, view analytics" },
             ].map(({ role, icon, label, desc }) => (
               <button
                 key={role}
@@ -425,7 +428,7 @@ export default function MembersPage() {
                   "text-left border-2 rounded-xl p-3 transition-all",
                   inviteRole === role ? "border-primary-500 bg-primary-50" : "border-gray-100 hover:border-gray-200"
                 )}>
-                <p className="text-sm font-semibold text-gray-900">{icon} {label}</p>
+                <p className="text-sm font-semibold text-gray-900">{icon}{label}</p>
                 <p className="text-xs text-gray-400 mt-0.5 leading-snug">{desc}</p>
               </button>
             ))}
@@ -453,7 +456,7 @@ export default function MembersPage() {
             <Button type="button" variant="ghost" size="md" onClick={() => setShowInvite(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="md" fullWidth loading={sending} icon={<span>📩</span>}>
+            <Button type="submit" variant="primary" size="md" fullWidth loading={sending} icon={<MEmail className="w-4 h-4" />}>
               Send Invitation
             </Button>
           </div>

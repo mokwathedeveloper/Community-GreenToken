@@ -78,10 +78,11 @@ function StatCard({ value, suffix, label, IconComp }: typeof STATS[0]) {
       <div className="w-14 h-14 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shadow-inner text-white">
         <IconComp />
       </div>
-      <p className="text-3xl md:text-4xl font-extrabold text-white tabular-nums leading-none">
-        {count.toLocaleString()}{suffix}
+      <p className="text-2xl md:text-4xl font-extrabold text-white tabular-nums leading-none">
+        {count.toLocaleString()}
+        {suffix && <span className="text-base md:text-xl font-semibold ml-0.5">{suffix.trim()}</span>}
       </p>
-      <p className="text-sm text-primary-200 font-medium">{label}</p>
+      <p className="text-xs md:text-sm text-primary-200 font-medium">{label}</p>
     </div>
   );
 }
@@ -90,7 +91,7 @@ export default function StatsRow() {
   return (
     <section aria-label="Platform statistics" className="bg-primary-800 py-14">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
           {STATS.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </div>

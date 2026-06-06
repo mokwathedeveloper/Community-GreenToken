@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
+import { MCoin, MGift, MLeaf } from "@/components/icons";
 
 type Reward = {
   id:          string;
@@ -90,13 +91,13 @@ export default function RedeemPage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        {[
-          { label: "Your Balance",   value: dataLoad ? "…" : `${balance.toLocaleString()} GTK`, icon: "🪙" },
-          { label: "Rewards Redeemed", value: dataLoad ? "…" : String(history.length),          icon: "🎁" },
-          { label: "Impact",         value: "Every redemption matters",                          icon: "🌿" },
-        ].map(({ label, value, icon }) => (
+        {([
+          { label: "Your Balance",     value: dataLoad ? "…" : `${balance.toLocaleString()} GTK`, Icon: MCoin, color: "text-amber-500"   },
+          { label: "Rewards Redeemed", value: dataLoad ? "…" : String(history.length),            Icon: MGift, color: "text-primary-600" },
+          { label: "Impact",           value: "Every redemption matters",                          Icon: MLeaf, color: "text-green-600"   },
+        ] as const).map(({ label, value, Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-            <span className="text-2xl" aria-hidden="true">{icon}</span>
+            <Icon className={`w-6 h-6 ${color}`} aria-hidden="true" />
             <div>
               <p className="text-sm font-bold text-gray-900">{value}</p>
               <p className="text-xs text-gray-400">{label}</p>
@@ -112,7 +113,7 @@ export default function RedeemPage() {
         <p className="text-center text-sm text-gray-400 py-10">Loading rewards…</p>
       ) : rewards.length === 0 ? (
         <div className="text-center py-10 bg-white rounded-xl border border-gray-100 shadow-sm">
-          <p className="text-3xl mb-2">🎁</p>
+          <div className="flex justify-center mb-2"><MGift className="w-8 h-8 text-gray-400" /></div>
           <p className="text-sm font-medium text-gray-700">No rewards yet</p>
           <p className="text-xs text-gray-400 mt-1">Ask your org admin to add rewards in the dashboard.</p>
         </div>
@@ -147,8 +148,8 @@ export default function RedeemPage() {
                   </div>
                 )}
 
-                <div className="h-36 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center text-6xl" aria-hidden="true">
-                  🎁
+                <div className="h-36 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center" aria-hidden="true">
+                  <MGift className="w-16 h-16 text-primary-300" />
                 </div>
 
                 <div className="p-4">
@@ -159,7 +160,7 @@ export default function RedeemPage() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1 text-sm font-bold text-gray-900">
-                      <span aria-hidden="true">🪙</span> {r.token_cost.toLocaleString()} GTK
+                      <MCoin className="w-4 h-4 text-amber-500" aria-hidden="true" /> {r.token_cost.toLocaleString()} GTK
                     </span>
                     <button type="button"
                       disabled={!available || !affordable}
@@ -183,10 +184,10 @@ export default function RedeemPage() {
       {/* Redeem CTA */}
       {selected && (
         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6 flex items-center justify-between">
-          <p className="text-sm text-primary-700 font-medium">
-            🌿 Ready to redeem <strong>{selectedReward?.title}</strong> for <strong>{selectedReward?.token_cost} GTK</strong>
+          <p className="text-sm text-primary-700 font-medium flex items-center gap-1">
+            <MLeaf className="w-4 h-4" /> Ready to redeem <strong>{selectedReward?.title}</strong> for <strong>{selectedReward?.token_cost} GTK</strong>
           </p>
-          <Button variant="primary" size="md" loading={loading} onClick={handleRedeem} icon={<span>🎁</span>}>
+          <Button variant="primary" size="md" loading={loading} onClick={handleRedeem} icon={<MGift className="w-4 h-4" />}>
             Redeem Now
           </Button>
         </div>
@@ -227,8 +228,8 @@ export default function RedeemPage() {
       <Modal
         open={success}
         onClose={() => { setSuccess(false); setRedeemed(null); }}
-        title="Redemption Successful! 🎉"
-        icon={<span className="text-3xl">🎉</span>}
+        title="Redemption Successful!"
+        icon={<MGift className="w-8 h-8 text-primary-600 mx-auto mb-2" />}
         description={redeemed
           ? `You redeemed "${redeemed.reward}" for ${redeemed.tokens} GTK. Your reward will be processed shortly.`
           : "Your reward will be processed shortly."}>

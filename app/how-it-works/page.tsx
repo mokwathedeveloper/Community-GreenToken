@@ -4,10 +4,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
-  UserPlus, Leaf, ShieldCheck, Coins, Gift,
-  Smartphone, Search, Link2, TrendingUp, ChevronRight,
-} from "lucide-react";
+  MPersonAdd, MLeaf, MShield, MCoin, MGift,
+  MSmartphone, MSearch, MLink, MChevronRight,
+} from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 
 export const metadata: Metadata = { title: "How It Works — Community GreenToken" };
@@ -15,7 +16,7 @@ export const metadata: Metadata = { title: "How It Works — Community GreenToke
 const STEPS = [
   {
     num: 1,
-    Icon: UserPlus,
+    Icon: MPersonAdd,
     iconBg: "bg-green-50",
     iconColor: "text-green-600",
     title: "Sign Up",
@@ -23,7 +24,7 @@ const STEPS = [
   },
   {
     num: 2,
-    Icon: Leaf,
+    Icon: MLeaf,
     iconBg: "bg-emerald-50",
     iconColor: "text-emerald-600",
     title: "Submit a Sustainable Action",
@@ -31,7 +32,7 @@ const STEPS = [
   },
   {
     num: 3,
-    Icon: ShieldCheck,
+    Icon: MShield,
     iconBg: "bg-blue-50",
     iconColor: "text-blue-600",
     title: "Verification",
@@ -39,7 +40,7 @@ const STEPS = [
   },
   {
     num: 4,
-    Icon: Coins,
+    Icon: MCoin,
     iconBg: "bg-amber-50",
     iconColor: "text-amber-600",
     title: "Earn GreenTokens",
@@ -47,7 +48,7 @@ const STEPS = [
   },
   {
     num: 5,
-    Icon: Gift,
+    Icon: MGift,
     iconBg: "bg-purple-50",
     iconColor: "text-purple-600",
     title: "Redeem or Donate",
@@ -56,11 +57,11 @@ const STEPS = [
 ];
 
 const LIFECYCLE = [
-  { Icon: Smartphone, label: "Submit a sustainable action on the app",   color: "text-green-600",  bg: "bg-green-50",   ring: "ring-green-200",   highlight: false },
-  { Icon: Search,     label: "Community & AI verify authenticity",        color: "text-blue-600",   bg: "bg-blue-50",    ring: "ring-blue-200",    highlight: false },
-  { Icon: Link2,      label: "Action recorded on Stellar blockchain",     color: "text-indigo-600", bg: "bg-indigo-50",  ring: "ring-indigo-200",  highlight: false },
-  { Icon: Coins,      label: "You earn GreenTokens to your wallet",       color: "text-white",      bg: "bg-primary-600",ring: "ring-primary-400", highlight: true  },
-  { Icon: Gift,       label: "Redeem rewards or donate to causes",        color: "text-purple-600", bg: "bg-purple-50",  ring: "ring-purple-200",  highlight: false },
+  { Icon: MSmartphone, label: "Submit a sustainable action on the app",   color: "text-green-600",  bg: "bg-green-50",   ring: "ring-green-200",   highlight: false },
+  { Icon: MSearch,     label: "Community & AI verify authenticity",        color: "text-blue-600",   bg: "bg-blue-50",    ring: "ring-blue-200",    highlight: false },
+  { Icon: MLink,       label: "Action recorded on Stellar blockchain",     color: "text-indigo-600", bg: "bg-indigo-50",  ring: "ring-indigo-200",  highlight: false },
+  { Icon: MCoin,       label: "You earn GreenTokens to your wallet",       color: "text-white",      bg: "bg-primary-600",ring: "ring-primary-400", highlight: true  },
+  { Icon: MGift,       label: "Redeem rewards or donate to causes",        color: "text-purple-600", bg: "bg-purple-50",  ring: "ring-purple-200",  highlight: false },
 ];
 
 const FAQ = [
@@ -151,7 +152,7 @@ export default function HowItWorksPage() {
 
                 {/* Icon in circle */}
                 <div className={`w-16 h-16 rounded-full ${step.iconBg} flex items-center justify-center mb-4 ring-1 ring-black/5 shadow-sm`}>
-                  <step.Icon className={`w-7 h-7 ${step.iconColor}`} strokeWidth={1.75} />
+                  <step.Icon className={`w-7 h-7 ${step.iconColor}`} />
                 </div>
 
                 <h3 className="text-sm font-bold text-gray-900 mb-2 leading-snug">{step.title}</h3>
@@ -184,7 +185,7 @@ export default function HowItWorksPage() {
                 {/* Node */}
                 <div className="flex flex-col items-center text-center w-36">
                   <div className={`${highlight ? "w-20 h-20 shadow-lg shadow-primary-200" : "w-16 h-16 shadow-sm"} rounded-full ${bg} flex items-center justify-center mb-3 ring-2 ${ring} transition-all`}>
-                    <Icon className={`${highlight ? "w-9 h-9" : "w-7 h-7"} ${color}`} strokeWidth={1.75} />
+                    <Icon className={`${highlight ? "w-9 h-9" : "w-7 h-7"} ${color}`} />
                   </div>
                   <p className={`text-xs font-medium leading-snug ${highlight ? "text-primary-700 font-bold" : "text-gray-700"}`}>{label}</p>
                 </div>

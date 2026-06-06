@@ -12,6 +12,7 @@ import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { MLeaf, MCheckCircle, MCoin, MStar, MContentCopy as MClipboard, MWarning, MInfo, MAttachFile, MLink } from "@/components/icons";
 
 const ACTION_TYPES = [
   "Recycling", "Tree Planting", "Carpooling", "Energy Saving",
@@ -130,7 +131,7 @@ export default function ActionSubmissionPage() {
 
       {/* ── Page heading ── */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 text-lg flex-shrink-0" aria-hidden="true">🌿</div>
+        <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center flex-shrink-0" aria-hidden="true"><MLeaf className="w-5 h-5 text-primary-600" /></div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Submit Action</h2>
           <p className="text-sm text-gray-500 mt-0.5">
@@ -143,7 +144,7 @@ export default function ActionSubmissionPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         {/* Actions Submitted */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-primary-50 flex items-center justify-center text-xl flex-shrink-0" aria-hidden="true">✅</div>
+          <div className="w-11 h-11 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0" aria-hidden="true"><MCheckCircle className="w-5 h-5 text-primary-600" /></div>
           <div>
             <p className={cn("text-2xl font-bold text-gray-900", statsLoading && "animate-pulse")}>
               {statsLoading ? "—" : actionsCount ?? 0}
@@ -157,7 +158,7 @@ export default function ActionSubmissionPage() {
 
         {/* Total Tokens */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center text-xl flex-shrink-0" aria-hidden="true">🪙</div>
+          <div className="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0" aria-hidden="true"><MCoin className="w-5 h-5 text-amber-500" /></div>
           <div>
             <p className={cn("text-2xl font-bold text-gray-900", statsLoading && "animate-pulse")}>
               {statsLoading ? "—" : (tokensEarned ?? 0).toLocaleString()}
@@ -169,7 +170,7 @@ export default function ActionSubmissionPage() {
 
         {/* Impact Points */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center text-xl flex-shrink-0" aria-hidden="true">⭐</div>
+          <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0" aria-hidden="true"><MStar className="w-5 h-5 text-amber-400" /></div>
           <div>
             <p className={cn("text-2xl font-bold text-gray-900", statsLoading && "animate-pulse")}>
               {statsLoading ? "—" : Math.floor((actionsCount ?? 0) * 1.5)}
@@ -188,7 +189,7 @@ export default function ActionSubmissionPage() {
 
           {/* Card header */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-primary-500 text-base" aria-hidden="true">📋</span>
+            <MClipboard className="w-4 h-4 text-primary-500" aria-hidden="true" />
             <h3 className="text-sm font-bold text-gray-900">Action Form</h3>
           </div>
           <p className="text-xs text-gray-400 mb-5">
@@ -198,7 +199,7 @@ export default function ActionSubmissionPage() {
           {/* Error banners */}
           {error && error.includes("session") && (
             <div role="alert" className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800">
-              <span aria-hidden="true">⚠️</span>
+              <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div>
                 <p className="font-semibold">Session expired</p>
                 <p className="text-xs mt-0.5">{error}</p>
@@ -208,7 +209,7 @@ export default function ActionSubmissionPage() {
           )}
           {error && !error.includes("session") && (
             <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">
-              <span aria-hidden="true">⚠</span>{error}
+              <MWarning className="w-4 h-4 flex-shrink-0" aria-hidden="true" />{error}
             </div>
           )}
 
@@ -288,7 +289,7 @@ export default function ActionSubmissionPage() {
 
             {/* Info note — matches mockup */}
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-              <span className="text-blue-400 text-sm mt-0.5" aria-hidden="true">ℹ️</span>
+              <MInfo className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <p className="text-xs text-blue-700 leading-relaxed">
                 Please ensure all details are accurate. Actions are verified before tokens are awarded.
               </p>
@@ -344,7 +345,7 @@ export default function ActionSubmissionPage() {
                 )}
                 {evidence && (
                   <div className="flex items-center gap-1.5 text-xs text-primary-600">
-                    <span>📎</span>
+                    <MAttachFile className="w-3.5 h-3.5" aria-hidden="true" />
                     <span className="truncate max-w-[160px]">{evidence.name}</span>
                   </div>
                 )}

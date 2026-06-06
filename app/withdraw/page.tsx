@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
+import { MCoin } from "@/components/icons";
 
 type Currency  = "KES" | "USD";
 type Method    = "mpesa" | "bank_transfer";
@@ -104,7 +105,7 @@ export default function WithdrawPage() {
       {/* ── Balance card ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center text-2xl flex-shrink-0">🪙</div>
+          <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0"><MCoin className="w-6 h-6 text-primary-600" /></div>
           <div>
             <p className={cn("text-2xl font-extrabold text-gray-900", loading && "animate-pulse")}>
               {loading ? "…" : (balance ?? 0).toLocaleString()}

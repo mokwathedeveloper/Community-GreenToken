@@ -8,6 +8,7 @@ import MiniLeaderboard from "@/components/dashboard/MiniLeaderboard";
 import DonationProgress from "@/components/dashboard/DonationProgress";
 import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
 import { useUser } from "@/hooks/useUser";
+import { MCoin, MCheckCircle, MHeart, MLeaf, MTrophy } from "@/components/icons";
 
 type LeaderEntry = { rank: number; name: string; handle: string; tokens: number };
 type DonationEntry = { id: string; name: string; status: "Ongoing" | "Completed"; raised: number; goal: number };
@@ -71,22 +72,22 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      icon: "🪙", iconBg: "bg-green-100", iconColor: "text-green-600",
+      icon: <MCoin className="w-6 h-6 text-green-600" />, iconBg: "bg-green-100", iconColor: "text-green-600",
       label: "Token Balance",  value: loading ? "—" : balance.toLocaleString(),
       change: "", changeType: "up" as const, sublabel: "GTK",
     },
     {
-      icon: "✅", iconBg: "bg-blue-100", iconColor: "text-blue-600",
+      icon: <MCheckCircle className="w-6 h-6 text-blue-600" />, iconBg: "bg-blue-100", iconColor: "text-blue-600",
       label: "Actions Verified", value: loading ? "—" : String(actions.verified),
       change: "", changeType: "up" as const, sublabel: `${actions.pending} pending`,
     },
     {
-      icon: "💝", iconBg: "bg-rose-100", iconColor: "text-rose-500",
+      icon: <MHeart className="w-6 h-6 text-rose-500" />, iconBg: "bg-rose-100", iconColor: "text-rose-500",
       label: "Total Earned",  value: loading ? "—" : totalEarned.toLocaleString(),
       change: "", changeType: "up" as const, sublabel: "GTK lifetime",
     },
     {
-      icon: "🌿", iconBg: "bg-teal-100", iconColor: "text-teal-600",
+      icon: <MLeaf className="w-6 h-6 text-teal-600" />, iconBg: "bg-teal-100", iconColor: "text-teal-600",
       label: "Your Rank",  value: loading ? "—" : (myRank ? `#${myRank}` : "—"),
       change: "", changeType: "up" as const, sublabel: "Community rank",
     },
@@ -96,7 +97,7 @@ export default function DashboardPage() {
     <AppLayout title="Dashboard" tokenBalance={BigInt(balance * 10_000_000)}>
       <div className="mb-5">
         <h2 className="text-2xl font-bold text-gray-900">
-          Welcome back, {userLoading ? "..." : (displayName ?? "GreenUser")}! 🌿
+          Welcome back, {userLoading ? "..." : (displayName ?? "GreenUser")}!
         </h2>
         <p className="text-sm text-gray-500 mt-0.5">
           Here&apos;s what&apos;s happening in your journey today.
@@ -118,7 +119,7 @@ export default function DashboardPage() {
 
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">❤️ Donation Progress</h3>
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><MHeart className="w-4 h-4 text-rose-500" aria-hidden="true" /> Donation Progress</h3>
           <Link href="/donations" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
             View All Projects →
           </Link>

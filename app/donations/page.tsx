@@ -10,16 +10,17 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { cn } from "@/lib/utils";
+import { MHeart, MCoin, MPeople, MLeaf, MTree, MRecycle, MWbSunny, MWaterDrop, MAttachMoney } from "@/components/icons";
 
 type StatusFilter = "All Projects" | "Ongoing" | "Completed" | "My Donations";
 
 const FILTERS: StatusFilter[] = ["All Projects", "Ongoing", "Completed", "My Donations"];
 
 const PROJECTS = [
-  { id: 1, name: "Tree Planting Initiative",    status: "Ongoing"   as const, raised: 80,  goal: 120, donors: 45,  desc: "Plant native trees in deforested areas across a 2km stretch. Every 10 GTK donations cover 1 tree.", image: "🌳" },
-  { id: 2, name: "Recycling Drive",             status: "Ongoing"   as const, raised: 62,  goal: 100, donors: 31,  desc: "Distribute recycling bins in schools and communities. Promoting recycling initiatives and reducing waste.", image: "♻️" },
-  { id: 3, name: "Solar for Schools Initiative",status: "Ongoing"   as const, raised: 45,  goal: 150, donors: 22,  desc: "Install solar panels on local schools, reducing energy bills and carbon footprint.", image: "☀️" },
-  { id: 4, name: "Clean Water Access",          status: "Completed" as const, raised: 120, goal: 120, donors: 68,  desc: "Provide clean drinking water access to rural communities through sustainable filtration systems.", image: "💧" },
+  { id: 1, name: "Tree Planting Initiative",    status: "Ongoing"   as const, raised: 80,  goal: 120, donors: 45,  desc: "Plant native trees in deforested areas across a 2km stretch. Every 10 GTK donations cover 1 tree.", Icon: MTree,      iconColor: "text-green-700"   },
+  { id: 2, name: "Recycling Drive",             status: "Ongoing"   as const, raised: 62,  goal: 100, donors: 31,  desc: "Distribute recycling bins in schools and communities. Promoting recycling initiatives and reducing waste.", Icon: MRecycle,   iconColor: "text-blue-600"    },
+  { id: 3, name: "Solar for Schools Initiative",status: "Ongoing"   as const, raised: 45,  goal: 150, donors: 22,  desc: "Install solar panels on local schools, reducing energy bills and carbon footprint.", Icon: MWbSunny,  iconColor: "text-amber-500"   },
+  { id: 4, name: "Clean Water Access",          status: "Completed" as const, raised: 120, goal: 120, donors: 68,  desc: "Provide clean drinking water access to rural communities through sustainable filtration systems.", Icon: MWaterDrop, iconColor: "text-sky-500"     },
 ];
 
 const MY_TOTAL = 3450;
@@ -61,20 +62,20 @@ export default function DonationsPage() {
   return (
     <AppLayout title="Donation Tracking">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">❤️ Donation Tracking</h2>
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><MHeart className="w-6 h-6 text-primary-600" /> Donation Tracking</h2>
         <p className="text-sm text-gray-500 mt-1">Track the impact of your donations and support meaningful green projects.</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total Donations",     value: "3,450",  icon: "💰" },
-          { label: "Total Tokens Donated",value: "3,450 GTK", icon: "🪙" },
-          { label: "Communities Impacted",value: "8",      icon: "👥" },
-          { label: "CO₂ Offset",          value: "2.45 t", icon: "🌿" },
-        ].map(({ label, value, icon }) => (
+        {([
+          { label: "Total Donations",     value: "3,450",     Icon: MAttachMoney, color: "text-green-600"   },
+          { label: "Total Tokens Donated",value: "3,450 GTK", Icon: MCoin,        color: "text-amber-500"   },
+          { label: "Communities Impacted",value: "8",         Icon: MPeople,      color: "text-blue-500"    },
+          { label: "CO₂ Offset",          value: "2.45 t",    Icon: MLeaf,        color: "text-primary-600" },
+        ] as const).map(({ label, value, Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-            <span className="text-xl" aria-hidden="true">{icon}</span>
+            <Icon className={`w-6 h-6 ${color}`} aria-hidden="true" />
             <div>
               <p className="text-base font-bold text-gray-900">{value}</p>
               <p className="text-xs text-gray-400">{label}</p>
@@ -108,8 +109,8 @@ export default function DonationsPage() {
       <div className="space-y-4">
         {filtered.map((p) => (
           <div key={p.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex gap-4 hover:shadow-md transition-shadow">
-            <div className="w-20 h-20 rounded-xl bg-primary-50 flex items-center justify-center text-4xl flex-shrink-0" aria-hidden="true">
-              {p.image}
+            <div className="w-20 h-20 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+              <p.Icon className={`w-10 h-10 ${p.iconColor}`} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-3 mb-1">
@@ -139,7 +140,7 @@ export default function DonationsPage() {
         ))}
       </div>
 
-      <p className="text-center text-xs text-primary-600 mt-6">🌿 Every donation matters. Thank you for your support!</p>
+      <p className="text-center text-xs text-primary-600 mt-6 flex items-center justify-center gap-1"><MLeaf className="w-3.5 h-3.5" /> Every donation matters. Thank you for your support!</p>
 
       {/* Donate modal */}
       {donatingProject && (
@@ -153,7 +154,7 @@ export default function DonationsPage() {
               className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500" />
             <div className="flex gap-2">
               <button onClick={() => setDonateModal(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">Cancel</button>
-              <Button variant="primary" size="md" fullWidth loading={donating} onClick={handleDonate} icon={<span>❤️</span>}>
+              <Button variant="primary" size="md" fullWidth loading={donating} onClick={handleDonate} icon={<MHeart className="w-4 h-4" />}>
                 Confirm Donation
               </Button>
             </div>

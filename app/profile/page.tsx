@@ -8,13 +8,14 @@ import { useToast } from "@/components/ui/Toast";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { MCrown, MBusiness, MShield, MLeaf, MLocationPin, MSave } from "@/components/icons";
 
 const ROLE_META = {
-  superadmin: { label: "Super Admin",  color: "bg-purple-100 text-purple-700 border-purple-200", icon: "👑" },
-  owner:      { label: "Org Owner",    color: "bg-amber-100  text-amber-700  border-amber-200",  icon: "🏢" },
-  admin:      { label: "Org Admin",    color: "bg-blue-100   text-blue-700   border-blue-200",   icon: "🛡️" },
-  member:     { label: "Member",       color: "bg-green-100  text-green-700  border-green-200",  icon: "🌿" },
-} as const;
+  superadmin: { label: "Super Admin",  color: "bg-purple-100 text-purple-700 border-purple-200", icon: <MCrown    className="w-3.5 h-3.5" /> },
+  owner:      { label: "Org Owner",    color: "bg-amber-100  text-amber-700  border-amber-200",  icon: <MBusiness className="w-3.5 h-3.5" /> },
+  admin:      { label: "Org Admin",    color: "bg-blue-100   text-blue-700   border-blue-200",   icon: <MShield   className="w-3.5 h-3.5" /> },
+  member:     { label: "Member",       color: "bg-green-100  text-green-700  border-green-200",  icon: <MLeaf     className="w-3.5 h-3.5" /> },
+};
 
 export default function ProfilePage() {
   const { user, role, orgName, displayName, avatarUrl, isLoading } = useUser();
@@ -59,7 +60,7 @@ export default function ProfilePage() {
           .eq("id", user.id);
       }
 
-      showToast("Profile updated successfully! ✅", "success");
+      showToast("Profile updated successfully!", "success");
     } catch {
       showToast("Could not save profile. Please try again.", "error");
     } finally {
@@ -76,7 +77,7 @@ export default function ProfilePage() {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password: newPwd });
       if (error) { showToast(error.message, "error"); return; }
-      showToast("Password changed successfully! 🔐", "success");
+      showToast("Password changed successfully!", "success");
       setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
       setChangingPwd(false);
     } catch {
@@ -138,7 +139,7 @@ export default function ProfilePage() {
                 )}
                 {orgName && (
                   <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-                    📍 {orgName}
+                    <MLocationPin className="w-3.5 h-3.5" aria-hidden="true" /> {orgName}
                   </span>
                 )}
               </div>
@@ -176,7 +177,7 @@ export default function ProfilePage() {
               onChange={(e) => setWallet(e.target.value)}
               hint="Connect your Stellar wallet to earn and redeem GTK tokens on-chain."
             />
-            <Button type="submit" variant="primary" size="md" loading={saving} icon={<span>💾</span>}>
+            <Button type="submit" variant="primary" size="md" loading={saving} icon={<MSave className="w-4 h-4" />}>
               Save Changes
             </Button>
           </form>

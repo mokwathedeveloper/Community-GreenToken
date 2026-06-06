@@ -6,10 +6,11 @@
 import { useEffect, useRef, useState, type ElementType } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { TrendingUp } from "lucide-react";
 import {
-  CheckCircle2, Coins, Users, Leaf, Heart,
-  TrendingUp, RefreshCw, ShieldCheck, BarChart3,
-} from "lucide-react";
+  MCheckCircle, MCoin, MPeople, MLeaf, MHeart,
+  MRecycle, MShield, MBarChart,
+} from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 
 // ── Count-up (respects prefers-reduced-motion) ────────────────────────────
@@ -130,11 +131,11 @@ const STATS: {
   Icon: ElementType; iconBg: string; iconColor: string;
   trend: string;
 }[] = [
-  { value: 2458721,  unit: "",    label: "Verified Actions",   Icon: CheckCircle2, iconBg: "bg-green-50",   iconColor: "text-green-600",  trend: "+12.5%" },
-  { value: 18734254, unit: "",    label: "GreenTokens Minted", Icon: Coins,        iconBg: "bg-amber-50",  iconColor: "text-amber-600",  trend: "+8.2%"  },
-  { value: 142389,   unit: "",    label: "Active Members",     Icon: Users,        iconBg: "bg-blue-50",   iconColor: "text-blue-600",   trend: "+5.7%"  },
-  { value: 7892450,  unit: " kg", label: "CO₂ Offset",         Icon: Leaf,         iconBg: "bg-primary-50",iconColor: "text-primary-600",trend: "+18.9%" },
-  { value: 3245769,  unit: "",    label: "Tokens Donated",     Icon: Heart,        iconBg: "bg-red-50",    iconColor: "text-red-500",    trend: "+23.1%" },
+  { value: 2458721,  unit: "",    label: "Verified Actions",   Icon: MCheckCircle, iconBg: "bg-green-50",   iconColor: "text-green-600",  trend: "+12.5%" },
+  { value: 18734254, unit: "",    label: "GreenTokens Minted", Icon: MCoin,        iconBg: "bg-amber-50",  iconColor: "text-amber-600",  trend: "+8.2%"  },
+  { value: 142389,   unit: "",    label: "Active Members",     Icon: MPeople,      iconBg: "bg-blue-50",   iconColor: "text-blue-600",   trend: "+5.7%"  },
+  { value: 7892450,  unit: " kg", label: "CO₂ Offset",         Icon: MLeaf,        iconBg: "bg-primary-50",iconColor: "text-primary-600",trend: "+18.9%" },
+  { value: 3245769,  unit: "",    label: "Tokens Donated",     Icon: MHeart,       iconBg: "bg-red-50",    iconColor: "text-red-500",    trend: "+23.1%" },
 ];
 
 const TOP_PROJECTS = [
@@ -147,10 +148,10 @@ const TOP_PROJECTS = [
 const HOW_STEPS: {
   Icon: ElementType; iconBg: string; iconColor: string; title: string; desc: string;
 }[] = [
-  { Icon: RefreshCw,   iconBg: "bg-green-50",   iconColor: "text-green-600",  title: "Take Sustainable Actions", desc: "Recycle, plant, carpool — every verified action counts toward community goals." },
-  { Icon: ShieldCheck, iconBg: "bg-blue-50",    iconColor: "text-blue-600",   title: "Get Verified & Earn GTK",  desc: "Your actions are verified on the Stellar blockchain and rewarded with GreenTokens." },
-  { Icon: Heart,       iconBg: "bg-red-50",     iconColor: "text-red-500",    title: "Donate & Fund Projects",   desc: "Allocate your tokens to real eco-projects with full on-chain proof of impact." },
-  { Icon: BarChart3,   iconBg: "bg-amber-50",   iconColor: "text-amber-600",  title: "Track Community Progress", desc: "Live metrics show community-wide impact and your personal contribution in real time." },
+  { Icon: MRecycle,    iconBg: "bg-green-50",   iconColor: "text-green-600",  title: "Take Sustainable Actions", desc: "Recycle, plant, carpool — every verified action counts toward community goals." },
+  { Icon: MShield,     iconBg: "bg-blue-50",    iconColor: "text-blue-600",   title: "Get Verified & Earn GTK",  desc: "Your actions are verified on the Stellar blockchain and rewarded with GreenTokens." },
+  { Icon: MHeart,      iconBg: "bg-red-50",     iconColor: "text-red-500",    title: "Donate & Fund Projects",   desc: "Allocate your tokens to real eco-projects with full on-chain proof of impact." },
+  { Icon: MBarChart,   iconBg: "bg-amber-50",   iconColor: "text-amber-600",  title: "Track Community Progress", desc: "Live metrics show community-wide impact and your personal contribution in real time." },
 ];
 
 // ── Stat card ──────────────────────────────────────────────────────────────
@@ -337,7 +338,7 @@ export default function ImpactPage() {
                   0{idx + 1}
                 </span>
                 <div className={`w-14 h-14 rounded-2xl ${iconBg} flex items-center justify-center mx-auto mb-4 shadow-sm ring-1 ring-black/5`}>
-                  <Icon className={`w-6 h-6 ${iconColor}`} strokeWidth={1.75} />
+                  <Icon className={`w-6 h-6 ${iconColor}`} />
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-2">{title}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>

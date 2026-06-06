@@ -5,12 +5,13 @@
 // Stellar flow: approve → POST /api/actions/verify → increment_token_balance RPC
 //               → after() fires ActionRegistry.verify_action() → GreenToken.mint() on Stellar
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload } from "@/components/icons";
 
 type ActionStatus = "pending" | "verified" | "rejected";
 
@@ -96,7 +97,7 @@ export default function AdminActionsPage() {
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            ⚡ Action Verification
+            <MBolt className="w-6 h-6 text-amber-500" aria-hidden="true" /> Action Verification
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
             Review and verify member eco-action submissions. Approved actions mint GTK tokens on Stellar.
@@ -104,14 +105,14 @@ export default function AdminActionsPage() {
         </div>
         {pendingCount > 0 && (
           <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl text-sm font-semibold text-amber-700">
-            🔔 {pendingCount} action{pendingCount > 1 ? "s" : ""} awaiting review
+            <MBolt className="w-4 h-4" aria-hidden="true" /> {pendingCount} action{pendingCount > 1 ? "s" : ""} awaiting review
           </span>
         )}
       </div>
 
       {/* ── Stellar blockchain info banner ── */}
       <div className="bg-primary-600 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5 text-white" aria-hidden="true">⛓️</div>
+        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5 text-white" aria-hidden="true"><MLink className="w-4 h-4" /></div>
         <div>
           <p className="text-sm font-bold text-white">Powered by Stellar Blockchain</p>
           <p className="text-xs text-white/80 mt-0.5 leading-relaxed">
@@ -148,7 +149,11 @@ export default function AdminActionsPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-4xl mb-3">{tab === "pending" ? "🎉" : "📋"}</p>
+            <div className="flex justify-center mb-3">
+            {tab === "pending"
+              ? <MCheckCircle className="w-12 h-12 text-primary-300" />
+              : <MBarChart className="w-12 h-12 text-gray-300" />}
+          </div>
             <p className="text-sm font-semibold text-gray-700">
               {tab === "pending" ? "All caught up! No pending actions." : `No ${tab} actions found.`}
             </p>
@@ -242,7 +247,7 @@ export default function AdminActionsPage() {
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 text-[10px] text-primary-600 hover:underline font-mono"
                               title="View on Stellar Explorer">
-                              ⛓️ {a.stellar_tx_hash.slice(0,8)}…
+                              <MLink className="w-2.5 h-2.5" aria-hidden="true" /> {a.stellar_tx_hash.slice(0,8)}…
                             </a>
                           )}
                         </div>
@@ -294,19 +299,19 @@ export default function AdminActionsPage() {
       {/* ── Stellar flow explanation ── */}
       <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-          ⛓️ How the Stellar Blockchain Verification Works
+          <MLink className="w-4 h-4 text-primary-600" aria-hidden="true" /> How the Stellar Blockchain Verification Works
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { step:"1", icon:"📤", title:"Member Submits",     desc:"Member fills action form, uploads evidence photo. SHA-256 hash is computed and sent to ActionRegistry.submit_action() on Stellar testnet." },
-            { step:"2", icon:"🔍", title:"Admin Reviews",      desc:"You see the submission in this queue with the evidence hash and description. You can edit the GTK token reward before approving." },
-            { step:"3", icon:"⛓️", title:"Blockchain Proof",  desc:"On approval, ActionRegistry.verify_action() is called. Cross-contract call triggers GreenToken.mint() — tokens minted to member's Stellar wallet." },
-            { step:"4", icon:"🪙", title:"Member Receives",    desc:"Member's GTK balance updates in DB (atomic RPC) and on-chain. Stellar tx_hash is stored as immutable proof visible to member." },
-          ].map(({step,icon,title,desc}) => (
+          {([
+            { step:"1", icon:<MUpload className="w-4 h-4 text-primary-600" />,  title:"Member Submits",  desc:"Member fills action form, uploads evidence photo. SHA-256 hash is computed and sent to ActionRegistry.submit_action() on Stellar testnet." },
+            { step:"2", icon:<MSearch className="w-4 h-4 text-blue-600" />,     title:"Admin Reviews",   desc:"You see the submission in this queue with the evidence hash and description. You can edit the GTK token reward before approving." },
+            { step:"3", icon:<MLink   className="w-4 h-4 text-primary-600" />,  title:"Blockchain Proof",desc:"On approval, ActionRegistry.verify_action() is called. Cross-contract call triggers GreenToken.mint() — tokens minted to member's Stellar wallet." },
+            { step:"4", icon:<MCoin   className="w-4 h-4 text-amber-500" />,    title:"Member Receives", desc:"Member's GTK balance updates in DB (atomic RPC) and on-chain. Stellar tx_hash is stored as immutable proof visible to member." },
+          ] as {step:string;icon:React.ReactNode;title:string;desc:string}[]).map(({step,icon,title,desc}) => (
             <div key={step} className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs flex-shrink-0 mt-0.5">{step}</div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">{icon} {title}</p>
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1">{icon}{title}</p>
                 <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{desc}</p>
               </div>
             </div>

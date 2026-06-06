@@ -4,32 +4,32 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Leaf, ShieldCheck, Users, Lightbulb } from "lucide-react";
+import { MLeaf, MShield, MPeople, MLightbulb } from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 
 export const metadata: Metadata = { title: "About Us — Community GreenToken" };
 
 const VALUES = [
   {
-    Icon: Leaf,
+    Icon: MLeaf,
     bg: "bg-emerald-500",
     title: "Sustainability",
     desc: "We promote eco-friendly actions and hold ourselves accountable to the planet we protect.",
   },
   {
-    Icon: ShieldCheck,
+    Icon: MShield,
     bg: "bg-green-500",
     title: "Transparency",
     desc: "All actions and rewards are verifiable on-chain — no hidden mechanics, no manipulation.",
   },
   {
-    Icon: Users,
+    Icon: MPeople,
     bg: "bg-teal-500",
     title: "Community Impact",
     desc: "We believe in collective action. Meaningful change only comes when communities work together.",
   },
   {
-    Icon: Lightbulb,
+    Icon: MLightbulb,
     bg: "bg-primary-500",
     title: "Innovation",
     desc: "We leverage technology and innovation to drive positive change and expand environmental goals.",
@@ -150,7 +150,7 @@ export default function AboutUsPage() {
               <div key={title}
                 className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-8 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
                 <div className={`w-16 h-16 rounded-full ${bg} flex items-center justify-center mx-auto mb-5 shadow-sm group-hover:scale-105 transition-transform`}>
-                  <Icon className="w-8 h-8 text-white" strokeWidth={1.75} aria-hidden="true" />
+                  <Icon className="w-8 h-8 text-white" aria-hidden="true" />
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-2">{title}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>

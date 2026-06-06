@@ -30,6 +30,7 @@ import PricingTable from "@/components/pricing/PricingTable";
 import SocialProof from "@/components/pricing/SocialProof";
 import ExitIntentPopup from "@/components/pricing/ExitIntentPopup";
 import { cn } from "@/lib/utils";
+import { MGift, MBusiness } from "@/components/icons";
 import {
   PLANS, ENTERPRISE_PLAN, COMPARISON_ROWS, FAQ_ITEMS, SOCIAL_PROOF_ORGS,
   annualSavings, monthlyFromAnnual,
@@ -94,7 +95,7 @@ export default function PricingPage() {
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-16 text-center">
           {/* 14-day trial banner */}
           <div className="inline-flex items-center gap-2 bg-primary-500/20 border border-primary-400/30 text-primary-200 text-xs font-semibold px-4 py-1.5 rounded-full mb-5">
-            🎁 14-day Pro trial — no credit card required
+            <MGift className="w-4 h-4" aria-hidden="true" /> 14-day Pro trial — no credit card required
           </div>
 
           <h1 id="pricing-hero-heading" className="text-5xl font-extrabold text-white mb-3 leading-tight">
@@ -217,7 +218,7 @@ export default function PricingPage() {
           >
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl" aria-hidden="true">🏢</span>
+                <MBusiness className="w-6 h-6 text-gray-500" aria-hidden="true" />
                 <h3 className="text-lg font-bold text-gray-900">ENTERPRISE</h3>
                 <span className="text-sm text-gray-400 font-medium">— Custom pricing</span>
               </div>

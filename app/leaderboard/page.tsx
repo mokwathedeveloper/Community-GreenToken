@@ -5,6 +5,7 @@ import Image from "next/image";
 import AppLayout from "@/components/layouts/AppLayout";
 import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { MTrophy, MCoin } from "@/components/icons";
 
 type Period = "all_time" | "monthly" | "weekly";
 
@@ -48,13 +49,14 @@ export default function LeaderboardPage() {
       .finally(() => setLoading(false));
   }, [period]);
 
-  const trophy = (rank: number) => rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
+  const trophy = (rank: number) =>
+    rank <= 3 ? <MTrophy className={cn("w-5 h-5", rank === 1 ? "text-yellow-400" : rank === 2 ? "text-gray-400" : "text-amber-600")} aria-hidden="true" /> : null;
 
   return (
     <AppLayout title="Leaderboard">
       <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">🏆 Leaderboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><MTrophy className="w-6 h-6 text-amber-500" aria-hidden="true" /> Leaderboard</h2>
           <p className="text-sm text-gray-500 mt-1">See how you rank among eco champions in the community.</p>
         </div>
         <div className="relative w-24 h-24 flex-shrink-0 hidden md:block">
@@ -141,11 +143,11 @@ export default function LeaderboardPage() {
                   <td className="px-5 py-3.5 font-medium text-gray-700">{u.totalEarned.toLocaleString()} GTK</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-primary-500" aria-hidden="true">🪙</span>
+                      <MCoin className="w-4 h-4 text-primary-500" aria-hidden="true" />
                       <span className="font-semibold text-gray-900">{u.balance.toLocaleString()}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-lg">{trophy(u.rank)}</td>
+                  <td className="px-5 py-3.5">{trophy(u.rank)}</td>
                 </tr>
               ))}
             </tbody>

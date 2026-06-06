@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { MCheckCircle, MWarning } from "@/components/icons";
 
 type Tab = "profile" | "token" | "contract" | "danger";
 
@@ -89,7 +90,7 @@ export default function OrgSettingsPage() {
     { key: "profile",  label: "Profile"   },
     { key: "token",    label: "Token"     },
     { key: "contract", label: "Contract"  },
-    { key: "danger",   label: "⚠ Danger" },
+    { key: "danger",   label: "Danger" },
   ];
 
   return (
@@ -132,7 +133,7 @@ export default function OrgSettingsPage() {
           <Input id="org-email" label="Contact Email" type="email" value={org.email}
             onChange={(e) => setOrg({ ...org, email: e.target.value })} />
           <Button type="submit" variant="primary" size="md" loading={saving}>
-            {saved ? "✅ Saved!" : "Save Profile"}
+            {saved ? <span className="flex items-center gap-1"><MCheckCircle className="w-4 h-4" /> Saved!</span> : "Save Profile"}
           </Button>
         </form>
       )}
@@ -179,7 +180,7 @@ export default function OrgSettingsPage() {
             </div>
           </div>
           <Button type="submit" variant="primary" size="md" loading={saving}>
-            {saved ? "✅ Saved!" : "Save Token Config"}
+            {saved ? <span className="flex items-center gap-1"><MCheckCircle className="w-4 h-4" /> Saved!</span> : "Save Token Config"}
           </Button>
         </form>
       )}
@@ -208,7 +209,7 @@ export default function OrgSettingsPage() {
       {/* ── Danger Zone ── */}
       {tab === "danger" && (
         <div className="border-2 border-red-200 rounded-xl p-6 bg-red-50 max-w-xl space-y-4">
-          <h3 className="text-red-700 font-semibold text-lg">⚠️ Danger Zone</h3>
+          <h3 className="text-red-700 font-semibold text-lg flex items-center gap-1.5"><MWarning className="w-5 h-5" aria-hidden="true" /> Danger Zone</h3>
           <p className="text-red-600 text-sm leading-relaxed">
             Deleting your organization <strong>permanently removes all members, tokens, and data</strong>.
             This action cannot be undone. All on-chain records remain on Stellar.

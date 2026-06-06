@@ -3,9 +3,10 @@
 // Spec: ux_ui/feature_specv2/analytics_metrics_page_md.md
 // Mockup: mockup/analytics_metrics_page_mockup.png
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import Link from "next/link";
+import { MCoin, MHeart, MCheckCircle, MTree, MAir, MWaterDrop, MRecycle, MBusiness, MLock, MBarChart } from "@/components/icons";
 
 type OverviewData = {
   totalActions: number; verifiedActions: number; pendingActions: number;
@@ -108,7 +109,7 @@ export default function AnalyticsPage() {
     return (
       <AppLayout title="Analytics">
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="text-6xl mb-4">🏢</div>
+          <div className="flex justify-center mb-4"><MBusiness className="w-16 h-16 text-gray-300" /></div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Set up your organization first</h2>
           <p className="text-gray-500 text-sm mb-6">You need to complete org setup before you can view analytics.</p>
           <Link href="/org/setup" className="px-7 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors">
@@ -124,7 +125,7 @@ export default function AnalyticsPage() {
     return (
       <AppLayout title="Analytics">
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="text-6xl mb-4">🔒</div>
+          <div className="flex justify-center mb-4"><MLock className="w-16 h-16 text-gray-300" /></div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Analytics requires Starter+</h2>
           <p className="text-gray-500 text-sm mb-6">Upgrade to access detailed analytics and impact metrics.</p>
           <Link href="/pricing" className="px-7 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors">
@@ -141,9 +142,9 @@ export default function AnalyticsPage() {
   const donations = overview?.tokensDonated   ?? 0;
   const actions   = overview?.totalActions    ?? 0;
 
-  const STAT_CARDS = [
+  const STAT_CARDS: { icon: ReactNode; bg: string; iconClr: string; value: string; label: string; change: string; subtitle: string }[] = [
     {
-      icon:     "🪙",
+      icon:     <MCoin className="w-6 h-6 text-primary-600" />,
       bg:       "bg-primary-50",
       iconClr:  "text-primary-600",
       value:    loading ? "—" : tokens.toLocaleString(),
@@ -152,7 +153,7 @@ export default function AnalyticsPage() {
       subtitle: "GTK distributed by the community",
     },
     {
-      icon:     "❤️",
+      icon:     <MHeart className="w-6 h-6 text-red-500" />,
       bg:       "bg-red-50",
       iconClr:  "text-red-500",
       value:    loading ? "—" : donations.toLocaleString(),
@@ -161,7 +162,7 @@ export default function AnalyticsPage() {
       subtitle: `Donations made (${actions})`,
     },
     {
-      icon:     "✅",
+      icon:     <MCheckCircle className="w-6 h-6 text-blue-600" />,
       bg:       "bg-blue-50",
       iconClr:  "text-blue-600",
       value:    loading ? "—" : actions.toLocaleString(),
@@ -201,11 +202,11 @@ export default function AnalyticsPage() {
        {label:"Other",pct:5,count:0,color:"#d1d5db"}];
 
   /* ── Impact summary — estimates from verified actions ── */
-  const IMPACT = [
-    { icon:"🌳", value: verified>0 ? verified.toLocaleString()              : "2,450",    label:"Trees Planted",    unit:"" },
-    { icon:"💨", value: verified>0 ? `${(verified*5/1000).toFixed(1)}`      : "12.8",     label:"CO₂ Avoided",      unit:"t" },
-    { icon:"💧", value: verified>0 ? `${(verified*50).toLocaleString()}`    : "18,600",   label:"Water Saved",      unit:"L" },
-    { icon:"♻️", value: verified>0 ? `${(verified*2).toLocaleString()}`     : "3,250",    label:"Waste Collected",  unit:"kg"},
+  const IMPACT: { icon: ReactNode; value: string; label: string; unit: string }[] = [
+    { icon:<MTree      className="w-8 h-8 text-primary-600" />, value: verified>0 ? verified.toLocaleString()              : "2,450",  label:"Trees Planted",   unit:""   },
+    { icon:<MAir       className="w-8 h-8 text-blue-500" />,    value: verified>0 ? `${(verified*5/1000).toFixed(1)}`      : "12.8",   label:"CO₂ Avoided",     unit:"t"  },
+    { icon:<MWaterDrop className="w-8 h-8 text-cyan-500" />,    value: verified>0 ? `${(verified*50).toLocaleString()}`    : "18,600", label:"Water Saved",      unit:"L"  },
+    { icon:<MRecycle   className="w-8 h-8 text-primary-500" />, value: verified>0 ? `${(verified*2).toLocaleString()}`     : "3,250",  label:"Waste Collected",  unit:"kg" },
   ];
 
   return (
@@ -234,8 +235,8 @@ export default function AnalyticsPage() {
         {STAT_CARDS.map(({icon,bg,iconClr,value,label,change,subtitle})=>(
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             {/* Icon box */}
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 text-xl ${bg}`} aria-hidden="true">
-              <span className={iconClr}>{icon}</span>
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${bg}`} aria-hidden="true">
+              {icon}
             </div>
             {/* Value + label */}
             <p className={`text-3xl font-extrabold text-gray-900 ${loading&&"animate-pulse"}`}>{value}</p>
@@ -311,8 +312,8 @@ export default function AnalyticsPage() {
             </svg>
           </div>
 
-          <p className="text-xs text-gray-400 mt-2">
-            📊 Community data shows steady growth, continuing to increase our positive environmental impact.
+          <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+            <MBarChart className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" /> Community data shows steady growth, continuing to increase our positive environmental impact.
           </p>
         </div>
 
@@ -353,7 +354,7 @@ export default function AnalyticsPage() {
           {IMPACT.map(({icon,value,label,unit})=>(
             <div key={label} className="text-center">
               {/* Large icon circle — matches mockup */}
-              <div className="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center text-3xl mx-auto mb-3" aria-hidden="true">
+              <div className="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-3" aria-hidden="true">
                 {icon}
               </div>
               <p className="text-2xl font-extrabold text-gray-900">

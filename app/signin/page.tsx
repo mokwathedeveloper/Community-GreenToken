@@ -12,11 +12,12 @@ import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
+import { MLeaf, MPeople, MLock, MLink } from "@/components/icons";
 
 const TRUST_BADGES = [
-  { icon: "🌿", title: "Sustainable Impact",    desc: "Every action builds a greener tomorrow"   },
-  { icon: "👥", title: "Community Powered",     desc: "Together we build stronger communities"   },
-  { icon: "🔒", title: "Secure & Transparent",  desc: "Your data stays yours, always"            },
+  { Icon: MLeaf,   title: "Sustainable Impact",   desc: "Every action builds a greener tomorrow"  },
+  { Icon: MPeople, title: "Community Powered",    desc: "Together we build stronger communities"  },
+  { Icon: MLock,   title: "Secure & Transparent", desc: "Your data stays yours, always"           },
 ];
 
 function friendlyError(msg: string): string {
@@ -155,12 +156,12 @@ export default function SignInPage() {
                   onClick={() => setShowPwd(p => !p)}
                   aria-label={showPwd ? "Hide password" : "Show password"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-                  {showPwd ? "🙈" : "👁"}
+                  {showPwd ? "●" : "○"}
                 </button>
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<span>🌿</span>}>
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<MLeaf className="w-4 h-4" />}>
               Sign In
             </Button>
           </form>
@@ -182,7 +183,7 @@ export default function SignInPage() {
               "text-sm font-semibold text-primary-700 rounded-xl hover:bg-primary-50 transition-colors",
               "focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             )}>
-            🔗 Connect Wallet
+            <MLink className="w-4 h-4" /> Connect Wallet
           </button>
 
           {/* Social logins */}
@@ -219,12 +220,12 @@ export default function SignInPage() {
         {/* ── Trust badges — dark text + frosted pill background for visibility ── */}
         {/* Hero bottom is very light so white text would be invisible — use dark text */}
         <div className="relative z-10 mt-6 w-full max-w-md grid grid-cols-3 gap-3 px-2">
-          {TRUST_BADGES.map(({ icon, title, desc }) => (
+          {TRUST_BADGES.map(({ Icon, title, desc }) => (
             <div
               key={title}
               className="flex flex-col items-center text-center bg-white/75 backdrop-blur-sm rounded-2xl px-3 py-3 shadow-sm border border-white/60"
             >
-              <div className="text-2xl mb-1.5" aria-hidden="true">{icon}</div>
+              <Icon className="w-6 h-6 text-primary-600 mb-1.5" />
               <p className="text-xs font-bold text-gray-800 leading-tight">{title}</p>
               <p className="text-[11px] text-gray-500 mt-1 leading-snug">{desc}</p>
             </div>

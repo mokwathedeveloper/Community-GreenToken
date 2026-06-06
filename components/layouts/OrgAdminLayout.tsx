@@ -11,15 +11,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import UserMenu from "@/components/ui/UserMenu";
 import { useUser } from "@/hooks/useUser";
-import {
-  Squares2X2Icon,
-  UsersIcon,
-  BoltIcon,
-  ChartBarIcon,
-  CreditCardIcon,
-  BuildingOfficeIcon,
-  UserPlusIcon,
-} from "@heroicons/react/24/outline";
+import { MDashboard, MPeople, MBolt, MBarChart, MCreditCard, MBusiness, MPersonAdd } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import NetworkBadge from "@/components/stellar/NetworkBadge";
 
@@ -27,12 +19,12 @@ import NetworkBadge from "@/components/stellar/NetworkBadge";
 // Those live in the member Sidebar (Sidebar.tsx).
 // ownerOnly: true → only org owner and superadmin can see
 const ORG_NAV = [
-  { label: "Overview",              href: "/org/admin",          Icon: Squares2X2Icon,    ownerOnly: false },
-  { label: "Members",               href: "/org/admin/members",  Icon: UsersIcon,         ownerOnly: false },
-  { label: "Verify Actions",        href: "/org/admin/actions",  Icon: BoltIcon,          ownerOnly: false },
-  { label: "Analytics",             href: "/analytics",          Icon: ChartBarIcon,      ownerOnly: false },
-  { label: "Billing",               href: "/org/admin/billing",  Icon: CreditCardIcon,    ownerOnly: true  },
-  { label: "Organization Settings", href: "/org/admin/settings", Icon: BuildingOfficeIcon,ownerOnly: false },
+  { label: "Overview",              href: "/org/admin",          Icon: MDashboard,  ownerOnly: false },
+  { label: "Members",               href: "/org/admin/members",  Icon: MPeople,     ownerOnly: false },
+  { label: "Verify Actions",        href: "/org/admin/actions",  Icon: MBolt,       ownerOnly: false },
+  { label: "Analytics",             href: "/analytics",          Icon: MBarChart,   ownerOnly: false },
+  { label: "Billing",               href: "/org/admin/billing",  Icon: MCreditCard, ownerOnly: true  },
+  { label: "Organization Settings", href: "/org/admin/settings", Icon: MBusiness,   ownerOnly: false },
 ];
 
 interface OrgAdminLayoutProps {
@@ -99,7 +91,7 @@ export default function OrgAdminLayout({
             href="/org/admin/members"
             className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
           >
-            <UserPlusIcon className="w-3.5 h-3.5" aria-hidden="true" />
+            <MPersonAdd className="w-3.5 h-3.5" aria-hidden="true" />
             + Invite Member
           </Link>
         </div>
