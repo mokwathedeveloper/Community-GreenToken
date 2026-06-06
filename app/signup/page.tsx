@@ -137,44 +137,45 @@ function SignUpPage() {
   return (
     <>
       {toastNode}
-      <div className="flex min-h-screen">
+      {/*
+        ── LAYOUT (borrowed from signin approach) ──────────────────────────
+        Hero image fills the full screen as background (object-cover, left-
+        anchored so all 5 people stay visible). A gradient darkens the left
+        half for text legibility and fades to transparent on the right.
+        The form lives in a floating white card (rounded-2xl shadow-2xl) on
+        the right — same card pattern as the signin page.
+        ────────────────────────────────────────────────────────────────────
+      */}
+      <div className="relative min-h-screen flex items-center">
 
-        {/* ── LEFT: Hero (55%) — image + text overlay ── */}
-        {/*
-          WHY object-contain:
-          The hero image is 1942×809 (very wide). With object-cover on a tall
-          panel the image scales to ~2160px wide but only 770px is visible —
-          only 3 of the 5 people show. object-contain + bg-[#0d1f0a] (dark
-          forest matching the image edges) reveals all 5 people with no
-          visible bars because the background blends with the dark image.
-        */}
-        <div className="hidden lg:flex lg:w-[55%] relative flex-col bg-[#0d1f0a]">
-          <Image
-            src="/assets/image/pages/auth/signup_hero.png"
-            alt="Family of five planting a tree together"
-            fill
-            className="object-contain object-center"
-            priority
-            sizes="55vw"
-          />
-          {/* Bottom gradient for text readability over the image */}
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent" aria-hidden="true" />
+        {/* ── Full-screen hero background ── */}
+        <Image
+          src="/assets/image/pages/auth/signup_hero.png"
+          alt="Family of five planting a tree together"
+          fill
+          className="object-cover"
+          style={{ objectPosition: "left center" }}
+          priority
+          sizes="100vw"
+        />
 
-          {/* Bottom-left text overlay — matches mockup */}
-          <div className="absolute bottom-0 left-0 right-0 px-10 pb-10">
+        {/* Gradient: strong on left for text, fades out before the card */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" aria-hidden="true" />
+
+        {/* ── LEFT: hero text overlay ── */}
+        <div className="hidden lg:flex flex-1 relative z-10 flex-col justify-end self-stretch pb-16 pl-12 pr-6">
+          <div className="mt-auto">
             <h2 className="text-4xl font-extrabold text-white leading-tight mb-3">
               Grow a greener<br />future, together.
             </h2>
-            <p className="text-white/80 text-sm mb-6">
-              Join a community that plants today and prospers tomorrow.
+            <p className="text-white/80 text-sm mb-8">
+              Join a community that plants today<br />and prospers tomorrow.
             </p>
-
-            {/* Hero trust badges */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: "🌱", title: "Eco Impact",          desc: "Every action creates a lasting impact"          },
-                { icon: "👥", title: "Community First",     desc: "Together we build a sustainable world"          },
-                { icon: "🔗", title: "Transparent & Secure",desc: "Blockchain-powered trust and accountability"    },
+                { icon: "🌱", title: "Eco Impact",           desc: "Every action creates a lasting impact"       },
+                { icon: "👥", title: "Community First",      desc: "Together we build a sustainable world"       },
+                { icon: "🔗", title: "Transparent & Secure", desc: "Blockchain-powered trust and accountability" },
               ].map(({ icon, title, desc }) => (
                 <div key={title} className="flex items-start gap-2">
                   <span className="text-white/80 flex-shrink-0 text-sm mt-0.5" aria-hidden="true">{icon}</span>
@@ -188,9 +189,10 @@ function SignUpPage() {
           </div>
         </div>
 
-        {/* ── RIGHT: Form panel (45%) ── */}
-        <div className="w-full lg:w-[45%] flex flex-col items-center bg-white px-6 overflow-y-auto min-h-screen">
-          <div className="w-full max-w-sm my-auto py-7">
+        {/* ── RIGHT: floating white card (same pattern as signin) ── */}
+        <div className="relative z-10 w-full lg:w-auto flex items-center justify-center p-4 lg:p-8 lg:pr-12">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl px-8 py-7 overflow-y-auto"
+               style={{ maxHeight: "calc(100svh - 2rem)" }}>
 
             {/* Logo */}
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -380,6 +382,7 @@ function SignUpPage() {
 
           </div>
         </div>
+
       </div>
     </>
   );
