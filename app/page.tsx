@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Leaf } from "lucide-react";
+import { MLeaf, MTrophy, MBolt } from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 import HeroSection from "@/components/landing/HeroSection";
 import StatsRow from "@/components/landing/StatsRow";
@@ -53,14 +53,16 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 justify-center lg:justify-start">
               <Link
                 href="/signup"
-                className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shadow-md text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shadow-md text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
               >
+                <MLeaf className="w-4 h-4" aria-hidden="true" />
                 Get Started
               </Link>
               <Link
                 href="/leaderboard"
-                className="px-8 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl border border-white/30 transition-colors backdrop-blur-sm text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl border border-white/30 transition-colors backdrop-blur-sm text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
               >
+                <MTrophy className="w-4 h-4" aria-hidden="true" />
                 Explore Leaderboard
               </Link>
             </div>
@@ -68,7 +70,7 @@ export default function LandingPage() {
 
           {/* Decorative GreenToken emblem — visible in mockup on right */}
           <div aria-hidden="true" className="hidden lg:flex flex-shrink-0 w-44 h-44 rounded-full bg-primary-600/80 border-4 border-primary-400/60 shadow-2xl items-center justify-center backdrop-blur-sm">
-            <Leaf className="w-20 h-20 text-white drop-shadow-lg" strokeWidth={1.5} />
+            <MLeaf className="w-20 h-20 text-white drop-shadow-lg" aria-hidden="true" />
           </div>
         </div>
       </section>

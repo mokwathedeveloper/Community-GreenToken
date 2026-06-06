@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MLink, MScale, MPeople } from "@/components/icons";
+import { MLink, MScale, MPeople, MLeaf, MLightbulb } from "@/components/icons";
 
 // Spec: landing_page_md.md — HeroCard section
 // Mockup: mockup/landing_page_mockup.png
@@ -41,12 +41,14 @@ export default function HeroSection() {
                 href="/signup"
                 className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
+                <MLeaf className="w-5 h-5" aria-hidden="true" />
                 Start Earning Tokens
               </Link>
               <Link
                 href="/how-it-works"
                 className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-primary-600 border-2 border-primary-500 hover:bg-primary-50 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
+                <MLightbulb className="w-5 h-5" aria-hidden="true" />
                 Watch How It Works
               </Link>
             </div>

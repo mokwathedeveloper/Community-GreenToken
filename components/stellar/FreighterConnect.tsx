@@ -8,6 +8,7 @@ import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { shortenKey, FREIGHTER_INSTALL_URL } from "@/lib/stellar/freighter";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
+import { MLink, MLeaf } from "@/components/icons";
 
 interface FreighterConnectProps {
   className?: string;
@@ -37,7 +38,7 @@ export default function FreighterConnect({
         )}
         aria-label="Install Freighter Stellar wallet (opens in new tab)"
       >
-        <span aria-hidden="true">🔗</span>
+        <MLink className="w-4 h-4" aria-hidden="true" />
         Install Freighter
         <span className="text-xs opacity-60" aria-hidden="true">↗</span>
       </a>
@@ -53,7 +54,7 @@ export default function FreighterConnect({
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 rounded-full border border-primary-100"
             title={wallet.publicKey}
           >
-            <span className="text-xs" aria-hidden="true">🌿</span>
+            <MLeaf className="w-3 h-3 text-primary-600" aria-hidden="true" />
             <span className="text-xs font-mono font-semibold text-primary-700">
               {shortenKey(wallet.publicKey)}
             </span>
@@ -81,7 +82,7 @@ export default function FreighterConnect({
         size={size}
         loading={isLoading}
         onClick={connect}
-        icon={<span aria-hidden="true">🔗</span>}
+        icon={<MLink className="w-4 h-4" aria-hidden="true" />}
         aria-label="Connect Freighter Stellar wallet"
       >
         Connect Wallet

@@ -14,9 +14,10 @@ import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import {
-  User, Mail, Lock, Tag, Eye, EyeOff, Wallet, Leaf, Globe, Github,
+  User, Mail, Lock, Tag, Eye, EyeOff, Wallet, Globe, Github,
   Users, ShieldCheck,
 } from "lucide-react";
+import { MLeaf } from "@/components/icons";
 
 function GoogleIcon() {
   return (
@@ -185,7 +186,7 @@ function SignUpPage() {
             <div className="grid grid-cols-3 gap-3">
               {[
                 {
-                  icon: <Leaf className="w-5 h-5 text-primary-600" />,
+                  icon: <MLeaf className="w-5 h-5 text-primary-600" />,
                   title: "Eco Impact",
                   desc:  "Every action creates a lasting impact",
                 },
@@ -233,7 +234,7 @@ function SignUpPage() {
             {/* Invite banner */}
             {inviteToken && orgName && (
               <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-2.5 text-center text-sm text-primary-700 font-medium mb-3">
-                <Leaf className="inline w-3.5 h-3.5 mr-1" />
+                <MLeaf className="inline w-3.5 h-3.5 mr-1" />
                 You&apos;re joining <strong>{orgName}</strong>
               </div>
             )}
@@ -346,7 +347,7 @@ function SignUpPage() {
 
               <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}
                 disabled={!agree || (selectedRole === "superadmin" && !!superAdminExists)}
-                icon={<Leaf className="w-4 h-4" />}>
+                icon={<MLeaf className="w-4 h-4" />}>
                 {inviteToken ? "Join Organization" : selectedRole === "superadmin" ? "Create Super Admin" : "Create Account"}
               </Button>
             </form>
@@ -388,7 +389,7 @@ function SignUpPage() {
             {/* Bottom trust badges — coloured pill outlines */}
             <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border border-primary-300 bg-primary-50 text-primary-700">
-                <Leaf className="w-3 h-3" aria-hidden="true" /> Eco-Focused
+                <MLeaf className="w-3 h-3" aria-hidden="true" /> Eco-Focused
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border border-slate-300 bg-slate-50 text-slate-600">
                 <Lock className="w-3 h-3" aria-hidden="true" /> Secure &amp; Private

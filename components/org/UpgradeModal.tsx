@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import { MLock } from "@/components/icons";
 // Note: 'View Plans' uses a styled <Link> directly since Button doesn't implement asChild pattern
 
 // Spec: TEAM_TASK_ASSIGNMENT.md — Tumusando Phase 1.7
@@ -25,7 +26,7 @@ export default function UpgradeModal({ feature, requiredPlan, onClose }: Upgrade
           ? `${feature} is available on the ${requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)} plan and above.`
           : `Upgrade your plan to access ${feature}.`
       }
-      icon={<span aria-hidden="true">🔒</span>}
+      icon={<MLock className="w-5 h-5 text-primary-600" aria-hidden="true" />}
     >
       <div className="flex flex-col gap-3 mt-2">
         <Link

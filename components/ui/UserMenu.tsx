@@ -15,14 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  ChevronDownIcon,
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon,
-  UserCircleIcon,
-  BuildingOfficeIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
+import { MExpandMore, MLogout, MSettings, MAccountCircle, MBusiness, MShield, MCrown, MLeaf, MLocationPin } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { AppRole } from "@/hooks/useUser";
@@ -123,7 +116,7 @@ export default function UserMenu({
         <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-[100px] truncate">
           {displayName ?? "User"}
         </span>
-        <ChevronDownIcon
+        <MExpandMore
           className={cn("w-4 h-4 text-gray-400 hidden sm:block transition-transform duration-200", open && "rotate-180")}
           aria-hidden="true"
         />
@@ -157,35 +150,36 @@ export default function UserMenu({
             {/* Role badge */}
             {roleMeta && (
               <span className={cn("inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border", roleMeta.classes)}>
-                <span aria-hidden="true">
-                  {role === "superadmin" ? "👑" :
-                   role === "owner"      ? "🏢" :
-                   role === "admin"      ? "🛡️" : "🌿"}
-                </span>
+                {role === "superadmin" ? <MCrown className="w-3 h-3" aria-hidden="true" /> :
+                 role === "owner"      ? <MBusiness className="w-3 h-3" aria-hidden="true" /> :
+                 role === "admin"      ? <MShield className="w-3 h-3" aria-hidden="true" /> :
+                                        <MLeaf className="w-3 h-3" aria-hidden="true" />}
                 {roleMeta.label}
               </span>
             )}
             {orgName && (
-              <p className="text-xs text-gray-400 mt-1 truncate">📍 {orgName}</p>
+              <p className="text-xs text-gray-400 mt-1 truncate flex items-center gap-1">
+                <MLocationPin className="w-3 h-3 flex-shrink-0" aria-hidden="true" />{orgName}
+              </p>
             )}
           </div>
 
           {/* Nav links */}
           <div className="py-1">
-            <MenuItem icon={<UserCircleIcon className="w-4 h-4" />} label="My Profile"
+            <MenuItem icon={<MAccountCircle className="w-4 h-4" />} label="My Profile"
               href="/profile" onClick={() => setOpen(false)} />
-            <MenuItem icon={<Cog6ToothIcon className="w-4 h-4" />} label="Settings"
+            <MenuItem icon={<MSettings className="w-4 h-4" />} label="Settings"
               href="/org/admin/settings" onClick={() => setOpen(false)} />
 
             {/* Org admin link */}
             {isOrgAdmin && (
-              <MenuItem icon={<BuildingOfficeIcon className="w-4 h-4" />} label="Admin Dashboard"
+              <MenuItem icon={<MBusiness className="w-4 h-4" />} label="Admin Dashboard"
                 href="/org/admin" onClick={() => setOpen(false)} />
             )}
 
             {/* Super admin link */}
             {isSuperAdmin && (
-              <MenuItem icon={<ShieldCheckIcon className="w-4 h-4" />} label="Platform Admin"
+              <MenuItem icon={<MShield className="w-4 h-4" />} label="Platform Admin"
                 href="/admin" onClick={() => setOpen(false)}
                 className="text-purple-700" />
             )}
@@ -214,7 +208,7 @@ export default function UserMenu({
                 "disabled:opacity-60 disabled:cursor-wait"
               )}
             >
-              <ArrowRightOnRectangleIcon className="w-4 h-4" aria-hidden="true" />
+              <MLogout className="w-4 h-4" aria-hidden="true" />
               {loggingOut ? "Signing out…" : "Sign Out"}
             </button>
           </div>
