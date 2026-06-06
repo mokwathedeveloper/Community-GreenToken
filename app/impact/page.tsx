@@ -316,27 +316,36 @@ export default function ImpactPage() {
       </section>
 
       {/* ── BE PART OF THE CHANGE ─────────────────────────────────────────── */}
-      <section className="relative py-16 bg-primary-900 overflow-hidden text-center">
-        <div className="absolute inset-0 opacity-10" aria-hidden="true">
-          <Image src="/assets/image/pages/impact/impact_hero.png" alt="" fill
-            className="object-cover" sizes="100vw" />
-        </div>
+      <section className="relative py-20 overflow-hidden text-center">
+        {/* banner.png as full background */}
+        <Image
+          src="/assets/image/banner.png"
+          alt="Lush green forest with sprouting plant and GreenToken coin"
+          fill
+          className="object-cover"
+          sizes="100vw"
+        />
+        {/* light white overlay so text is readable over bright bg */}
+        <div className="absolute inset-0 bg-white/50" aria-hidden="true" />
+
         <div className="relative z-10 max-w-2xl mx-auto px-6">
-          <div className="w-14 h-14 rounded-full bg-primary-700 flex items-center justify-center mx-auto mb-4 text-2xl">
+          <div className="w-14 h-14 rounded-full bg-primary-600/90 flex items-center justify-center mx-auto mb-4 text-2xl shadow-md">
             🌿
           </div>
-          <h2 className="text-3xl font-extrabold text-white mb-3">Be Part of the Change</h2>
-          <p className="text-white/70 text-sm mb-8 leading-relaxed max-w-md mx-auto">
+          <h2 className="text-3xl font-extrabold text-primary-900 mb-3 drop-shadow-sm">
+            Be Part of the Change
+          </h2>
+          <p className="text-primary-800/80 text-sm mb-8 leading-relaxed max-w-md mx-auto">
             Join thousands proving that small actions build a sustainable world. Every token earned is a vote for a greener future.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/signup"
-              className="px-8 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none">
+              className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shadow-md focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
               Get Started Free
             </Link>
             <button type="button"
               onClick={() => navigator.share?.({ title: "Community GreenToken — Be Part of the Change", url: location.href })}
-              className="px-8 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl border border-white/30 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none">
+              className="px-8 py-3 bg-white/80 hover:bg-white text-primary-800 font-semibold rounded-xl border border-primary-300 transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
               Share on Twitter
             </button>
           </div>
