@@ -13,6 +13,20 @@ import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
+import {
+  User, Mail, Lock, Tag, Eye, EyeOff, Wallet, Leaf, Globe, Github,
+} from "lucide-react";
+
+function GoogleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
 
 type SignupRole = "admin" | "superadmin";
 type PasswordStrength = 0 | 1 | 2 | 3 | 4;
@@ -175,11 +189,11 @@ function SignUpPage() {
         </div>
 
         {/* ── RIGHT: Form panel (45%) ── */}
-        <div className="w-full lg:w-[45%] flex flex-col items-center justify-center bg-white px-6 py-8 overflow-y-auto">
-          <div className="w-full max-w-sm">
+        <div className="w-full lg:w-[45%] flex flex-col items-center bg-white px-6 overflow-y-auto min-h-screen">
+          <div className="w-full max-w-sm my-auto py-7">
 
             {/* Logo */}
-            <div className="flex items-center justify-center gap-2 mb-5">
+            <div className="flex items-center justify-center gap-2 mb-4">
               <div className="relative w-9 h-9 flex-shrink-0">
                 <Image src="/branding/community-greentoken-logo.png" alt="Community GreenToken" fill className="object-contain" sizes="36px" />
               </div>
@@ -189,120 +203,108 @@ function SignUpPage() {
             </div>
 
             <h1 className="text-2xl font-extrabold text-gray-900 text-center mb-1">Create your account</h1>
-            <p className="text-xs text-gray-500 text-center mb-5">
+            <p className="text-xs text-gray-500 text-center mb-4">
               Join a global community building a sustainable and regenerative future.
             </p>
 
             {/* Invite banner */}
             {inviteToken && orgName && (
-              <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 text-center text-sm text-primary-700 font-medium mb-4">
-                🌿 You&apos;re joining <strong>{orgName}</strong>
+              <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-2.5 text-center text-sm text-primary-700 font-medium mb-3">
+                <Leaf className="inline w-3.5 h-3.5 mr-1" />
+                You&apos;re joining <strong>{orgName}</strong>
               </div>
             )}
 
-            {/* Role selector — only if NOT signing up via invite */}
+            {/* Role selector — only shown when not signing up via invite */}
             {!inviteToken && !checkingAdmin && (
-              <div className="mb-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Who are you?</p>
+              <div className="mb-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Who are you?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setSelectedRole("admin")}
-                    className={cn("border-2 rounded-xl p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
+                    className={cn("border-2 rounded-xl p-2.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
                       selectedRole === "admin" ? "border-primary-500 bg-primary-50" : "border-gray-200 hover:border-gray-300")}>
                     <p className="text-sm font-bold text-gray-900">🏢 Admin</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Create & manage an org.</p>
-                    {selectedRole === "admin" && <span className="text-[10px] font-bold text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full mt-1 inline-block">✓ Selected</span>}
+                    <p className="text-xs text-gray-500 mt-0.5">Create &amp; manage an org.</p>
                   </button>
                   <button type="button" disabled={superAdminExists === true}
                     onClick={() => !superAdminExists && setSelectedRole("superadmin")}
-                    className={cn("border-2 rounded-xl p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
+                    className={cn("border-2 rounded-xl p-2.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
                       superAdminExists ? "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed" :
                       selectedRole === "superadmin" ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-gray-300")}>
                     <p className="text-sm font-bold text-gray-900">⚡ Super Admin</p>
                     <p className="text-xs text-gray-500 mt-0.5">{superAdminExists ? "Already taken." : "Platform admin (1 only)."}</p>
-                    {superAdminExists
-                      ? <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full mt-1 inline-block">🔒 Taken</span>
-                      : selectedRole === "superadmin" && <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full mt-1 inline-block">✓ Selected</span>
-                    }
                   </button>
                 </div>
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-2 flex gap-1.5 items-start">
-                  <span>ℹ️</span>
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 mt-1.5 flex gap-1.5 items-center">
+                  <span aria-hidden="true">ℹ️</span>
                   <span><strong>Members</strong> join via an invite link from their admin.</span>
                 </p>
               </div>
             )}
 
-            {/* Form */}
+            {/* ── FORM — placeholders serve as labels, matching mockup ── */}
             <form onSubmit={handleSubmit} noValidate className="space-y-3">
 
               {/* Full Name */}
-              <div>
-                <label htmlFor="signup-name" className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">👤</span>
-                  <input id="signup-name" type="text" placeholder="Alice Mokoena"
-                    value={name} onChange={e => setName(e.target.value)}
-                    autoComplete="name" required
-                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
-                </div>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
+                <input id="signup-name" type="text" placeholder="Full Name"
+                  value={name} onChange={e => setName(e.target.value)}
+                  autoComplete="name" required aria-label="Full Name"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white placeholder:text-gray-400" />
               </div>
 
               {/* Email */}
-              <div>
-                <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">✉️</span>
-                  <input id="signup-email" type="email" placeholder="you@example.com"
-                    value={email} onChange={e => setEmail(e.target.value)}
-                    autoComplete="email" required
-                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
-                </div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
+                <input id="signup-email" type="email" placeholder="Email Address"
+                  value={email} onChange={e => setEmail(e.target.value)}
+                  autoComplete="email" required aria-label="Email Address"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white placeholder:text-gray-400" />
               </div>
 
               {/* Password + strength */}
               <div>
-                <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">🔒</span>
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
                   <input id="signup-password" type={showPwd ? "text" : "password"}
-                    placeholder="Min. 8 characters"
+                    placeholder="Password"
                     value={password} onChange={e => setPassword(e.target.value)}
-                    autoComplete="new-password" required minLength={8}
-                    className="w-full pl-9 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
+                    autoComplete="new-password" required minLength={8} aria-label="Password"
+                    className="w-full pl-9 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white placeholder:text-gray-400" />
                   <button type="button" onClick={() => setShowPwd(p => !p)}
                     aria-label={showPwd ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-                    {showPwd ? "🙈" : "👁"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+                    {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {password && (
                   <div className="mt-1.5" aria-live="polite">
-                    <div className="flex gap-1 mb-1">
-                      {[1,2,3,4].map(i => (
-                        <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-all",
-                          i <= strength ? STRENGTH_COLORS[strength] : "bg-gray-100")} />
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      <span className={cn("font-semibold", strength >= 3 ? "text-primary-600" : strength >= 2 ? "text-blue-500" : "text-red-400")}>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 flex-1">
+                        {[1,2,3,4].map(i => (
+                          <div key={i} className={cn("h-1 flex-1 rounded-full transition-all",
+                            i <= strength ? STRENGTH_COLORS[strength] : "bg-gray-100")} />
+                        ))}
+                      </div>
+                      <span className={cn("text-xs font-semibold flex-shrink-0",
+                        strength >= 3 ? "text-primary-600" : strength >= 2 ? "text-blue-500" : "text-red-400")}>
                         {STRENGTH_LABELS[strength]}
                       </span>
-                      {" "}— Use 8+ characters with letters, numbers &amp; symbols.
-                    </p>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">Use 8+ characters with a mix of letters, numbers &amp; symbols.</p>
                   </div>
                 )}
               </div>
 
               {/* Invite token */}
               {!inviteToken && (
-                <div>
-                  <label htmlFor="signup-invite" className="block text-sm font-medium text-gray-700 mb-1.5">Invite token <span className="text-gray-400 font-normal">(optional)</span></label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">🏷️</span>
-                    <input id="signup-invite" type="text" placeholder="Paste invite token if you have one"
-                      value={invite} onChange={e => setInvite(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" />
-                  </div>
+                <div className="relative">
+                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
+                  <input id="signup-invite" type="text" placeholder="Invite token (optional)"
+                    value={invite} onChange={e => setInvite(e.target.value)}
+                    aria-label="Invite token (optional)"
+                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white placeholder:text-gray-400" />
                 </div>
               )}
 
@@ -321,13 +323,13 @@ function SignUpPage() {
 
               <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}
                 disabled={!agree || (selectedRole === "superadmin" && !!superAdminExists)}
-                icon={<span>🌿</span>}>
+                icon={<Leaf className="w-4 h-4" />}>
                 {inviteToken ? "Join Organization" : selectedRole === "superadmin" ? "Create Super Admin" : "Create Account"}
               </Button>
             </form>
 
             {/* Divider */}
-            <div className="relative my-4">
+            <div className="relative my-3">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
               <div className="relative flex justify-center text-xs text-gray-400 bg-white px-3">or continue with</div>
             </div>
@@ -336,41 +338,44 @@ function SignUpPage() {
             <div className="grid grid-cols-2 gap-2 mb-2">
               <button type="button" onClick={() => showToast("Google sign-up coming soon!", "info")}
                 className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-                <span className="text-red-500 font-bold">G</span> Continue with Google
+                <GoogleIcon /> Continue with Google
               </button>
               <button type="button" onClick={() => showToast("GitHub sign-up coming soon!", "info")}
                 className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-                <span className="text-gray-900 font-bold text-base leading-none">⌥</span> Continue with GitHub
+                <Github className="w-4 h-4" /> Continue with GitHub
               </button>
             </div>
 
             {/* Connect Wallet */}
             <button type="button" onClick={() => showToast("Freighter wallet registration coming soon!", "info")}
               className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-primary-300 text-sm font-semibold text-primary-700 rounded-xl hover:bg-primary-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-              🔗 Connect Crypto Wallet
-              <span className="ml-1 text-[10px] font-bold bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded">Web3</span>
+              <Wallet className="w-4 h-4" />
+              Connect Crypto Wallet
+              <span className="text-[10px] font-bold bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded">Web3</span>
             </button>
 
             {/* Sign in link */}
-            <p className="text-center text-sm text-gray-500 mt-4">
+            <p className="text-center text-sm text-gray-500 mt-3">
               Already have an account?{" "}
               <Link href="/signin" className="text-primary-600 font-semibold hover:text-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
                 Sign in →
               </Link>
             </p>
 
-            {/* Bottom badges */}
-            <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-center gap-6">
-              {[
-                { icon: "🌿", label: "Eco-Focused" },
-                { icon: "🔒", label: "Secure & Private" },
-                { icon: "🌐", label: "Global Community" },
-              ].map(({ icon, label }) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <span className="text-sm" aria-hidden="true">{icon}</span>
-                  <span className="text-xs text-gray-500 font-medium">{label}</span>
-                </div>
-              ))}
+            {/* Bottom trust badges */}
+            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-1.5">
+                <Leaf className="w-3.5 h-3.5 text-primary-600" aria-hidden="true" />
+                <span className="text-xs text-gray-500 font-medium">Eco-Focused</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
+                <span className="text-xs text-gray-500 font-medium">Secure &amp; Private</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-blue-500" aria-hidden="true" />
+                <span className="text-xs text-gray-500 font-medium">Global Community</span>
+              </div>
             </div>
 
           </div>
