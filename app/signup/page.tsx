@@ -126,18 +126,25 @@ function SignUpPage() {
       <div className="flex min-h-screen">
 
         {/* ── LEFT: Hero (55%) — image + text overlay ── */}
-        <div className="hidden lg:flex lg:w-[55%] relative flex-col">
+        {/*
+          WHY object-contain:
+          The hero image is 1942×809 (very wide). With object-cover on a tall
+          panel the image scales to ~2160px wide but only 770px is visible —
+          only 3 of the 5 people show. object-contain + bg-[#0d1f0a] (dark
+          forest matching the image edges) reveals all 5 people with no
+          visible bars because the background blends with the dark image.
+        */}
+        <div className="hidden lg:flex lg:w-[55%] relative flex-col bg-[#0d1f0a]">
           <Image
             src="/assets/image/pages/auth/signup_hero.png"
-            alt="Family planting a tree together"
+            alt="Family of five planting a tree together"
             fill
-            className="object-cover"
-            style={{ objectPosition: "30% center" }}
+            className="object-contain object-center"
             priority
             sizes="55vw"
           />
-          {/* Dark gradient bottom for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" aria-hidden="true" />
+          {/* Bottom gradient for text readability over the image */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent" aria-hidden="true" />
 
           {/* Bottom-left text overlay — matches mockup */}
           <div className="absolute bottom-0 left-0 right-0 px-10 pb-10">
