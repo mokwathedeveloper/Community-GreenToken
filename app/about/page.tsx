@@ -112,21 +112,15 @@ export default function AboutUsPage() {
           priority
           sizes="100vw"
         />
-        {/* Left gradient keeps text crisp; fades out so hero photo shows on right */}
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.90) 30%, rgba(255,255,255,0.45) 58%, rgba(255,255,255,0) 100%)" }}
-          aria-hidden="true"
-        />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full py-20 lg:py-28">
           <div className="max-w-xl">
-            <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">About Us</p>
-            <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
+            <p className="text-xs font-bold text-primary-300 uppercase tracking-widest mb-3">About Us</p>
+            <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-5">
               Building a Sustainable{" "}
-              <span className="text-primary-500">Future, Together.</span>
+              <span className="text-primary-300">Future, Together.</span>
             </h1>
-            <p className="text-base text-gray-600 leading-relaxed">
+            <p className="text-base text-white/90 leading-relaxed">
               Community GreenToken was born out of a simple belief: small actions can create a big
               impact. We reward and empower individuals and communities to take sustainable actions
               through transparent, blockchain-verified tokens.
@@ -215,12 +209,11 @@ export default function AboutUsPage() {
           className="object-cover object-center"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow mb-2">
             Be a part of the change.
           </h2>
-          <p className="text-sm text-white/85 mb-7 max-w-md leading-relaxed">
+          <p className="text-sm text-white/90 drop-shadow mb-7 max-w-md leading-relaxed">
             Join Community GreenToken and start making an impact today.
           </p>
           <Link
