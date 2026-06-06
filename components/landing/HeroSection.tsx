@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Link2, Scale, Users } from "lucide-react";
 
 // Spec: landing_page_md.md — HeroCard section
 // Mockup: mockup/landing_page_mockup.png
 
 const TRUST_BADGES = [
-  { icon: "🔗", label: "Blockchain Secured" },
-  { icon: "⚖️", label: "Transparent & Fair" },
-  { icon: "🤝", label: "Community Driven" },
+  { Icon: Link2,  label: "Blockchain Secured"  },
+  { Icon: Scale,  label: "Transparent & Fair"  },
+  { Icon: Users,  label: "Community Driven"    },
 ];
 
 export default function HeroSection() {
@@ -19,7 +20,7 @@ export default function HeroSection() {
       <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-          {/* Left — text content */}
+          {/* Left — text */}
           <div className="order-2 lg:order-1">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
               Rewarding{" "}
@@ -37,28 +38,28 @@ export default function HeroSection() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 mb-10">
               <Link
-                href="/org/setup"
-                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors duration-150 shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                <span aria-hidden="true">🌿</span> Start Earning Tokens
+                Start Earning Tokens
               </Link>
               <Link
                 href="/how-it-works"
-                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-primary-600 border-2 border-primary-500 hover:bg-primary-50 rounded-xl transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-primary-600 border-2 border-primary-500 hover:bg-primary-50 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
-                <span aria-hidden="true">▶</span> Watch How It Works
+                Watch How It Works
               </Link>
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap gap-4">
-              {TRUST_BADGES.map(({ icon, label }) => (
+            <div className="flex flex-wrap gap-3">
+              {TRUST_BADGES.map(({ Icon, label }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-50 rounded-full border border-primary-100"
                 >
-                  <span aria-hidden="true" className="text-sm">{icon}</span>
-                  <span className="text-xs font-medium text-gray-600">{label}</span>
+                  <Icon className="w-4 h-4 text-primary-600" strokeWidth={1.75} aria-hidden="true" />
+                  <span className="text-xs font-semibold text-primary-700">{label}</span>
                 </div>
               ))}
             </div>
