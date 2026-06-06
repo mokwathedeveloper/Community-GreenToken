@@ -356,7 +356,6 @@ export default function ImpactPage() {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-white/52" aria-hidden="true" />
 
         <div className="relative z-10 max-w-2xl mx-auto px-6">
           <div className="relative w-16 h-16 mx-auto mb-4">
