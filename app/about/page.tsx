@@ -1,60 +1,77 @@
-// Rules: R-FE-01, R-FE-07, R-IMG-02, R-COLOR-02, R-A11Y-01
 // Spec: ux_ui/feature_specv2/about_us_page_md.md
 // Mockup: mockup/about_us_page_mockup.png
 
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Leaf, ShieldCheck, Users, Lightbulb } from "lucide-react";
 import PublicLayout from "@/components/layouts/PublicLayout";
 
 export const metadata: Metadata = { title: "About Us — Community GreenToken" };
 
 const VALUES = [
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3C7 3 3 7.5 3 12c0 2.5 1 4.8 2.6 6.5M12 3c5 0 9 4.5 9 9 0 2.5-1 4.8-2.6 6.5M12 3v18M3 12h18" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7.5C9.5 6 11 5 12 5s2.5 1 4 2.5" />
-      </svg>
-    ),
+    Icon: Leaf,
+    bg: "bg-emerald-500",
     title: "Sustainability",
     desc: "We promote eco-friendly actions and hold ourselves accountable to the planet we protect.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    ),
+    Icon: ShieldCheck,
+    bg: "bg-green-500",
     title: "Transparency",
     desc: "All actions and rewards are verifiable on-chain — no hidden mechanics, no manipulation.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-      </svg>
-    ),
+    Icon: Users,
+    bg: "bg-teal-500",
     title: "Community Impact",
     desc: "We believe in collective action. Meaningful change only comes when communities work together.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-      </svg>
-    ),
+    Icon: Lightbulb,
+    bg: "bg-primary-500",
     title: "Innovation",
     desc: "We leverage technology and innovation to drive positive change and expand environmental goals.",
   },
 ];
 
 const TEAM = [
-  { name: "Arjun Patel",   role: "Blockchain Lead",   bio: "10+ years blockchain, crypto architecture and smart contract development.", color: "bg-emerald-500" },
-  { name: "Meera Shah",    role: "Product Designer",  bio: "Loves creating beautiful, human-centered and sustainable product experiences.", color: "bg-violet-500" },
-  { name: "Rohit Verma",   role: "Backend Engineer",  bio: "Full-stack developer with a focus on Node.js, serverless APIs and Supabase.", color: "bg-sky-500"     },
-  { name: "Priya Nair",    role: "Frontend Lead",     bio: "Lives and breathes React, Next.js and accessible UI design.", color: "bg-rose-500"     },
-  { name: "Karan Singh",   role: "DevOps / Infra",    bio: "CI/CD pipelines, cloud infrastructure and blockchain node management.", color: "bg-amber-500"   },
+  {
+    name: "Arjun Patel",
+    role: "Blockchain Lead",
+    bio: "10+ years blockchain, crypto architecture and smart contract development.",
+    color: "from-emerald-400 to-emerald-600",
+    social: { github: "#", linkedin: "#", twitter: "#" },
+  },
+  {
+    name: "Meera Shah",
+    role: "Product Designer",
+    bio: "Loves creating beautiful, human-centred and sustainable product experiences.",
+    color: "from-violet-400 to-violet-600",
+    social: { github: "#", linkedin: "#", twitter: "#" },
+  },
+  {
+    name: "Rohit Verma",
+    role: "Backend Engineer",
+    bio: "Full-stack developer with a focus on Node.js, serverless APIs and Supabase.",
+    color: "from-sky-400 to-sky-600",
+    social: { github: "#", linkedin: "#", twitter: "#" },
+  },
+  {
+    name: "Priya Nair",
+    role: "Frontend Lead",
+    bio: "Lives and breathes React, Next.js and accessible UI design.",
+    color: "from-rose-400 to-rose-600",
+    social: { github: "#", linkedin: "#", twitter: "#" },
+  },
+  {
+    name: "Karan Singh",
+    role: "DevOps / Infra",
+    bio: "CI/CD pipelines, cloud infrastructure and blockchain node management.",
+    color: "from-amber-400 to-amber-600",
+    social: { github: "#", linkedin: "#", twitter: "#" },
+  },
 ];
 
 function GitHubIcon() {
@@ -85,10 +102,8 @@ export default function AboutUsPage() {
   return (
     <PublicLayout>
 
-      {/* ── Hero — image covers full section, text overlaid on left ── */}
-      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[560px] flex items-center overflow-hidden">
-
-        {/* Background image covers the full hero — object-cover fills edge to edge */}
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <section aria-labelledby="about-hero-heading" className="relative min-h-[480px] lg:min-h-[540px] flex items-center overflow-hidden">
         <Image
           src="/assets/image/pages/about-us/about_us_hero.png"
           alt="Hands gently holding a young plant seedling in sunlit forest"
@@ -97,45 +112,45 @@ export default function AboutUsPage() {
           priority
           sizes="100vw"
         />
-
-        {/* Left-to-right gradient — white on left keeps text crisp, fades to transparent so image shows on right */}
+        {/* Left gradient keeps text crisp; fades out so hero photo shows on right */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.30) 60%, rgba(255,255,255,0) 100%)" }}
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.90) 30%, rgba(255,255,255,0.45) 58%, rgba(255,255,255,0) 100%)" }}
           aria-hidden="true"
         />
 
-        {/* Text — sits on the light left portion */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full py-16 lg:py-24">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full py-20 lg:py-28">
           <div className="max-w-xl">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">About Us</p>
-            <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
+            <h1 id="about-hero-heading" className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
               Building a Sustainable{" "}
               <span className="text-primary-500">Future, Together.</span>
             </h1>
-            <p className="mt-5 text-base text-gray-600 leading-relaxed">
-              Community GreenToken was born out of a simple belief: small actions can create big impact.
-              We reward sustainable actions through transparent, blockchain-verified tokens.
+            <p className="text-base text-gray-600 leading-relaxed">
+              Community GreenToken was born out of a simple belief: small actions can create a big
+              impact. We reward and empower individuals and communities to take sustainable actions
+              through transparent, blockchain-verified tokens.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── Values ── */}
+      {/* ── VALUES ───────────────────────────────────────────────────────── */}
       <section aria-labelledby="values-heading" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Our Values</p>
-          <h2 id="values-heading" className="text-3xl font-bold text-gray-900 text-center mb-14">
+          <p className="text-center text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">
+            Our Values
+          </p>
+          <h2 id="values-heading" className="text-3xl font-extrabold text-gray-900 text-center mb-14">
             The Principles That Guide Us
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {VALUES.map(({ icon, title, desc }) => (
+            {VALUES.map(({ Icon, bg, title, desc }) => (
               <div key={title}
-                className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-7 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
-                {/* Green circle icon container — matches mockup */}
-                <div className="w-14 h-14 rounded-full bg-primary-500 flex items-center justify-center mx-auto mb-5 group-hover:bg-primary-600 transition-colors">
-                  {icon}
+                className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-8 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
+                <div className={`w-16 h-16 rounded-full ${bg} flex items-center justify-center mx-auto mb-5 shadow-sm group-hover:scale-105 transition-transform`}>
+                  <Icon className="w-8 h-8 text-white" strokeWidth={1.75} aria-hidden="true" />
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-2">{title}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
@@ -145,42 +160,43 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      {/* ── Team ── */}
-      <section aria-labelledby="team-heading" className="py-20 bg-white border-t border-gray-100">
+      {/* ── TEAM ─────────────────────────────────────────────────────────── */}
+      <section aria-labelledby="team-heading" className="py-20 bg-gray-50 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Meet Our Team</p>
-          <h2 id="team-heading" className="text-3xl font-bold text-gray-900 text-center mb-14">
+          <p className="text-center text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">
+            Meet Our Team
+          </p>
+          <h2 id="team-heading" className="text-3xl font-extrabold text-gray-900 text-center mb-14">
             The People Behind GreenToken
           </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-            {TEAM.map(({ name, role, bio, color }) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+            {TEAM.map(({ name, role, bio, color, social }) => (
               <div key={name}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center hover:shadow-md hover:-translate-y-1 transition-all duration-200">
 
-                {/* Avatar circle */}
-                <div className={`w-20 h-20 rounded-full ${color} flex items-center justify-center mx-auto mb-4 ring-4 ring-white shadow-md`}>
+                {/* Gradient avatar */}
+                <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${color} flex items-center justify-center mx-auto mb-4 ring-4 ring-white shadow-md`}>
                   <span className="text-2xl font-extrabold text-white select-none">
                     {name.charAt(0)}
                   </span>
                 </div>
 
                 <p className="text-sm font-bold text-gray-900 leading-tight">{name}</p>
-                <p className="text-xs font-semibold text-primary-600 mt-0.5 mb-2">{role}</p>
+                <p className="text-xs font-semibold text-primary-600 mt-1 mb-2">{role}</p>
                 <p className="text-xs text-gray-400 leading-relaxed mb-4">{bio}</p>
 
-                {/* Social icons */}
                 <div className="flex items-center justify-center gap-3">
-                  <a href="#" aria-label={`${name} on GitHub`}
-                    className="text-gray-400 hover:text-gray-700 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
+                  <a href={social.github} aria-label={`${name} on GitHub`}
+                    className="text-gray-400 hover:text-gray-800 transition-colors">
                     <GitHubIcon />
                   </a>
-                  <a href="#" aria-label={`${name} on LinkedIn`}
-                    className="text-gray-400 hover:text-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
+                  <a href={social.linkedin} aria-label={`${name} on LinkedIn`}
+                    className="text-gray-400 hover:text-blue-600 transition-colors">
                     <LinkedInIcon />
                   </a>
-                  <a href="#" aria-label={`${name} on X (Twitter)`}
-                    className="text-gray-400 hover:text-gray-900 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
+                  <a href={social.twitter} aria-label={`${name} on X (Twitter)`}
+                    className="text-gray-400 hover:text-gray-900 transition-colors">
                     <TwitterIcon />
                   </a>
                 </div>
@@ -190,7 +206,7 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      {/* ── CTA Banner ── */}
+      {/* ── CTA BANNER ───────────────────────────────────────────────────── */}
       <section aria-label="Call to action" className="relative h-80 sm:h-96 lg:h-[420px] overflow-hidden">
         <Image
           src="/assets/image/pages/about-us/about_us_cta_banner.png"
@@ -199,20 +215,18 @@ export default function AboutUsPage() {
           className="object-cover object-center"
           sizes="100vw"
         />
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
-        {/* Content */}
+        <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
             Be a part of the change.
           </h2>
-          <p className="text-sm sm:text-base text-white/85 mb-6 max-w-md">
+          <p className="text-sm text-white/85 mb-7 max-w-md leading-relaxed">
             Join Community GreenToken and start making an impact today.
           </p>
           <Link
-            href="/org/setup"
-            className="inline-flex items-center gap-2 px-7 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition-colors shadow-lg focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none text-sm">
-            Get Started →
+            href="/signup"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition-colors shadow-lg text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none">
+            Get Started
           </Link>
         </div>
       </section>
