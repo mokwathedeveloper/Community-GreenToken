@@ -215,11 +215,12 @@ export default function AboutUsPage() {
           className="object-cover object-center"
           sizes="100vw"
         />
+        <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow mb-2">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
             Be a part of the change.
           </h2>
-          <p className="text-sm text-white/90 drop-shadow mb-7 max-w-md leading-relaxed">
+          <p className="text-sm text-white/85 mb-7 max-w-md leading-relaxed">
             Join Community GreenToken and start making an impact today.
           </p>
           <Link
