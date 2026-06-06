@@ -164,10 +164,19 @@ export default function ImpactPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-[500px] flex items-center overflow-hidden bg-[#0b2e14]">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0b2e14] via-[#0b2e14]/90 to-[#1a4a24]" />
+        {/* impact_hero.png as background — dark green overlay keeps the colour */}
+        <Image
+          src="/assets/image/pages/impact/impact_hero.png"
+          alt="Community members planting trees on a hillside"
+          fill
+          className="object-cover opacity-40"
+          priority
+          sizes="100vw"
+          style={{ objectPosition: "center 30%" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0b2e14]/90 via-[#0b2e14]/70 to-[#0b2e14]/40" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 w-full flex items-center justify-between gap-10">
-          {/* Text */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 w-full">
           <div className="max-w-xl">
             <h1 className="text-5xl font-extrabold text-white leading-[1.1] mb-5">
               Our Community.<br />
@@ -188,17 +197,6 @@ export default function ImpactPage() {
                 Share Impact
               </button>
             </div>
-          </div>
-
-          {/* Globe illustration */}
-          <div className="hidden lg:block relative w-72 h-72 flex-shrink-0">
-            <Image
-              src="/assets/image/donationsidebar/green_earth_and_sprout.png"
-              alt="Green Earth illustration"
-              fill
-              className="object-contain drop-shadow-2xl"
-              sizes="288px"
-            />
           </div>
         </div>
       </section>
