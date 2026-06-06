@@ -3,9 +3,13 @@
 // Spec: ux_ui/feature_specv2/impact_page_md.md
 // Mockup: mockup/impact_page_mockup.png
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ElementType } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  CheckCircle2, Coins, Users, Leaf, Heart,
+  TrendingUp, RefreshCw, ShieldCheck, BarChart3,
+} from "lucide-react";
 import PublicLayout from "@/components/layouts/PublicLayout";
 
 // ── Count-up (respects prefers-reduced-motion) ────────────────────────────
@@ -54,8 +58,8 @@ const CHART_DATA: Record<ChartRange, { label: string; value: number }[]> = {
 
 function ActionChart({ range }: { range: ChartRange }) {
   const data = CHART_DATA[range];
-  const W = 460, H = 190;
-  const PAD = { top: 16, right: 12, bottom: 28, left: 48 };
+  const W = 460, H = 200;
+  const PAD = { top: 20, right: 16, bottom: 32, left: 52 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
   const max = Math.max(...data.map(d => d.value));
@@ -64,6 +68,7 @@ function ActionChart({ range }: { range: ChartRange }) {
   const pts = data.map((d, i) => ({
     x: PAD.left + i * xStep,
     y: PAD.top + innerH - (d.value / max) * innerH,
+    v: d.value,
   }));
 
   const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
@@ -78,27 +83,40 @@ function ActionChart({ range }: { range: ChartRange }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Community actions over time chart">
       <defs>
         <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#16a34a" stopOpacity="0.18" />
+          <stop offset="0%" stopColor="#16a34a" stopOpacity="0.22" />
           <stop offset="100%" stopColor="#16a34a" stopOpacity="0.01" />
         </linearGradient>
       </defs>
+      {/* Gridlines */}
       {yTicks.map((t, i) => (
         <g key={i}>
           <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y}
-            stroke="#f3f4f6" strokeWidth="1" />
-          <text x={PAD.left - 6} y={t.y + 4} textAnchor="end" fill="#9ca3af" fontSize="10">
+            stroke={i === 0 ? "#d1d5db" : "#e5e7eb"} strokeWidth="1" strokeDasharray={i === 0 ? "0" : "4 3"} />
+          <text x={PAD.left - 8} y={t.y + 4} textAnchor="end" fill="#9ca3af" fontSize="10" fontFamily="system-ui">
             {t.label}
           </text>
         </g>
       ))}
+      {/* Vertical gridlines */}
+      {pts.map((p, i) => (
+        <line key={`vg-${i}`} x1={p.x} y1={PAD.top} x2={p.x} y2={PAD.top + innerH}
+          stroke="#f3f4f6" strokeWidth="1" />
+      ))}
+      {/* Area */}
       <path d={areaPath} fill="url(#chartGrad)" />
+      {/* Line */}
       <path d={linePath} fill="none" stroke="#16a34a" strokeWidth="2.5"
         strokeLinecap="round" strokeLinejoin="round" />
+      {/* Data points */}
       {pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#16a34a" stroke="white" strokeWidth="1.5" />
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r="5" fill="white" stroke="#16a34a" strokeWidth="2" />
+          <circle cx={p.x} cy={p.y} r="2.5" fill="#16a34a" />
+        </g>
       ))}
+      {/* X labels */}
       {data.map((d, i) => (
-        <text key={i} x={pts[i].x} y={H - 4} textAnchor="middle" fill="#9ca3af" fontSize="10">
+        <text key={i} x={pts[i].x} y={H - 6} textAnchor="middle" fill="#9ca3af" fontSize="10" fontFamily="system-ui">
           {d.label}
         </text>
       ))}
@@ -107,12 +125,16 @@ function ActionChart({ range }: { range: ChartRange }) {
 }
 
 // ── Static data ────────────────────────────────────────────────────────────
-const STATS = [
-  { value: 2458721,  unit: "",    label: "Verified Actions",   icon: "✅" },
-  { value: 18734254, unit: "",    label: "GreenTokens Minted", icon: "🪙" },
-  { value: 142389,   unit: "",    label: "Active Members",     icon: "👥" },
-  { value: 7892450,  unit: " kg", label: "CO₂ Offset",         icon: "🌿" },
-  { value: 3245769,  unit: "",    label: "Tokens Donated",     icon: "❤️" },
+const STATS: {
+  value: number; unit: string; label: string;
+  Icon: ElementType; iconBg: string; iconColor: string;
+  trend: string;
+}[] = [
+  { value: 2458721,  unit: "",    label: "Verified Actions",   Icon: CheckCircle2, iconBg: "bg-green-50",   iconColor: "text-green-600",  trend: "+12.5%" },
+  { value: 18734254, unit: "",    label: "GreenTokens Minted", Icon: Coins,        iconBg: "bg-amber-50",  iconColor: "text-amber-600",  trend: "+8.2%"  },
+  { value: 142389,   unit: "",    label: "Active Members",     Icon: Users,        iconBg: "bg-blue-50",   iconColor: "text-blue-600",   trend: "+5.7%"  },
+  { value: 7892450,  unit: " kg", label: "CO₂ Offset",         Icon: Leaf,         iconBg: "bg-primary-50",iconColor: "text-primary-600",trend: "+18.9%" },
+  { value: 3245769,  unit: "",    label: "Tokens Donated",     Icon: Heart,        iconBg: "bg-red-50",    iconColor: "text-red-500",    trend: "+23.1%" },
 ];
 
 const TOP_PROJECTS = [
@@ -122,24 +144,37 @@ const TOP_PROJECTS = [
   { name: "Solar Micro-Grid",      donated: 840000,  goal: 1000000, img: "/assets/image/dashboard/dashboard_cta_banner_nature.png" },
 ];
 
-const HOW_STEPS = [
-  { icon: "♻️", title: "Take Sustainable Actions", desc: "Recycle, plant, carpool — every verified action counts toward community goals." },
-  { icon: "🔍", title: "Get Verified & Earn GTK",  desc: "Your actions are verified on the Stellar blockchain and rewarded with GreenTokens." },
-  { icon: "❤️", title: "Donate & Fund Projects",   desc: "Allocate your tokens to real eco-projects with full on-chain proof of impact." },
-  { icon: "📊", title: "Track Community Progress", desc: "Live metrics show community-wide impact and your personal contribution in real time." },
+const HOW_STEPS: {
+  Icon: ElementType; iconBg: string; iconColor: string; title: string; desc: string;
+}[] = [
+  { Icon: RefreshCw,   iconBg: "bg-green-50",   iconColor: "text-green-600",  title: "Take Sustainable Actions", desc: "Recycle, plant, carpool — every verified action counts toward community goals." },
+  { Icon: ShieldCheck, iconBg: "bg-blue-50",    iconColor: "text-blue-600",   title: "Get Verified & Earn GTK",  desc: "Your actions are verified on the Stellar blockchain and rewarded with GreenTokens." },
+  { Icon: Heart,       iconBg: "bg-red-50",     iconColor: "text-red-500",    title: "Donate & Fund Projects",   desc: "Allocate your tokens to real eco-projects with full on-chain proof of impact." },
+  { Icon: BarChart3,   iconBg: "bg-amber-50",   iconColor: "text-amber-600",  title: "Track Community Progress", desc: "Live metrics show community-wide impact and your personal contribution in real time." },
 ];
 
-function StatBlock({ value, unit, label, icon, active }: {
-  value: number; unit: string; label: string; icon: string; active: boolean;
+// ── Stat card ──────────────────────────────────────────────────────────────
+function StatBlock({ value, unit, label, Icon, iconBg, iconColor, trend, active }: {
+  value: number; unit: string; label: string;
+  Icon: ElementType; iconBg: string; iconColor: string;
+  trend: string; active: boolean;
 }) {
   const display = useCountUp(value, active);
   return (
-    <div className="flex flex-col items-center text-center px-4 py-5">
-      <p className="text-2xl font-extrabold text-gray-900 leading-none tabular-nums">
+    <div className="flex flex-col items-center text-center px-4 py-6 group">
+      <div className={`w-11 h-11 rounded-full ${iconBg} flex items-center justify-center mb-3 shadow-sm ring-1 ring-black/5`}>
+        <Icon className={`w-5 h-5 ${iconColor}`} />
+      </div>
+      <p className="text-[1.35rem] font-extrabold text-gray-900 leading-none tabular-nums">
         {display.toLocaleString()}
-        {unit && <span className="text-sm font-semibold text-gray-500 ml-0.5">{unit}</span>}
+        {unit && <span className="text-sm font-semibold text-gray-400 ml-0.5">{unit}</span>}
       </p>
-      <p className="text-[11px] text-gray-400 mt-1.5 font-medium uppercase tracking-wide">{label}</p>
+      <p className="text-[11px] text-gray-400 mt-1 font-medium uppercase tracking-wide leading-tight">{label}</p>
+      <div className="flex items-center gap-0.5 mt-1.5 text-[11px] font-semibold text-green-600">
+        <TrendingUp className="w-3 h-3" />
+        <span>{trend}</span>
+        <span className="text-gray-400 font-normal ml-0.5">this month</span>
+      </div>
     </div>
   );
 }
@@ -164,7 +199,6 @@ export default function ImpactPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-[500px] flex items-center overflow-hidden bg-[#0b2e14]">
-        {/* impact_hero.png as background — dark green overlay keeps the colour */}
         <Image
           src="/assets/image/pages/impact/impact_hero.png"
           alt="Community members planting trees on a hillside"
@@ -213,13 +247,13 @@ export default function ImpactPage() {
       </section>
 
       {/* ── CHART + PROJECTS ──────────────────────────────────────────────── */}
-      <section className="py-10 bg-white">
+      <section className="py-10 bg-gray-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
 
             {/* Left: chart */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
                 <h2 className="text-sm font-bold text-gray-900">Community Actions Over Time</h2>
                 <div className="flex gap-1 bg-gray-50 border border-gray-100 rounded-lg p-0.5">
                   {(["7d", "30d", "all"] as ChartRange[]).map((r) => (
@@ -235,50 +269,59 @@ export default function ImpactPage() {
                   ))}
                 </div>
               </div>
-              <ActionChart range={chartRange} />
-              <p className="text-[11px] text-gray-400 mt-2">
-                Verified actions recorded on the Stellar blockchain during this period.
+              <p className="text-[11px] text-gray-400 mb-3">
+                Verified actions recorded on the Stellar blockchain.
               </p>
+              <ActionChart range={chartRange} />
             </div>
 
             {/* Right: Top projects */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h2 className="text-sm font-bold text-gray-900 mb-4">Top Eco Projects Funded</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-gray-900">Top Eco Projects Funded</h2>
+                <Link href="/org/setup" className="text-[11px] text-primary-600 hover:text-primary-700 font-semibold">
+                  View All →
+                </Link>
+              </div>
               <div className="space-y-4">
                 {TOP_PROJECTS.map((p) => {
                   const pct = Math.round((p.donated / p.goal) * 100);
                   return (
                     <div key={p.name} className="flex items-start gap-3">
-                      <div className="relative w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                      <div className="relative w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 shadow-sm">
                         <Image src={p.img} alt={p.name} fill className="object-cover" sizes="56px" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-sm font-semibold text-gray-800 truncate pr-2">{p.name}</p>
-                          <span className="text-xs font-bold text-primary-600 flex-shrink-0">{pct}%</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-bold text-gray-800 truncate pr-2">{p.name}</p>
+                          <span className="text-xs font-extrabold text-primary-600 flex-shrink-0">{pct}%</span>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2 mb-1">
-                          <div className="bg-primary-600 h-2 rounded-full" style={{ width: `${pct}%` }} />
+                        <div className="w-full bg-gray-100 rounded-full h-2 mb-1.5 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full shadow-sm"
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
-                        <p className="text-[11px] text-gray-400">
-                          {p.donated.toLocaleString()} GTK &nbsp;·&nbsp; Goal: {p.goal.toLocaleString()}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] text-gray-500 font-medium">
+                            {(p.donated / 1000).toFixed(0)}K GTK raised
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            Goal: {(p.goal / 1000).toFixed(0)}K
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <Link href="/org/setup"
-                className="mt-5 block text-center text-xs font-semibold text-primary-600 hover:text-primary-700 py-2 border border-primary-200 rounded-xl hover:bg-primary-50 transition-colors">
-                View All Projects →
-              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── EVERY ACTION CREATES IMPACT ───────────────────────────────────── */}
-      <section className="py-16 bg-gray-50 border-t border-gray-100">
+      <section className="py-16 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Every Action Creates Impact</h2>
@@ -287,16 +330,16 @@ export default function ImpactPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {HOW_STEPS.map(({ icon, title, desc }, idx) => (
+            {HOW_STEPS.map(({ Icon, iconBg, iconColor, title, desc }, idx) => (
               <div key={title}
-                className="relative bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center hover:shadow-md transition-shadow">
-                <span className="absolute top-3 right-4 text-xs font-bold text-gray-200 select-none">
+                className="relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-6 text-center">
+                <span className="absolute top-3 right-4 text-xs font-bold text-gray-200 select-none tabular-nums">
                   0{idx + 1}
                 </span>
-                <div className="w-12 h-12 rounded-full bg-primary-50 border border-primary-100 flex items-center justify-center mx-auto mb-3 text-xl">
-                  {icon}
+                <div className={`w-14 h-14 rounded-2xl ${iconBg} flex items-center justify-center mx-auto mb-4 shadow-sm ring-1 ring-black/5`}>
+                  <Icon className={`w-6 h-6 ${iconColor}`} strokeWidth={1.75} />
                 </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-1.5">{title}</h3>
+                <h3 className="text-sm font-bold text-gray-900 mb-2">{title}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -306,7 +349,6 @@ export default function ImpactPage() {
 
       {/* ── BE PART OF THE CHANGE ─────────────────────────────────────────── */}
       <section className="relative py-20 overflow-hidden text-center">
-        {/* banner.png as full background */}
         <Image
           src="/assets/image/banner.png"
           alt="Lush green forest with sprouting plant and GreenToken coin"
@@ -314,14 +356,19 @@ export default function ImpactPage() {
           className="object-cover"
           sizes="100vw"
         />
-        {/* light white overlay so text is readable over bright bg */}
-        <div className="absolute inset-0 bg-white/50" aria-hidden="true" />
+        <div className="absolute inset-0 bg-white/52" aria-hidden="true" />
 
         <div className="relative z-10 max-w-2xl mx-auto px-6">
-          <div className="w-14 h-14 rounded-full bg-primary-600/90 flex items-center justify-center mx-auto mb-4 text-2xl shadow-md">
-            🌿
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <Image
+              src="/branding/community-greentoken-logo.png"
+              alt="Community GreenToken"
+              fill
+              className="object-contain drop-shadow-md"
+              sizes="64px"
+            />
           </div>
-          <h2 className="text-3xl font-extrabold text-primary-900 mb-3 drop-shadow-sm">
+          <h2 className="text-3xl font-extrabold text-primary-900 mb-3">
             Be Part of the Change
           </h2>
           <p className="text-primary-800/80 text-sm mb-8 leading-relaxed max-w-md mx-auto">
@@ -340,6 +387,7 @@ export default function ImpactPage() {
           </div>
         </div>
       </section>
+
 
     </PublicLayout>
   );
