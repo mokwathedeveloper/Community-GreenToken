@@ -181,32 +181,30 @@ function SignUpPage() {
             {/* Thin separator */}
             <div className="w-10 h-[2px] bg-white/30 rounded-full mb-6" aria-hidden="true" />
 
-            {/* Feature blocks — icon on top, title bold, description lighter */}
-            <div className="grid grid-cols-3 gap-5">
+            {/* Feature cards — same frosted-glass style as the signin trust badges */}
+            <div className="grid grid-cols-3 gap-3">
               {[
                 {
-                  icon: <Leaf className="w-[18px] h-[18px] text-white" />,
+                  icon: <Leaf className="w-5 h-5 text-primary-600" />,
                   title: "Eco Impact",
                   desc:  "Every action creates a lasting impact",
                 },
                 {
-                  icon: <Users className="w-[18px] h-[18px] text-white" />,
+                  icon: <Users className="w-5 h-5 text-primary-600" />,
                   title: "Community First",
                   desc:  "Together we build a sustainable world",
                 },
                 {
-                  icon: <ShieldCheck className="w-[18px] h-[18px] text-white" />,
+                  icon: <ShieldCheck className="w-5 h-5 text-primary-600" />,
                   title: "Transparent & Secure",
                   desc:  "Blockchain-powered trust and accountability",
                 },
               ].map(({ icon, title, desc }) => (
-                <div key={title} className="flex flex-col gap-2">
-                  {/* Circular icon */}
-                  <div className="w-10 h-10 rounded-full bg-white/15 border border-white/25 backdrop-blur-sm flex items-center justify-center">
-                    {icon}
-                  </div>
-                  <p className="text-white text-[0.78rem] font-bold leading-snug">{title}</p>
-                  <p className="text-white/55 text-[0.72rem] leading-relaxed -mt-1">{desc}</p>
+                <div key={title}
+                  className="flex flex-col items-center text-center bg-white/75 backdrop-blur-sm rounded-2xl px-3 py-3 shadow-sm border border-white/60">
+                  <div className="mb-1.5" aria-hidden="true">{icon}</div>
+                  <p className="text-xs font-bold text-gray-800 leading-tight">{title}</p>
+                  <p className="text-[11px] text-gray-500 mt-1 leading-snug">{desc}</p>
                 </div>
               ))}
             </div>
