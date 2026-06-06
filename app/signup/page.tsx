@@ -162,49 +162,51 @@ function SignUpPage() {
             sizes="55vw"
           />
 
-          {/* Bottom-to-top gradient for text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" aria-hidden="true" />
+          {/* Gradient: strong at bottom for text, fades up naturally */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden="true" />
 
-          {/* Right-edge feather — clean transition into the white panel */}
-          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-white/10" aria-hidden="true" />
-
-          {/* ── Bottom-left overlay: headline + feature blocks ── */}
+          {/* ── Bottom-left overlay ── */}
           <div className="absolute bottom-0 left-0 right-0 z-10 px-10 pb-10">
-            <h2 className="text-[2.6rem] font-extrabold text-white leading-tight mb-2">
+
+            {/* Headline */}
+            <h2 className="text-[2.75rem] font-extrabold text-white leading-[1.15] tracking-tight drop-shadow-md mb-3">
               Grow a greener<br />future, together.
             </h2>
-            <p className="text-white/75 text-sm mb-7">
+
+            {/* Subtitle */}
+            <p className="text-white/80 text-[0.92rem] leading-relaxed mb-6 max-w-xs">
               Join a community that plants today and prospers tomorrow.
             </p>
 
-            {/* Feature blocks — circular icon + title + description */}
-            <div className="flex items-start gap-5">
+            {/* Thin separator */}
+            <div className="w-10 h-[2px] bg-white/30 rounded-full mb-6" aria-hidden="true" />
+
+            {/* Feature blocks — icon on top, title bold, description lighter */}
+            <div className="grid grid-cols-3 gap-5">
               {[
                 {
-                  icon: <Leaf className="w-4 h-4 text-white" />,
+                  icon: <Leaf className="w-[18px] h-[18px] text-white" />,
                   title: "Eco Impact",
                   desc:  "Every action creates a lasting impact",
                 },
                 {
-                  icon: <Users className="w-4 h-4 text-white" />,
+                  icon: <Users className="w-[18px] h-[18px] text-white" />,
                   title: "Community First",
                   desc:  "Together we build a sustainable world",
                 },
                 {
-                  icon: <ShieldCheck className="w-4 h-4 text-white" />,
+                  icon: <ShieldCheck className="w-[18px] h-[18px] text-white" />,
                   title: "Transparent & Secure",
                   desc:  "Blockchain-powered trust and accountability",
                 },
               ].map(({ icon, title, desc }) => (
-                <div key={title} className="flex-1 flex items-start gap-2.5">
-                  {/* Circular icon container */}
-                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-white/30">
+                <div key={title} className="flex flex-col gap-2">
+                  {/* Circular icon */}
+                  <div className="w-10 h-10 rounded-full bg-white/15 border border-white/25 backdrop-blur-sm flex items-center justify-center">
                     {icon}
                   </div>
-                  <div>
-                    <p className="text-white text-xs font-semibold leading-tight">{title}</p>
-                    <p className="text-white/60 text-[11px] leading-snug mt-0.5">{desc}</p>
-                  </div>
+                  <p className="text-white text-[0.78rem] font-bold leading-snug">{title}</p>
+                  <p className="text-white/55 text-[0.72rem] leading-relaxed -mt-1">{desc}</p>
                 </div>
               ))}
             </div>
