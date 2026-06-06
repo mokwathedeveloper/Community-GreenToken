@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils";
 // Rule R-COMP-08: Navbar is public-facing, RockieRaheem owns this.
 
 const NAV_LINKS = [
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/impact",       label: "Impact" },
-  { href: "/leaderboard",  label: "Leaderboard" },
-  { href: "/redeem",       label: "Redeem" },
-  { href: "/about",        label: "About Us" },
-  { href: "/submit-action",      label: "★ Submit Action"    },
+  { href: "/",              label: "Home"            },
+  { href: "/how-it-works",  label: "How It Works"    },
+  { href: "/impact",        label: "Impact"          },
+  { href: "/leaderboard",   label: "Leaderboard"     },
+  { href: "/redeem",        label: "Redeem"          },
+  { href: "/about",         label: "About Us"        },
+  { href: "/submit-action", label: "★ Submit Action" },
 ];
 
 export default function Navbar() {
