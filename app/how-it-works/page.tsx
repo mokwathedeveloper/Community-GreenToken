@@ -83,7 +83,7 @@ export default function HowItWorksPage() {
     <PublicLayout>
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[420px] flex items-center overflow-hidden bg-[#f4fbf4]">
+      <section className="relative min-h-[420px] flex items-center overflow-hidden">
         <Image
           src="/assets/image/pages/how-it-works/how_it_works_hero.png"
           alt="Green earth illustration"
@@ -93,7 +93,6 @@ export default function HowItWorksPage() {
           sizes="100vw"
           style={{ objectPosition: "right center" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/65 to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 w-full">
           <div className="max-w-2xl">
@@ -173,7 +172,6 @@ export default function HowItWorksPage() {
           aria-hidden="true"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-white/55" aria-hidden="true" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-6">
           <h2 id="lifecycle-heading" className="text-2xl font-extrabold text-gray-900 text-center mb-12">
@@ -270,7 +268,6 @@ export default function HowItWorksPage() {
           sizes="100vw"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-white/45" aria-hidden="true" />
 
         <div className="relative z-10 max-w-2xl mx-auto px-6">
           <div className="relative w-16 h-16 mx-auto mb-5">
