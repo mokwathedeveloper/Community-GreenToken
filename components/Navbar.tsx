@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MHome, MLightbulb, MBarChart, MTrophy, MGift, MPeople, MBolt, MLogin, MLeaf } from "@/components/icons";
+import { MHome, MLightbulb, MBarChart, MTrophy, MGift, MPeople, MBolt, MLogin, MLeaf, MCoin } from "@/components/icons";
 
 // Spec: DESIGN_SPEC.md Section 6.1
 // Rule R-COMP-08: Navbar is public-facing, RockieRaheem owns this.
@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { href: "/redeem",        label: "Redeem",        Icon: MGift        },
   { href: "/about",         label: "About Us",      Icon: MPeople      },
   { href: "/submit-action", label: "Submit Action", Icon: MBolt        },
+  { href: "/tokenomics",   label: "Tokenomics",    Icon: MCoin        },
 ];
 
 export default function Navbar() {

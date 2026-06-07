@@ -7,6 +7,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import StatsRow from "@/components/landing/StatsRow";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import HowItWorks from "@/components/landing/HowItWorks";
+import CompetitiveEdge from "@/components/landing/CompetitiveEdge";
 
 export const metadata: Metadata = {
   title: "Community GreenToken — Rewarding Sustainable Actions",
@@ -29,7 +30,10 @@ export default function LandingPage() {
       {/* 4. How It Works */}
       <HowItWorks />
 
-      {/* 5. Bottom CTA Banner — matches mockup with GreenToken emblem on right */}
+      {/* 5. Competitive Edge — why GreenToken wins */}
+      <CompetitiveEdge />
+
+      {/* 6. Bottom CTA Banner — matches mockup with GreenToken emblem on right */}
       <section className="relative w-full h-[380px] md:h-[420px] overflow-hidden">
         <Image
           src="/assets/image/banner.png"
