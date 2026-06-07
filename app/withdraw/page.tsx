@@ -14,14 +14,16 @@ import { MCoin } from "@/components/icons";
 type Currency  = "KES" | "USD";
 type Method    = "mpesa" | "bank_transfer";
 type WithdrawalRecord = {
-  id:            string;
-  tokens_amount: number;
-  cash_amount:   number;
-  currency:      string;
-  method:        string;
-  account_name:  string;
-  status:        "pending" | "processing" | "completed" | "failed" | "canceled";
-  created_at:    string;
+  id:             string;
+  tokens_amount:  number;
+  cash_amount:    number;
+  currency:       string;
+  method:         string;
+  account_name:   string;
+  status:         "pending" | "processing" | "completed" | "failed" | "canceled";
+  failure_reason: string | null;
+  processed_at:   string | null;
+  created_at:     string;
 };
 
 const RATES: Record<Currency, number> = { KES: 0.50, USD: 0.004 };
@@ -365,17 +367,30 @@ export default function WithdrawPage() {
                     {r.currency === "KES" ? "KES" : "$"} {r.cash_amount.toLocaleString("en",{minimumFractionDigits:2})}
                   </td>
                   <td className="px-4 py-3.5 text-gray-600 capitalize">
-                    {r.method === "mpesa" ? "📱 M-Pesa" : "🏦 Bank"}
+                    {r.method === "mpesa" ? "M-Pesa" : "Bank"}
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-500">{r.account_name}</td>
                   <td className="px-4 py-3.5">
                     <Badge color={
                       r.status === "completed"  ? "green" :
                       r.status === "failed"     ? "red"   :
+                      r.status === "canceled"   ? "gray"  :
                       r.status === "processing" ? "blue"  : "amber"
                     } dot>
-                      {r.status}
+                      {r.status === "completed" ? "Paid" :
+                       r.status === "canceled"  ? "Rejected" :
+                       r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                     </Badge>
+                    {(r.status === "failed" || r.status === "canceled") && r.failure_reason && (
+                      <p className="text-xs text-red-500 mt-0.5 max-w-[160px] truncate" title={r.failure_reason}>
+                        {r.failure_reason}
+                      </p>
+                    )}
+                    {r.status === "completed" && r.processed_at && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {new Date(r.processed_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </td>
                 </tr>
               ))}

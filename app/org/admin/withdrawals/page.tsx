@@ -65,7 +65,6 @@ export default function AdminWithdrawalsPage() {
   const [total,        setTotal]        = useState(0);
   const [loading,      setLoading]      = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("");
-  const [acting,       setActing]       = useState<string | null>(null);
   const [errMsg,       setErrMsg]       = useState<string | null>(null);
   const [successMsg,   setSuccessMsg]   = useState<string | null>(null);
 
@@ -330,13 +329,11 @@ export default function AdminWithdrawalsPage() {
                       {row.status === "pending" ? (
                         <div className="flex items-center gap-1.5">
                           <Button variant="primary" size="xs"
-                            loading={acting === row.id}
                             onClick={() => openApprove(row)}
                             icon={<MCheckCircle className="w-3.5 h-3.5" />}>
                             Approve & Pay
                           </Button>
                           <Button variant="danger" size="xs"
-                            loading={acting === row.id}
                             onClick={() => { setRejectTarget(row); setRejectReason(""); setErrMsg(null); }}>
                             Reject
                           </Button>
