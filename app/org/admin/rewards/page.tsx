@@ -13,6 +13,26 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
+// ── Reward catalog — predefined titles admins can create ──────────────────────
+
+const REWARD_CATALOG = [
+  { title: "Eco Water Bottle",          description: "A reusable stainless steel water bottle to reduce plastic waste.",           tokenCost: 100 },
+  { title: "Reusable Shopping Bag",     description: "Durable reusable bag to replace single-use plastic bags.",                   tokenCost: 50  },
+  { title: "Tree Planting Certificate", description: "We plant a tree in your name through a local reforestation project.",        tokenCost: 150 },
+  { title: "Compost Bin Starter Kit",   description: "Home composting bin and guide to turn food waste into organic fertilizer.",  tokenCost: 200 },
+  { title: "Solar Phone Charger",       description: "Portable solar-powered charger to keep devices running without the grid.",   tokenCost: 300 },
+  { title: "Organic Seeds Kit",         description: "Assorted organic vegetable and herb seeds to grow your own food at home.",   tokenCost: 80  },
+  { title: "Community Garden Plot",     description: "One-month access to a shared community garden bed.",                         tokenCost: 250 },
+  { title: "Public Transport Pass",     description: "Weekly public transport pass to reduce your carbon footprint.",              tokenCost: 180 },
+  { title: "Bamboo Utensil Set",        description: "Reusable bamboo cutlery set to replace single-use plastic utensils.",        tokenCost: 75  },
+  { title: "Eco-Cleaning Kit",          description: "Non-toxic, biodegradable household cleaning products bundle.",               tokenCost: 120 },
+  { title: "Recycled Notebook",         description: "Notebook made from 100% recycled and sustainably sourced paper.",           tokenCost: 40  },
+  { title: "Local Produce Voucher",     description: "Voucher redeemable at the local farmers market for fresh seasonal produce.", tokenCost: 200 },
+  { title: "Zero-Waste Starter Pack",   description: "Beeswax wraps, bamboo toothbrush, reusable straws and produce bags.",       tokenCost: 160 },
+  { title: "Green Energy Voucher",      description: "Bill credit towards renewable electricity for your household.",              tokenCost: 400 },
+  { title: "Bicycle Repair Voucher",    description: "Free bike service and tune-up at a local partner repair workshop.",         tokenCost: 220 },
+] as const;
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Reward = {
@@ -37,6 +57,10 @@ type Redemption = {
 
 type FormState = { title: string; description: string; tokenCost: string; totalSupply: string };
 const EMPTY_FORM: FormState = { title: "", description: "", tokenCost: "", totalSupply: "" };
+
+function catalogItem(title: string) {
+  return REWARD_CATALOG.find(r => r.title === title) ?? null;
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -108,7 +132,7 @@ export default function AdminRewardsPage() {
   async function handleSave() {
     setErrMsg(null);
     const cost = parseInt(form.tokenCost, 10);
-    if (!form.title.trim() || form.title.length < 2) { setErrMsg("Title must be at least 2 characters."); return; }
+    if (!form.title) { setErrMsg("Please select a reward type from the dropdown."); return; }
     if (!Number.isInteger(cost) || cost < 1)          { setErrMsg("Token cost must be a positive whole number."); return; }
     const supply = form.totalSupply ? parseInt(form.totalSupply, 10) : null;
     if (form.totalSupply && (!Number.isInteger(supply) || (supply ?? 0) < 1)) {
@@ -508,12 +532,43 @@ export default function AdminRewardsPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="rw-title">
-              Reward Title <span className="text-red-500">*</span>
+              Reward Type <span className="text-red-500">*</span>
             </label>
-            <input id="rw-title" type="text" value={form.title} maxLength={100}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Eco Water Bottle"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400" />
+            <div className="relative">
+              <MGift className="absolute left-3 top-2.5 w-4 h-4 text-primary-400 pointer-events-none" />
+              <select
+                id="rw-title"
+                value={form.title}
+                disabled={!!editTarget}
+                onChange={e => {
+                  const item = catalogItem(e.target.value);
+                  setForm(f => ({
+                    ...f,
+                    title:       e.target.value,
+                    description: item ? item.description : f.description,
+                    tokenCost:   item ? String(item.tokenCost) : f.tokenCost,
+                  }));
+                }}
+                className={cn(
+                  "w-full border border-gray-200 rounded-lg pl-9 pr-8 py-2 text-sm appearance-none",
+                  "focus:outline-none focus:ring-2 focus:ring-primary-400",
+                  "disabled:bg-gray-50 disabled:text-gray-500",
+                  !form.title ? "text-gray-400" : "text-gray-900"
+                )}
+              >
+                <option value="" disabled>Select a reward type…</option>
+                {REWARD_CATALOG.map(r => (
+                  <option key={r.title} value={r.title}>{r.title}</option>
+                ))}
+              </select>
+              {/* Custom chevron */}
+              <svg className="absolute right-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            {!!editTarget && (
+              <p className="text-xs text-gray-400 mt-1">Reward type cannot be changed after creation.</p>
+            )}
           </div>
 
           <div>
