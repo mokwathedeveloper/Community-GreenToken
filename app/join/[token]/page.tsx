@@ -1,17 +1,5 @@
 "use client";
 
-/**
- * /join/[token]
- *
- * User lands here after clicking an invite link from their email.
- * Flow:
- *   1. Page loads → fetch invite details from DB (org name, role, expiry)
- *   2. If invite is valid → show "You've been invited to [Org]" card
- *   3. If user is NOT logged in → show sign-up / sign-in form
- *   4. On auth success → POST /api/invites/[token]/accept → redirect to /dashboard
- *   5. If invite expired/invalid → show clear error
- */
-
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,17 +9,29 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { MLink2, MAccessTime, MCheckCircle, MGift, MLeaf, MEmail, MWarning } from "@/components/icons";
+import {
+  MLink2, MAccessTime, MCheckCircle, MGift, MLeaf,
+  MEmail, MWarning, MLock,
+} from "@/components/icons";
 
-type InviteStatus = "loading" | "valid" | "expired" | "invalid" | "accepted" | "already_member" | "wrong_email";
-type AuthMode     = "signup" | "signin";
+type InviteStatus =
+  | "loading"
+  | "check_email"   // landed here without a session — prompt to check inbox
+  | "valid"         // has session, invite valid, show form (new user or already authed)
+  | "expired"
+  | "invalid"
+  | "accepted"
+  | "already_member"
+  | "wrong_email";
+
+type AuthMode = "signup" | "signin";
 
 interface InviteInfo {
-  orgName:       string;
-  orgSlug:       string;
-  role:          string;
-  expiresAt:     string;
-  invitedEmail?: string;   // set for email-specific invites
+  orgName:      string;
+  orgSlug:      string;
+  role:         string;
+  expiresAt:    string;
+  invitedEmail?: string;
 }
 
 export default function JoinPage() {
@@ -47,20 +47,14 @@ export default function JoinPage() {
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
 
-  // Load invite details
   useEffect(() => {
     if (!token) return;
 
     async function loadInvite() {
       const supabase = createClient();
-
-      // Check if user is already logged in
       const { data: { session } } = await supabase.auth.getSession();
 
-      // ── Fetch invite via the admin-client API endpoint ──────────────────
-      // DO NOT query the invites table directly from the browser client.
-      // RLS on invites blocks unauthenticated (and new-user) reads.
-      // GET /api/invites/[token] uses createAdminClient() — bypasses RLS.
+      // Fetch invite via admin-client API (bypasses RLS)
       let inviteData: {
         role: string;
         expires_at: string;
@@ -93,52 +87,43 @@ export default function JoinPage() {
         return;
       }
 
-      const org = inviteData.organizations;
       const invitedEmail = (inviteData.invited_email as string | null) ?? undefined;
-      setInvite({
-        orgName:      org?.name   ?? "an organization",
-        orgSlug:      org?.slug   ?? "",
+      const info: InviteInfo = {
+        orgName:      inviteData.organizations?.name ?? "an organization",
+        orgSlug:      inviteData.organizations?.slug ?? "",
         role:         inviteData.role,
         expiresAt:    inviteData.expires_at,
         invitedEmail,
-      });
+      };
+      setInvite(info);
 
-      // Pre-fill the email field if this is an email-specific invite
-      if (invitedEmail) setEmail(invitedEmail);
+      if (invitedEmail) {
+        setEmail(invitedEmail);
+        setMode("signin");
+      }
 
-      // Default to signin mode if there's a specific email (likely existing user from magic link)
-      if (invitedEmail) setMode("signin");
-
-      // If already logged in, auto-accept
       if (session?.user) {
-        await acceptInvite(session.user.id);
+        // Already authenticated — try to accept immediately
+        await acceptInvite();
       } else {
-        setStatus("valid");
+        // No session: if this was an email invite, ask them to check inbox.
+        // If it's a generic link, show the sign-up/sign-in form directly.
+        setStatus(invitedEmail ? "check_email" : "valid");
       }
     }
 
     loadInvite();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  async function acceptInvite(userId?: string) {
+  async function acceptInvite() {
     try {
-      const res = await fetch(`/api/invites/${token}/accept`, { method: "POST" });
+      const res  = await fetch(`/api/invites/${token}/accept`, { method: "POST" });
       const json = await res.json();
 
-      if (res.status === 409) {
-        setStatus("already_member");
-        setTimeout(() => router.push("/dashboard"), 2000);
-        return;
-      }
-      if (res.status === 403 && json.error?.code === "WRONG_EMAIL") {
-        setStatus("wrong_email");
-        return;
-      }
-      if (!res.ok) {
-        showToast(json.error?.message ?? "Could not accept invite.", "error");
-        setStatus("invalid");
-        return;
-      }
+      if (res.status === 409) { setStatus("already_member"); setTimeout(() => router.push("/dashboard"), 2000); return; }
+      if (res.status === 403 && json.error?.code === "WRONG_EMAIL") { setStatus("wrong_email"); return; }
+      if (!res.ok) { showToast(json.error?.message ?? "Could not accept invite.", "error"); setStatus("invalid"); return; }
 
       setStatus("accepted");
       showToast(`Welcome to ${invite?.orgName ?? "the organization"}!`, "success");
@@ -155,8 +140,6 @@ export default function JoinPage() {
 
     try {
       if (mode === "signup") {
-        // emailRedirectTo sends the user back to this exact invite URL after
-        // email confirmation, so they auto-join even if confirmation is required.
         const joinUrl = typeof window !== "undefined" ? window.location.href : "";
         const { data: signUpData, error } = await supabase.auth.signUp({
           email, password,
@@ -166,11 +149,9 @@ export default function JoinPage() {
           },
         });
         if (error) { showToast(error.message, "error"); return; }
-
-        // If no session, email confirmation is required — user needs to verify email first
         if (!signUpData.session) {
           showToast(
-            "Check your email to confirm your account. Once confirmed, you'll be taken straight to the organisation.",
+            "Check your email to confirm your account — then click the confirmation link to join automatically.",
             "success"
           );
           setLoading(false);
@@ -180,7 +161,6 @@ export default function JoinPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { showToast("Incorrect email or password.", "error"); return; }
       }
-      // After auth, accept the invite
       await acceptInvite();
     } finally {
       setLoading(false);
@@ -188,14 +168,11 @@ export default function JoinPage() {
   }
 
   const roleLabel: Record<string, string> = {
-    owner:  "Org Owner",
-    admin:  "Org Admin",
-    member: "Member",
+    owner: "Org Owner", admin: "Org Admin", member: "Member",
   };
-
   const roleColor: Record<string, string> = {
-    owner:  "bg-amber-100 text-amber-700",
-    admin:  "bg-blue-100 text-blue-700",
+    owner: "bg-amber-100 text-amber-700",
+    admin: "bg-blue-100 text-blue-700",
     member: "bg-green-100 text-green-700",
   };
 
@@ -223,6 +200,58 @@ export default function JoinPage() {
             </div>
           )}
 
+          {/* ── Check email (no session, email-specific invite) ── */}
+          {status === "check_email" && invite && (
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-br from-primary-600 to-primary-700 px-6 py-6 text-white text-center">
+                <div className="flex justify-center mb-3"><MEmail className="w-10 h-10 text-white" /></div>
+                <h2 className="text-xl font-bold mb-1">Check your inbox!</h2>
+                <p className="text-primary-100 text-sm">
+                  You've been invited to join{" "}
+                  <strong className="text-white">{invite.orgName}</strong>
+                </p>
+              </div>
+              <div className="px-6 py-6 text-center space-y-4">
+                <div className="bg-primary-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-700 font-medium mb-1">
+                    A one-time login link was sent to:
+                  </p>
+                  <p className="text-primary-700 font-bold text-sm break-all">
+                    {invite.invitedEmail}
+                  </p>
+                </div>
+                <ol className="text-left space-y-2 text-sm text-gray-600">
+                  <li className="flex gap-2">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center">1</span>
+                    Open the email from Community GreenToken
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center">2</span>
+                    Click the <strong>"Accept Invitation"</strong> button in the email
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center">3</span>
+                    You'll be logged in automatically — no password needed
+                  </li>
+                </ol>
+                <p className="text-xs text-gray-400">
+                  Didn't get the email? Check spam, or ask your admin to resend.
+                </p>
+
+                {/* Fallback: already have account */}
+                <div className="border-t pt-4">
+                  <p className="text-xs text-gray-500 mb-2">Already have an account?</p>
+                  <button
+                    onClick={() => { setMode("signin"); setStatus("valid"); }}
+                    className="text-sm text-primary-600 font-medium hover:underline"
+                  >
+                    Sign in with your password instead →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── Invalid ── */}
           {status === "invalid" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -246,9 +275,7 @@ export default function JoinPage() {
               <p className="text-sm text-gray-500 mb-6">
                 Please sign out and sign back in with that email address, then click this link again.
               </p>
-              <div className="flex flex-col gap-2">
-                <Link href="/signin"><Button variant="primary" size="md" fullWidth>Sign in with the right account</Button></Link>
-              </div>
+              <Link href="/signin"><Button variant="primary" size="md" fullWidth>Sign in with the right account</Button></Link>
             </div>
           )}
 
@@ -285,7 +312,7 @@ export default function JoinPage() {
             </div>
           )}
 
-          {/* ── Valid invite — auth form ── */}
+          {/* ── Valid invite — auth form (generic link or fallback) ── */}
           {status === "valid" && invite && (
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
 
@@ -308,6 +335,15 @@ export default function JoinPage() {
 
               {/* Auth form */}
               <div className="px-6 py-6">
+
+                {/* Locked-email notice */}
+                {invite.invitedEmail && (
+                  <div className="flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-lg px-3 py-2 mb-4 text-xs text-primary-700">
+                    <MLock className="w-3.5 h-3.5 flex-shrink-0" />
+                    This invite is locked to <strong className="ml-1">{invite.invitedEmail}</strong>
+                  </div>
+                )}
+
                 {/* Mode toggle */}
                 <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
                   {(["signup", "signin"] as AuthMode[]).map((m) => (
@@ -321,51 +357,48 @@ export default function JoinPage() {
 
                 <form onSubmit={handleAuth} noValidate className="space-y-3">
                   {mode === "signup" && (
-                    <Input id="join-name" type="text" label="Full Name" placeholder="Alice Mokoena"
+                    <Input id="join-name" type="text" label="Full Name" placeholder="Grace Wanjiku"
                       value={name} onChange={(e) => setName(e.target.value)} required />
                   )}
 
                   <div>
                     <Input id="join-email" type="email"
-                      label={invite?.invitedEmail ? "Email Address (locked to invite)" : "Email Address"}
+                      label="Email Address"
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => { if (!invite?.invitedEmail) setEmail(e.target.value); }}
                       readOnly={!!invite?.invitedEmail}
                       autoComplete="email" required
                     />
-                    {invite?.invitedEmail && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-primary-600">
-                        <MEmail className="w-3 h-3" aria-hidden="true" />
-                        This invite is locked to this email address
-                      </p>
-                    )}
                   </div>
 
                   <div>
                     <label htmlFor="join-password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {mode === "signup" ? "Create Password" : "Password"}
+                      {mode === "signup" ? "Create a Password" : "Your Password"}
                     </label>
                     <input
                       id="join-password"
                       type="password"
-                      placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"}
+                      placeholder={mode === "signup" ? "Min. 8 characters" : "Enter your password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required minLength={8}
                       className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
                     />
+                    {mode === "signup" && (
+                      <p className="mt-1 text-xs text-gray-400">
+                        This becomes your permanent password for the app.
+                      </p>
+                    )}
                   </div>
 
                   <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<MLeaf className="w-4 h-4" />}>
-                    {mode === "signup" ? `Join ${invite.orgName}` : `Sign In & Join ${invite.orgName}`}
+                    {mode === "signup" ? `Create Account & Join ${invite.orgName}` : `Sign In & Join ${invite.orgName}`}
                   </Button>
                 </form>
 
                 <p className="text-center text-xs text-gray-400 mt-4">
-                  {mode === "signup"
-                    ? "Already have an account? "
-                    : "Don't have an account? "}
+                  {mode === "signup" ? "Already have an account? " : "Don't have an account? "}
                   <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
                     className="text-primary-600 font-medium hover:underline">
                     {mode === "signup" ? "Sign in instead" : "Create one"}
