@@ -45,7 +45,8 @@ export default function JoinPage() {
   const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [loading,  setLoading]  = useState(false);
+  const [loading,    setLoading]    = useState(false);
+  const [hasSession, setHasSession] = useState(false); // already authed via magic link
 
   // Guard: prevent acceptInvite() running twice simultaneously.
   // onAuthStateChange fires SIGNED_IN for both magic links AND manual sign-in.
@@ -65,6 +66,7 @@ export default function JoinPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session && !manualAuthRef.current) {
+          setHasSession(true);
           acceptInvite();
         }
       }
@@ -122,11 +124,9 @@ export default function JoinPage() {
       }
 
       if (session?.user) {
-        // Already authenticated — try to accept immediately
+        setHasSession(true);
         await acceptInvite();
       } else {
-        // No session: if this was an email invite, ask them to check inbox.
-        // If it's a generic link, show the sign-up/sign-in form directly.
         setStatus(invitedEmail ? "check_email" : "valid");
       }
     }
@@ -372,35 +372,46 @@ export default function JoinPage() {
                 </p>
               </div>
 
-              {/* Auth form */}
-              <div className="px-6 py-6">
-
-                {/* Locked-email notice */}
-                {invite.invitedEmail && (
-                  <div className="flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-lg px-3 py-2 mb-4 text-xs text-primary-700">
-                    <MLock className="w-3.5 h-3.5 flex-shrink-0" />
-                    This invite is locked to <strong className="ml-1">{invite.invitedEmail}</strong>
-                  </div>
-                )}
-
-                {/* Mode toggle */}
-                <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
-                  {(["signup", "signin"] as AuthMode[]).map((m) => (
-                    <button key={m} onClick={() => setMode(m)}
-                      className={cn("flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
-                        mode === m ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}>
-                      {m === "signup" ? "New Account" : "I have an account"}
-                    </button>
-                  ))}
+              {/* Body: if already authed show retry button; otherwise show auth form */}
+              {hasSession ? (
+                <div className="px-6 py-6 text-center space-y-4">
+                  <p className="text-sm text-gray-600">
+                    You&apos;re logged in. Click below to finish joining{" "}
+                    <strong>{invite.orgName}</strong>.
+                  </p>
+                  <Button
+                    variant="primary" size="lg" fullWidth loading={loading}
+                    icon={<MLeaf className="w-4 h-4" />}
+                    onClick={() => { setLoading(true); acceptInvite().finally(() => setLoading(false)); }}
+                  >
+                    Join {invite.orgName}
+                  </Button>
                 </div>
-
-                <form onSubmit={handleAuth} noValidate className="space-y-3">
-                  {mode === "signup" && (
-                    <Input id="join-name" type="text" label="Full Name" placeholder="Grace Wanjiku"
-                      value={name} onChange={(e) => setName(e.target.value)} required />
+              ) : (
+                <div className="px-6 py-6">
+                  {invite.invitedEmail && (
+                    <div className="flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-lg px-3 py-2 mb-4 text-xs text-primary-700">
+                      <MLock className="w-3.5 h-3.5 flex-shrink-0" />
+                      This invite is locked to <strong className="ml-1">{invite.invitedEmail}</strong>
+                    </div>
                   )}
 
-                  <div>
+                  <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
+                    {(["signup", "signin"] as AuthMode[]).map((m) => (
+                      <button key={m} onClick={() => setMode(m)}
+                        className={cn("flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                          mode === m ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}>
+                        {m === "signup" ? "New Account" : "I have an account"}
+                      </button>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleAuth} noValidate className="space-y-3">
+                    {mode === "signup" && (
+                      <Input id="join-name" type="text" label="Full Name" placeholder="Grace Wanjiku"
+                        value={name} onChange={(e) => setName(e.target.value)} required />
+                    )}
+
                     <Input id="join-email" type="email"
                       label="Email Address"
                       placeholder="you@example.com"
@@ -409,41 +420,37 @@ export default function JoinPage() {
                       readOnly={!!invite?.invitedEmail}
                       autoComplete="email" required
                     />
-                  </div>
 
-                  <div>
-                    <label htmlFor="join-password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {mode === "signup" ? "Create a Password" : "Your Password"}
-                    </label>
-                    <input
-                      id="join-password"
-                      type="password"
-                      placeholder={mode === "signup" ? "Min. 8 characters" : "Enter your password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required minLength={8}
-                      className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
-                    />
-                    {mode === "signup" && (
-                      <p className="mt-1 text-xs text-gray-400">
-                        This becomes your permanent password for the app.
-                      </p>
-                    )}
-                  </div>
+                    <div>
+                      <label htmlFor="join-password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {mode === "signup" ? "Create a Password" : "Your Password"}
+                      </label>
+                      <input
+                        id="join-password" type="password"
+                        placeholder={mode === "signup" ? "Min. 8 characters" : "Enter your password"}
+                        value={password} onChange={(e) => setPassword(e.target.value)}
+                        required minLength={8}
+                        className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                      />
+                      {mode === "signup" && (
+                        <p className="mt-1 text-xs text-gray-400">This becomes your permanent password for the app.</p>
+                      )}
+                    </div>
 
-                  <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<MLeaf className="w-4 h-4" />}>
-                    {mode === "signup" ? `Create Account & Join ${invite.orgName}` : `Sign In & Join ${invite.orgName}`}
-                  </Button>
-                </form>
+                    <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} icon={<MLeaf className="w-4 h-4" />}>
+                      {mode === "signup" ? `Create Account & Join ${invite.orgName}` : `Sign In & Join ${invite.orgName}`}
+                    </Button>
+                  </form>
 
-                <p className="text-center text-xs text-gray-400 mt-4">
-                  {mode === "signup" ? "Already have an account? " : "Don't have an account? "}
-                  <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-                    className="text-primary-600 font-medium hover:underline">
-                    {mode === "signup" ? "Sign in instead" : "Create one"}
-                  </button>
-                </p>
-              </div>
+                  <p className="text-center text-xs text-gray-400 mt-4">
+                    {mode === "signup" ? "Already have an account? " : "Don't have an account? "}
+                    <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                      className="text-primary-600 font-medium hover:underline">
+                      {mode === "signup" ? "Sign in instead" : "Create one"}
+                    </button>
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

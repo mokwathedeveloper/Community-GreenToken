@@ -12,16 +12,38 @@ export async function POST(
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
-  const { token } = await params; // Next.js 16: params is async
-  const supabase  = createAdminClient();
+  const { token } = await params;
+  const supabase   = createAdminClient();
 
-  const { data: invite } = await (supabase as any)
+  // Fetch invite — try with invited_email first (requires migration 024).
+  // If the column doesn't exist, PostgREST returns an error and data=null;
+  // fall back to a query without it so the flow works before migration runs.
+  type InviteRow = {
+    id: string; org_id: string; role: string;
+    uses_left: number | null; expires_at: string;
+    invited_email: string | null;
+  };
+
+  let invite: InviteRow | null = null;
+
+  const { data: withEmail, error: errWithEmail } = await (supabase as any)
     .from("invites")
     .select("id, org_id, role, uses_left, expires_at, invited_email")
     .eq("token", token)
-    .maybeSingle() as {
-      data: { id: string; org_id: string; role: string; uses_left: number | null; expires_at: string; invited_email: string | null } | null
-    };
+    .maybeSingle() as { data: InviteRow | null; error: { code?: string; message?: string } | null };
+
+  if (errWithEmail) {
+    console.warn("[accept] invited_email query failed, retrying without it:", JSON.stringify(errWithEmail));
+    const { data: withoutEmail } = await (supabase as any)
+      .from("invites")
+      .select("id, org_id, role, uses_left, expires_at")
+      .eq("token", token)
+      .maybeSingle() as { data: Omit<InviteRow, "invited_email"> | null };
+
+    invite = withoutEmail ? { ...withoutEmail, invited_email: null } : null;
+  } else {
+    invite = withEmail;
+  }
 
   if (!invite) {
     return NextResponse.json(
@@ -54,7 +76,7 @@ export async function POST(
         {
           error: {
             code: "WRONG_EMAIL",
-            message: `This invite was sent to ${invite.invited_email}. Please sign in with that email address to accept it.`,
+            message: `This invite was sent to ${invite.invited_email}. Please use that email address to accept it.`,
           },
         },
         { status: 403 }
@@ -78,11 +100,19 @@ export async function POST(
   }
 
   // Create membership
-  await (supabase as any).from("org_members").insert({
+  const { error: insertErr } = await (supabase as any).from("org_members").insert({
     org_id:  invite.org_id,
     user_id: auth.userId,
     role:    invite.role,
   });
+
+  if (insertErr) {
+    console.error("[accept] org_members insert failed:", JSON.stringify(insertErr));
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Could not create membership. Please try again." } },
+      { status: 500 }
+    );
+  }
 
   // Decrement uses_left
   if (invite.uses_left !== null) {
