@@ -266,7 +266,7 @@ export default function JoinPage() {
                 <div className="flex justify-center mb-3"><MEmail className="w-10 h-10 text-white" /></div>
                 <h2 className="text-xl font-bold mb-1">Check your inbox!</h2>
                 <p className="text-primary-100 text-sm">
-                  You've been invited to join{" "}
+                  You&apos;ve been invited to join{" "}
                   <strong className="text-white">{invite.orgName}</strong>
                 </p>
               </div>
@@ -286,11 +286,11 @@ export default function JoinPage() {
                   </li>
                   <li className="flex gap-2">
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center">2</span>
-                    Click the <strong>"Accept Invitation"</strong> button in the email
+                    Click the <strong>&ldquo;Accept Invitation&rdquo;</strong> button in the email
                   </li>
                   <li className="flex gap-2">
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center">3</span>
-                    You'll be logged in automatically — no password needed
+                    You&apos;ll be logged in automatically — no password needed
                   </li>
                 </ol>
                 {/* Resend magic link */}
@@ -377,7 +377,7 @@ export default function JoinPage() {
           {status === "accepted" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
               <div className="flex justify-center mb-4"><MGift className="w-12 h-12 text-primary-600" /></div>
-              <h2 className="text-xl font-bold text-primary-700 mb-2">You're in!</h2>
+              <h2 className="text-xl font-bold text-primary-700 mb-2">You&apos;re in!</h2>
               <p className="text-sm text-gray-500">Welcome to <strong>{invite?.orgName}</strong>. Taking you to your dashboard…</p>
               <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mt-4" />
             </div>
@@ -390,7 +390,7 @@ export default function JoinPage() {
               {/* Invite header */}
               <div className="bg-gradient-to-br from-primary-600 to-primary-700 px-6 py-6 text-white text-center">
                 <div className="flex justify-center mb-3"><MLeaf className="w-10 h-10 text-white" /></div>
-                <h2 className="text-xl font-bold mb-1">You've been invited!</h2>
+                <h2 className="text-xl font-bold mb-1">You&apos;ve been invited!</h2>
                 <p className="text-primary-100 text-sm">
                   Join <strong className="text-white">{invite.orgName}</strong> on Community GreenToken
                 </p>

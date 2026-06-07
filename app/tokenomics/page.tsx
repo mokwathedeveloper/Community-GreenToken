@@ -178,7 +178,7 @@ export default function TokenomicsPage() {
               <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-100 hidden md:block" aria-hidden="true" />
 
               <div className="space-y-6">
-                {FLOW.map(({ step, Icon, title, desc, href, cta, color }, i) => (
+                {FLOW.map(({ step, Icon, title, desc, href, cta, color }) => (
                   <div key={step} className="relative flex gap-6 items-start">
                     {/* Step circle */}
                     <div className={`relative z-10 flex-shrink-0 w-16 h-16 rounded-full ${color} flex flex-col items-center justify-center shadow-lg`}>

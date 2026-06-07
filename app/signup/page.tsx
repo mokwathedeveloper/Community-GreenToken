@@ -85,6 +85,7 @@ function SignUpPage() {
   const strength = calcStrength(password);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (inviteToken) { setCheckingAdmin(false); return; }
     fetch("/api/auth/superadmin-exists")
       .then(r => r.json())

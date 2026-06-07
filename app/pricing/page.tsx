@@ -22,7 +22,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
 import PublicLayout from "@/components/layouts/PublicLayout";
 import PricingCTAButton from "@/components/pricing/PricingCTAButton";
 import FAQAccordion from "@/components/pricing/FAQAccordion";
@@ -42,7 +41,7 @@ export default function PricingPage() {
   const [loadingPlan,  setLoadingPlan] = useState<string | null>(null);
 
   async function handleSelect(plan: Plan) {
-    if (plan.href) { window.location.href = plan.href; return; }
+    if (plan.href) { window.location.assign(plan.href); return; }
 
     setLoadingPlan(plan.id);
     try {
@@ -56,7 +55,7 @@ export default function PricingPage() {
       });
       const json = await res.json();
       if (json.data?.url) {
-        window.location.href = json.data.url;
+        window.location.assign(json.data.url);
       } else {
         console.error("[pricing] checkout failed:", json.error);
       }

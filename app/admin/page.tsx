@@ -91,18 +91,19 @@ function RevenueChart() {
 // SVG donut chart
 function PlanDonut() {
   const total = PLAN_DIST.reduce((s, d) => s + d.count, 0);
-  let cursor = -90;
   const r = 44, cx = 56, cy = 56;
-  const slices = PLAN_DIST.map((d) => {
-    const sweepAngle = (d.count / total) * 360;
-    const a1 = (cursor * Math.PI) / 180;
-    const a2 = ((cursor + sweepAngle) * Math.PI) / 180;
-    const large = sweepAngle > 180 ? 1 : 0;
-    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-    const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
-    cursor += sweepAngle;
-    return { ...d, path: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z` };
-  });
+  const slices = PLAN_DIST.reduce<{ label: string; count: number; color: string; path: string }[]>(
+    (acc, d) => {
+      const start = acc.reduce((s, sl) => s + (sl.count / total) * 360, -90);
+      const sweep = (d.count / total) * 360;
+      const a1 = (start * Math.PI) / 180;
+      const a2 = ((start + sweep) * Math.PI) / 180;
+      const large = sweep > 180 ? 1 : 0;
+      const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+      const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
+      return [...acc, { ...d, path: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z` }];
+    }, []
+  );
 
   return (
     <div className="flex items-center gap-4">
@@ -135,7 +136,6 @@ export default function SuperAdminPage() {
   const sorted = [...orgs].sort((a, b) => b[sortBy] - a[sortBy]);
 
   function suspend(id: string) {
-    if (!confirm("Suspend this organization?")) return;
     setOrgs((o) => o.map((org) => org.id === id ? { ...org, status: "canceled" as OrgStatus } : org));
   }
 
@@ -252,6 +252,7 @@ export default function SuperAdminPage() {
                       <td className="px-4 py-3 text-gray-400">{org.members.toLocaleString()}</td>
                       <td className="px-4 py-3 text-green-400 font-semibold">${org.mrr}</td>
                       <td className="px-4 py-3">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         <Badge color={(STATUS_COLORS[org.status] ?? "gray") as any}>{org.status.replace("_", " ")}</Badge>
                       </td>
                       <td className="px-4 py-3">

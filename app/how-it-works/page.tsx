@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import {
   MPersonAdd, MLeaf, MShield, MCoin, MGift,
-  MSmartphone, MSearch, MLink, MChevronRight,
+  MSmartphone, MSearch, MLink,
 } from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 
