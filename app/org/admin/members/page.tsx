@@ -38,7 +38,7 @@ import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
-import { MLink, MEmail, MInbox, MLock, MLeaf, MShield, MBusiness, MCheckCircle } from "@/components/icons";
+import { MLink, MEmail, MInbox, MLock, MLeaf, MShield, MBusiness, MCheckCircle, MWarning } from "@/components/icons";
 
 type MemberRole = "owner" | "admin" | "member";
 
@@ -86,6 +86,7 @@ export default function MembersPage() {
   const [sending,      setSending]      = useState(false);
   const [linkCopied,   setLinkCopied]   = useState(false);
   const [activeTab,    setActiveTab]    = useState<"members" | "invites">("members");
+  const [loadErr,      setLoadErr]      = useState<string | null>(null);
 
   const appUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
 
@@ -99,7 +100,7 @@ export default function MembersPage() {
       setMembers(membersRes.data ?? []);
       setInvites(invitesRes.data ?? []);
       if (usageRes?.data?.member_limit) setMemberLimit(usageRes.data.member_limit);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load member data.")).finally(() => setLoading(false));
   }, [orgId, isOrgAdmin]);
 
   useEffect(() => { if (!userLoading && isOrgAdmin) loadData(); }, [userLoading, isOrgAdmin, loadData]);
@@ -188,11 +189,10 @@ export default function MembersPage() {
   }
 
   async function revokeInvite(token: string, email: string) {
-    if (!confirm(`Revoke invite for ${email}?`)) return;
     try {
       await fetch(`/api/invites/email?token=${token}`, { method: "DELETE" });
       setInvites((inv) => inv.filter((i) => i.token !== token));
-      showToast("Invite revoked.", "info");
+      showToast(`Invite for ${email} revoked.`, "info");
     } catch {
       showToast("Could not revoke invite.", "error");
     }
@@ -201,6 +201,14 @@ export default function MembersPage() {
   return (
     <OrgAdminLayout orgName={orgName ?? "Your Org"} plan="Pro Plan">
       {toastNode}
+
+      {loadErr && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -277,7 +285,20 @@ export default function MembersPage() {
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {loading ? (
-              <p className="text-center text-sm text-gray-400 py-8">Loading members…</p>
+              <div className="divide-y divide-gray-50 animate-pulse" aria-label="Loading members" aria-busy="true">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="px-4 py-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3.5 bg-gray-100 rounded w-1/3" />
+                      <div className="h-3 bg-gray-100 rounded w-1/4" />
+                    </div>
+                    <div className="h-6 bg-gray-100 rounded-full w-16" />
+                    <div className="h-3 bg-gray-100 rounded w-20" />
+                    <div className="h-7 bg-gray-100 rounded w-24" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <caption className="sr-only">Organization member list</caption>

@@ -5,14 +5,14 @@
 // Stellar flow: approve → POST /api/actions/verify → increment_token_balance RPC
 //               → after() fires ActionRegistry.verify_action() → GreenToken.mint() on Stellar
 
-import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
-import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload, MOpenInNew } from "@/components/icons";
+import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload, MOpenInNew, MWarning } from "@/components/icons";
 
 type ActionStatus = "pending" | "verified" | "rejected";
 
@@ -48,6 +48,7 @@ export default function AdminActionsPage() {
   const [loading,    setLoading]    = useState(true);
   const [acting,     setActing]     = useState<string | null>(null);
   const [actionErr,  setActionErr]  = useState<string | null>(null);
+  const [loadErr,    setLoadErr]    = useState<string | null>(null);
   const [tokenMap,   setTokenMap]   = useState<Record<string, number>>({});
   const [page,       setPage]       = useState(1);
   const [total,      setTotal]      = useState(0);
@@ -66,10 +67,11 @@ export default function AdminActionsPage() {
         setItems(res.data ?? []);
         setTotal(res.pagination?.total ?? 0);
       })
-      .catch(console.error)
+      .catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load actions."))
       .finally(() => setLoading(false));
   }, [userLoading, isOrgAdmin, tab, page]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadActions(); }, [loadActions]);
 
   // Poll for stellar_tx_hash on recently verified actions (fires after after() resolves)
@@ -167,6 +169,15 @@ export default function AdminActionsPage() {
           </span>
         )}
       </div>
+
+      {/* Data load error */}
+      {loadErr && (
+        <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
+          <MWarning className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} className="ml-auto text-red-400 hover:text-red-600 text-lg leading-none" aria-label="Dismiss error">×</button>
+        </div>
+      )}
 
       {/* Inline action error — shown when approve/reject fails */}
       {actionErr && (
@@ -383,7 +394,7 @@ export default function AdminActionsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {([
             { step:"1", icon:<MUpload className="w-4 h-4 text-primary-600" />,  title:"Member Submits",  desc:"Member fills action form, uploads evidence photo. SHA-256 hash is computed and sent to ActionRegistry.submit_action() on Stellar testnet." },
-            { step:"2", icon:<MSearch className="w-4 h-4 text-blue-600" />,     title:"Admin Reviews",   desc:"You see the submission in this queue with the evidence hash and description. You can edit the GTK token reward before approving." },
+            { step:"2", icon:<MSearch className="w-4 h-4 text-primary-600" />,   title:"Admin Reviews",   desc:"You see the submission in this queue with the evidence hash and description. You can edit the GTK token reward before approving." },
             { step:"3", icon:<MLink   className="w-4 h-4 text-primary-600" />,  title:"Blockchain Proof",desc:"On approval, ActionRegistry.verify_action() is called. Cross-contract call triggers GreenToken.mint() — tokens minted to member's Stellar wallet." },
             { step:"4", icon:<MCoin   className="w-4 h-4 text-amber-500" />,    title:"Member Receives", desc:"Member's GTK balance updates in DB (atomic RPC) and on-chain. Stellar tx_hash is stored as immutable proof visible to member." },
           ] as {step:string;icon:React.ReactNode;title:string;desc:string}[]).map(({step,icon,title,desc}) => (

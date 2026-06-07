@@ -97,6 +97,7 @@ export default function AdminWithdrawalsPage() {
   }, [isOrgAdmin, filterStatus]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!userLoading && isOrgAdmin) loadWithdrawals();
   }, [userLoading, isOrgAdmin, loadWithdrawals]);
 
@@ -237,7 +238,24 @@ export default function AdminWithdrawalsPage() {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-sm text-gray-400">Loading withdrawals…</div>
+          <div className="divide-y divide-gray-50 animate-pulse" aria-label="Loading withdrawals" aria-busy="true">
+            {[1,2,3].map(i => (
+              <div key={i} className="px-5 py-5 flex items-center gap-4">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-gray-100 rounded w-1/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/5" />
+                </div>
+                <div className="h-4 bg-gray-100 rounded w-20" />
+                <div className="h-4 bg-gray-100 rounded w-24" />
+                <div className="h-6 bg-gray-100 rounded-full w-16" />
+                <div className="flex gap-1.5">
+                  <div className="h-8 bg-gray-100 rounded w-20" />
+                  <div className="h-8 bg-gray-100 rounded w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : rows.length === 0 ? (
           <div className="py-16 text-center">
             <MAccessTime className="w-8 h-8 text-gray-300 mx-auto mb-3" />
@@ -467,7 +485,7 @@ export default function AdminWithdrawalsPage() {
                       <span className="text-sm font-semibold text-gray-900">Mark as Manually Paid</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      You've already sent the payment outside this system. This marks the request as completed.
+                      You have already sent the payment outside this system. This marks the request as completed.
                     </p>
                   </div>
                 </label>
@@ -512,7 +530,7 @@ export default function AdminWithdrawalsPage() {
               <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2">{errMsg}</div>
             )}
             <p className="text-sm text-gray-600">
-              Rejecting <strong>{memberName(rejectTarget)}</strong>'s withdrawal of{" "}
+              Rejecting <strong>{memberName(rejectTarget)}</strong>&apos;s withdrawal of{" "}
               <strong>{rejectTarget.tokens_amount.toLocaleString()} GTK</strong>.
               Their tokens will be <strong>refunded immediately</strong>.
             </p>

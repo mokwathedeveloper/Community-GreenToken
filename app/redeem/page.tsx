@@ -67,6 +67,7 @@ export default function RedeemPage() {
   const [loading,   setLoading]   = useState(false);
   const [dataLoad,  setDataLoad]  = useState(true);
   const [errMsg,    setErrMsg]    = useState<string | null>(null);
+  const [loadErr,   setLoadErr]   = useState<string | null>(null);
   const [redeemed,  setRedeemed]  = useState<{ title: string; tokens: number } | null>(null);
 
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function RedeemPage() {
       const logs: RedemptionLog[] = histRes.data ?? [];
       setHistory(logs);
       setTotalRed(histRes.pagination?.total ?? logs.length);
-    }).catch(console.error).finally(() => setDataLoad(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load rewards. Please refresh.")).finally(() => setDataLoad(false));
   }, []);
 
   const selectedReward = rewards.find(r => r.id === selected);
@@ -157,6 +158,15 @@ export default function RedeemPage() {
           </p>
         </div>
       </div>
+
+      {/* ── Load error banner ─────────────────────────────────────────────── */}
+      {loadErr && (
+        <div role="alert" className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss" className="ml-auto text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {/* ── Error banner ───────────────────────────────────────────────────── */}
       {errMsg && (
@@ -240,7 +250,7 @@ export default function RedeemPage() {
           </div>
           <p className="text-sm font-bold text-gray-700">No rewards yet</p>
           <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
-            Your org admin hasn't added any rewards. Check back soon!
+            Your org admin has not added any rewards. Check back soon!
           </p>
         </div>
       ) : (
@@ -397,7 +407,19 @@ export default function RedeemPage() {
         </div>
 
         {dataLoad ? (
-          <div className="py-8 text-center text-sm text-gray-400 animate-pulse">Loading history…</div>
+          <div className="divide-y divide-gray-50 animate-pulse" aria-label="Loading redemption history" aria-busy="true">
+            {[1,2,3].map(i => (
+              <div key={i} className="px-5 py-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gray-100 flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-gray-100 rounded w-2/5" />
+                  <div className="h-3 bg-gray-100 rounded w-1/4" />
+                </div>
+                <div className="h-4 bg-gray-100 rounded w-16" />
+                <div className="h-6 bg-gray-100 rounded-full w-20" />
+              </div>
+            ))}
+          </div>
         ) : history.length === 0 ? (
           <div className="py-12 text-center">
             <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -459,7 +481,7 @@ export default function RedeemPage() {
       <Modal
         open={success}
         onClose={() => { setSuccess(false); setRedeemed(null); }}
-        title="Redemption Successful! 🎉"
+        title="Redemption Successful!"
         icon={<MCheckCircle className="w-8 h-8 text-green-500" />}
         description={
           redeemed

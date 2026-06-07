@@ -9,7 +9,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
-import { MCoin } from "@/components/icons";
+import { MCoin, MAccountBalance, MPayments, MCreditCard, MPhoneAndroid, MAttachMoney, MWarning } from "@/components/icons";
 
 type Currency  = "KES" | "USD";
 type Method    = "mpesa" | "bank_transfer";
@@ -27,13 +27,13 @@ type WithdrawalRecord = {
 };
 
 const RATES: Record<Currency, number> = { KES: 0.50, USD: 0.004 };
-const CURRENCY_LABELS: Record<Currency, string> = { KES: "KSH (Kenyan Shilling)", USD: "USD (US Dollar)" };
 const MIN_GTK = 500;
 
 export default function WithdrawPage() {
   const [balance,    setBalance]    = useState<number | null>(null);
   const [history,    setHistory]    = useState<WithdrawalRecord[]>([]);
   const [loading,    setLoading]    = useState(true);
+  const [loadErr,    setLoadErr]    = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success,    setSuccess]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function WithdrawPage() {
     ]).then(([balRes, histRes]) => {
       setBalance(balRes.data?.balance ?? 0);
       setHistory(histRes.data ?? []);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load your balance. Please refresh.")).finally(() => setLoading(false));
   }, [success]);
 
   async function handleSubmit(e: FormEvent) {
@@ -97,12 +97,20 @@ export default function WithdrawPage() {
       {/* ── Page header ── */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          💸 Withdraw Tokens
+          <MAttachMoney className="w-6 h-6 text-primary-500" aria-hidden="true" /> Withdraw Tokens
         </h2>
         <p className="text-sm text-gray-500 mt-0.5">
           Convert your GreenTokens to cash and send to M-Pesa or your bank account.
         </p>
       </div>
+
+      {loadErr && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {/* ── Balance card ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -116,7 +124,7 @@ export default function WithdrawPage() {
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-2xl flex-shrink-0">🏦</div>
+          <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0"><MAccountBalance className="w-6 h-6 text-green-600" aria-hidden="true" /></div>
           <div>
             <p className="text-2xl font-extrabold text-gray-900">
               {loading ? "…" : `KES ${((balance ?? 0) * RATES.KES).toFixed(2)}`}
@@ -125,7 +133,7 @@ export default function WithdrawPage() {
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">💵</div>
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0"><MPayments className="w-6 h-6 text-blue-600" aria-hidden="true" /></div>
           <div>
             <p className="text-2xl font-extrabold text-gray-900">
               {loading ? "…" : `$${((balance ?? 0) * RATES.USD).toFixed(2)}`}
@@ -140,7 +148,7 @@ export default function WithdrawPage() {
         {/* ── Withdrawal form (3/5) ── */}
         <div className="lg:col-span-3 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h3 className="text-sm font-bold text-gray-900 mb-1 flex items-center gap-2">
-            <span className="text-primary-500" aria-hidden="true">💳</span> Request Withdrawal
+            <MCreditCard className="w-4 h-4 text-primary-500" aria-hidden="true" /> Request Withdrawal
           </h3>
           <p className="text-xs text-gray-400 mb-5">
             Minimum {MIN_GTK.toLocaleString()} GTK · Rate: 1 GTK = {RATES.KES} KES / ${RATES.USD} USD
@@ -148,7 +156,7 @@ export default function WithdrawPage() {
 
           {error && (
             <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">
-              <span aria-hidden="true">⚠</span>{error}
+              <MWarning className="w-4 h-4 flex-shrink-0" aria-hidden="true" />{error}
             </div>
           )}
 
@@ -204,7 +212,7 @@ export default function WithdrawPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Payout Method</label>
               <div className="grid grid-cols-2 gap-3">
-                {([["mpesa","📱 M-Pesa"],["bank_transfer","🏦 Bank Transfer"]] as [Method,string][]).map(([m,label]) => (
+                {(["mpesa", "bank_transfer"] as Method[]).map(m => (
                   <button
                     key={m} type="button"
                     onClick={() => setMethod(m)}
@@ -212,7 +220,12 @@ export default function WithdrawPage() {
                       "border-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
                       method === m ? "border-primary-500 bg-primary-50 text-primary-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
                     )}>
-                    {label}
+                    <span className="flex items-center justify-center gap-1.5">
+                      {m === "mpesa"
+                        ? <MPhoneAndroid className="w-4 h-4" aria-hidden="true" />
+                        : <MAccountBalance className="w-4 h-4" aria-hidden="true" />}
+                      {m === "mpesa" ? "M-Pesa" : "Bank Transfer"}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -268,7 +281,9 @@ export default function WithdrawPage() {
 
             {/* Info note */}
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-              <span className="text-blue-400 text-sm mt-0.5" aria-hidden="true">ℹ️</span>
+              <svg className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              </svg>
               <p className="text-xs text-blue-700 leading-relaxed">
                 Withdrawals are processed within <strong>1–3 business days</strong>.
                 Your tokens are deducted immediately when you submit.
@@ -403,7 +418,7 @@ export default function WithdrawPage() {
       <Modal
         open={success}
         onClose={() => setSuccess(false)}
-        title="Withdrawal Submitted! 🎉"
+        title="Withdrawal Submitted!"
         icon={
           <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
