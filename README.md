@@ -792,6 +792,24 @@ The `/architecture` folder contains 16 technical reference documents:
 
 ---
 
+## Documentation Index
+
+| Document | Description |
+|---|---|
+| [`README.md`](README.md) | This file — overview, architecture, quick start, API reference |
+| [`WHITEPAPER.md`](WHITEPAPER.md) | Full technical whitepaper — problem, solution, contracts, security, roadmap |
+| [`TOKENOMICS.md`](TOKENOMICS.md) | GTK token economics — distribution, mint flow, deflationary mechanics, projections |
+| [`TECH_STACK.md`](TECH_STACK.md) | Technical reference — all packages, versions, design decisions |
+| [`SECURITY.md`](SECURITY.md) | Security policy — OWASP coverage, rate limits, audit status, incident response |
+| [`INVESTOR.md`](INVESTOR.md) | Investor brief — pitch, market, business model, competitive moat, ask |
+| [`RESPONSIBLE_DEVELOPMENT.md`](RESPONSIBLE_DEVELOPMENT.md) | Responsible dev — privacy, ethics, environmental alignment, anti-greenwashing |
+| [`CONTRIBUTORS.md`](CONTRIBUTORS.md) | Team, timeline, contributing guide |
+| [`CHANGELOG.md`](CHANGELOG.md) | Full version history (v1.0.0 → v2.0.0) |
+| [`architecture/`](architecture/) | 16 technical reference documents (API, DB, blockchain, security, deployment) |
+| [`DEVELOPMENT_RULES.md`](DEVELOPMENT_RULES.md) | Strict coding standards for all contributors |
+
+---
+
 ## Hackathon — WebBridge Stellar Track
 
 **GreenToken was built specifically for the WebBridge Hackathon Stellar Track.**
@@ -841,7 +859,7 @@ git commit -m "feat(scope): description"
 
 ## License
 
-MIT © 2025 Community GreenToken Contributors
+MIT © 2026 Community GreenToken Contributors
 
 ---
 
