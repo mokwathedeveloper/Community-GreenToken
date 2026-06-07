@@ -67,16 +67,17 @@ export async function b2cPayment(params: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://community-greentoken.vercel.app";
 
   const payload = {
-    InitiatorName:      process.env.MPESA_INITIATOR_NAME,
-    SecurityCredential: process.env.MPESA_INITIATOR_PASSWORD,
-    CommandID:          "BusinessPayment",
-    Amount:             Math.round(params.amountKes),
-    PartyA:             process.env.MPESA_SHORTCODE,
-    PartyB:             formatPhone(params.phoneNumber),
-    Remarks:            params.remarks.slice(0, 100),
-    QueueTimeOutURL:    `${appUrl}/api/payments/mpesa/callback`,
-    ResultURL:          `${appUrl}/api/payments/mpesa/callback`,
-    Occasion:           params.withdrawalId,
+    OriginatorConversationID: `gtk-${params.withdrawalId.slice(0, 16)}-${Date.now()}`,
+    InitiatorName:            process.env.MPESA_INITIATOR_NAME,
+    SecurityCredential:       process.env.MPESA_INITIATOR_PASSWORD,
+    CommandID:                "BusinessPayment",
+    Amount:                   Math.round(params.amountKes),
+    PartyA:                   process.env.MPESA_SHORTCODE,
+    PartyB:                   formatPhone(params.phoneNumber),
+    Remarks:                  params.remarks.slice(0, 100),
+    QueueTimeOutURL:          `${appUrl}/api/payments/mpesa/callback`,
+    ResultURL:                `${appUrl}/api/payments/mpesa/callback`,
+    Occasion:                 params.withdrawalId,
   };
 
   const res = await fetch(`${BASE_URL}/mpesa/b2c/v3/paymentrequest`, {
