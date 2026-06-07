@@ -21,16 +21,17 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { MLink2, MAccessTime, MCheckCircle, MGift, MLeaf } from "@/components/icons";
+import { MLink2, MAccessTime, MCheckCircle, MGift, MLeaf, MEmail, MWarning } from "@/components/icons";
 
-type InviteStatus = "loading" | "valid" | "expired" | "invalid" | "accepted" | "already_member";
+type InviteStatus = "loading" | "valid" | "expired" | "invalid" | "accepted" | "already_member" | "wrong_email";
 type AuthMode     = "signup" | "signin";
 
 interface InviteInfo {
-  orgName:   string;
-  orgSlug:   string;
-  role:      string;
-  expiresAt: string;
+  orgName:       string;
+  orgSlug:       string;
+  role:          string;
+  expiresAt:     string;
+  invitedEmail?: string;   // set for email-specific invites
 }
 
 export default function JoinPage() {
@@ -66,6 +67,7 @@ export default function JoinPage() {
         uses_left: number | null;
         is_expired: boolean;
         is_valid: boolean;
+        invited_email?: string | null;
         organizations: { name: string; slug: string } | null;
       } | null = null;
 
@@ -92,12 +94,20 @@ export default function JoinPage() {
       }
 
       const org = inviteData.organizations;
+      const invitedEmail = (inviteData.invited_email as string | null) ?? undefined;
       setInvite({
-        orgName:   org?.name   ?? "an organization",
-        orgSlug:   org?.slug   ?? "",
-        role:      inviteData.role,
-        expiresAt: inviteData.expires_at,
+        orgName:      org?.name   ?? "an organization",
+        orgSlug:      org?.slug   ?? "",
+        role:         inviteData.role,
+        expiresAt:    inviteData.expires_at,
+        invitedEmail,
       });
+
+      // Pre-fill the email field if this is an email-specific invite
+      if (invitedEmail) setEmail(invitedEmail);
+
+      // Default to signin mode if there's a specific email (likely existing user from magic link)
+      if (invitedEmail) setMode("signin");
 
       // If already logged in, auto-accept
       if (session?.user) {
@@ -120,6 +130,10 @@ export default function JoinPage() {
         setTimeout(() => router.push("/dashboard"), 2000);
         return;
       }
+      if (res.status === 403 && json.error?.code === "WRONG_EMAIL") {
+        setStatus("wrong_email");
+        return;
+      }
       if (!res.ok) {
         showToast(json.error?.message ?? "Could not accept invite.", "error");
         setStatus("invalid");
@@ -127,7 +141,7 @@ export default function JoinPage() {
       }
 
       setStatus("accepted");
-      showToast(`Welcome to ${invite?.orgName ?? "the organization"}! 🌿`, "success");
+      showToast(`Welcome to ${invite?.orgName ?? "the organization"}!`, "success");
       setTimeout(() => router.push("/dashboard"), 1800);
     } catch {
       showToast("Something went wrong. Please try again.", "error");
@@ -210,12 +224,31 @@ export default function JoinPage() {
           )}
 
           {/* ── Invalid ── */}
-          {(status === "invalid") && (
+          {status === "invalid" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
               <div className="flex justify-center mb-4"><MLink2 className="w-12 h-12 text-gray-400" /></div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Invite Not Found</h2>
               <p className="text-sm text-gray-500 mb-6">This invite link is invalid or has already been used.</p>
-              <Link href="/signup"><Button variant="primary" size="md" fullWidth>Create a new account</Button></Link>
+              <p className="text-xs text-gray-400 mb-6">If you think this is a mistake, ask your org admin to send a new invite.</p>
+              <Link href="/signin"><Button variant="outline" size="md" fullWidth>Sign in instead</Button></Link>
+            </div>
+          )}
+
+          {/* ── Wrong email ── */}
+          {status === "wrong_email" && (
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <div className="flex justify-center mb-4"><MWarning className="w-12 h-12 text-amber-400" /></div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Wrong Email Address</h2>
+              <p className="text-sm text-gray-500 mb-2">
+                This invite was sent to{" "}
+                <strong className="text-gray-800">{invite?.invitedEmail ?? "a specific email address"}</strong>.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Please sign out and sign back in with that email address, then click this link again.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link href="/signin"><Button variant="primary" size="md" fullWidth>Sign in with the right account</Button></Link>
+              </div>
             </div>
           )}
 
@@ -292,8 +325,22 @@ export default function JoinPage() {
                       value={name} onChange={(e) => setName(e.target.value)} required />
                   )}
 
-                  <Input id="join-email" type="email" label="Email Address" placeholder="you@example.com"
-                    value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+                  <div>
+                    <Input id="join-email" type="email"
+                      label={invite?.invitedEmail ? "Email Address (locked to invite)" : "Email Address"}
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => { if (!invite?.invitedEmail) setEmail(e.target.value); }}
+                      readOnly={!!invite?.invitedEmail}
+                      autoComplete="email" required
+                    />
+                    {invite?.invitedEmail && (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-primary-600">
+                        <MEmail className="w-3 h-3" aria-hidden="true" />
+                        This invite is locked to this email address
+                      </p>
+                    )}
+                  </div>
 
                   <div>
                     <label htmlFor="join-password" className="block text-sm font-medium text-gray-700 mb-1.5">

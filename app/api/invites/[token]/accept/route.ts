@@ -17,10 +17,10 @@ export async function POST(
 
   const { data: invite } = await (supabase as any)
     .from("invites")
-    .select("id, org_id, role, uses_left, expires_at")
+    .select("id, org_id, role, uses_left, expires_at, invited_email")
     .eq("token", token)
     .maybeSingle() as {
-      data: { id: string; org_id: string; role: string; uses_left: number | null; expires_at: string } | null
+      data: { id: string; org_id: string; role: string; uses_left: number | null; expires_at: string; invited_email: string | null } | null
     };
 
   if (!invite) {
@@ -43,6 +43,23 @@ export async function POST(
       { error: { code: "INVITE_EXHAUSTED", message: "This invite has reached its usage limit." } },
       { status: 410 }
     );
+  }
+
+  // Email-specific invite: verify the authenticated user's email matches
+  if (invite.invited_email) {
+    const { data: { user } } = await supabase.auth.admin.getUserById(auth.userId);
+    const userEmail = user?.email?.toLowerCase().trim() ?? "";
+    if (userEmail !== invite.invited_email.toLowerCase().trim()) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "WRONG_EMAIL",
+            message: `This invite was sent to ${invite.invited_email}. Please sign in with that email address to accept it.`,
+          },
+        },
+        { status: 403 }
+      );
+    }
   }
 
   // Check if already a member

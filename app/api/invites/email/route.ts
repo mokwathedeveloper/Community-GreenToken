@@ -53,11 +53,12 @@ export async function POST(req: NextRequest) {
   const { data: invite, error: inviteErr } = await (supabase as any)
     .from("invites")
     .insert({
-      org_id:     auth!.orgId,
-      created_by: auth!.userId,
+      org_id:         auth!.orgId,
+      created_by:     auth!.userId,
       role,
-      uses_left:  1,           // single-use invite
-      expires_at: expiresAt,
+      uses_left:      1,           // single-use invite
+      expires_at:     expiresAt,
+      invited_email:  email,       // only this email may accept
     })
     .select("id, token, role, expires_at")
     .single();

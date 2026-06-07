@@ -17,7 +17,7 @@ export async function GET(
   // id can be either the UUID or the token hex string
   const { data: invite } = await (supabase as any)
     .from("invites")
-    .select("id, org_id, role, uses_left, expires_at, created_at, organizations(name, slug)")
+    .select("id, org_id, role, uses_left, expires_at, created_at, invited_email, organizations(name, slug)")
     .or(`id.eq.${token},token.eq.${token}`)
     .maybeSingle() as { data: Record<string, unknown> | null };
 
