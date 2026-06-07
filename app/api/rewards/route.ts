@@ -5,20 +5,30 @@ import { parseBody, createRewardSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
 
 // GET /api/rewards — org reward catalog
+// ?all=true → admin view: returns all rewards including inactive (requires admin role)
 // POST /api/rewards — admin: add new reward
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
   if (!auth.orgId) return NextResponse.json({ data: [], meta: { org_id: "" } });
 
+  const showAll = req.nextUrl.searchParams.get("all") === "true";
+  if (showAll) {
+    const guard = requireOrgAdmin(auth);
+    if (guard) return guard;
+  }
+
   const supabase = createAdminClient();
-  const { data, error } = await (supabase as any)
+  let query = (supabase as any)
     .from("rewards")
     .select("id, title, description, token_cost, stock, is_active, created_at")
     .eq("org_id", auth.orgId)
-    .eq("is_active", true)
-    .order("token_cost", { ascending: true });
+    .order("created_at", { ascending: false });
+
+  if (!showAll) query = query.eq("is_active", true).order("token_cost", { ascending: true });
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json(
