@@ -36,6 +36,12 @@ export async function GET(req: NextRequest) {
     .order("submitted_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
+  // Members only see their own submissions; admins/owners see all org actions.
+  // Admin queue is served by /api/actions/pending — this route is primarily member-facing.
+  if (auth.role === "member") {
+    query = query.eq("user_id", auth.userId);
+  }
+
   if (status) query = query.eq("status", status);
 
   const { data, count, error } = await query as {
