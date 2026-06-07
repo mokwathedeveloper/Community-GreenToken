@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MLink, MScale, MPeople, MLeaf, MLightbulb } from "@/components/icons";
+import { MLink, MScale, MPeople, MLeaf, MLightbulb, MPhoneAndroid, MStar } from "@/components/icons";
 
 const TRUST_BADGES = [
-  { Icon: MLink,   label: "Blockchain Secured" },
-  { Icon: MScale,  label: "Transparent & Fair" },
+  { Icon: MLink,   label: "Stellar Blockchain" },
+  { Icon: MPhoneAndroid, label: "M-Pesa Cash Out" },
   { Icon: MPeople, label: "Community Driven"   },
+  { Icon: MStar,   label: "Africa-First"        },
 ];
 
 export default function HeroSection() {
@@ -40,17 +41,25 @@ export default function HeroSection() {
         <div className="max-w-xl">
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
-            Rewarding{" "}
-            <span className="text-primary-600">Sustainable</span>{" "}
-            Actions. Building Better{" "}
-            <span className="text-primary-600">Communities.</span>
+            Earn Real{" "}
+            <span className="text-primary-600">Cash Rewards</span>{" "}
+            for Eco-Actions.{" "}
+            <span className="text-primary-600">Verified on Stellar.</span>
           </h1>
 
-          <p className="text-lg text-gray-700 leading-relaxed mb-8 max-w-lg">
-            Community GreenToken rewards real-world eco-friendly actions with
-            blockchain-verified tokens. Earn rewards for recycling, planting
-            trees, and reducing your carbon footprint — transparently, on Stellar.
+          <p className="text-lg text-gray-700 leading-relaxed mb-3 max-w-lg">
+            Your school, NGO, or company rewards members for verified real-world
+            eco-actions — recycling, tree planting, clean-ups. Every reward is
+            recorded on the Stellar blockchain and can be cashed out via M-Pesa.
           </p>
+
+          {/* M-Pesa highlight pill */}
+          <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-1.5 mb-7">
+            <MPhoneAndroid className="w-4 h-4 text-green-600 flex-shrink-0" aria-hidden="true" />
+            <span className="text-sm font-semibold text-green-700">
+              Community members in Kenya earn real KES — redeemable via M-Pesa
+            </span>
+          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mb-10">
@@ -66,7 +75,7 @@ export default function HeroSection() {
               className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-primary-600 border-2 border-primary-500 hover:bg-primary-50 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               <MLightbulb className="w-5 h-5" aria-hidden="true" />
-              Watch How It Works
+              See How It Works
             </Link>
           </div>
 

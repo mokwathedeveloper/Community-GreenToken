@@ -4,11 +4,12 @@
 
 # Community GreenToken
 
-### Rewarding Sustainable Actions. Building Better Communities.
+### Earn Real Cash Rewards for Eco-Actions. Verified on Stellar.
 
-*A production-ready, multi-tenant SaaS platform that tokenizes real-world eco-actions into blockchain-verified rewards on Stellar.*
+*A production-ready, multi-tenant SaaS platform that tokenizes real-world eco-actions into blockchain-verified rewards on Stellar — with M-Pesa cash-out for African communities.*
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel)](https://community-greentoken-fb803chx2-moracios-projects.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-community--greentoken.vercel.app-black?logo=vercel)](https://community-greentoken.vercel.app)
+[![Demo Guide](https://img.shields.io/badge/Judge%20Demo-DEMO__GUIDE.md-brightgreen)](#-judge-demo--live-credentials)
 [![Stellar Testnet](https://img.shields.io/badge/Blockchain-Stellar%20Testnet-brightgreen?logo=stellar)](https://stellar.org)
 [![SEP-41](https://img.shields.io/badge/Token%20Standard-SEP--41-blue)](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0041.md)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black?logo=nextdotjs)](https://nextjs.org)
@@ -19,9 +20,27 @@
 
 ---
 
-> **"The only Stellar hackathon project with a full SaaS layer: multi-tenant org management, Stripe billing, admin dashboards, Freighter wallet integration, and 3 live Soroban contracts — all shipped as a working product, not a proof of concept."**
+> **"The only Stellar hackathon project with a full SaaS layer, M-Pesa cash-out, and 3 live Soroban contracts — verified eco-actions, not pledges."**
 
 </div>
+
+---
+
+## 🔑 Judge Demo — Live Credentials
+
+**Live URL:** https://community-greentoken.vercel.app  
+**Full walkthrough:** [DEMO_GUIDE.md](DEMO_GUIDE.md)
+
+| Role | Email | Password | What you see |
+|---|---|---|---|
+| **Org Admin** | `demo-admin@greentoken.app` | `DemoGTK2026!` | Action verification queue, analytics, billing dashboard |
+| **Community Member** | `demo-member@greentoken.app` | `DemoGTK2026!` | 225 GTK balance, submit actions, M-Pesa withdrawal |
+
+### Core demo flow (3 minutes)
+1. Sign in as **admin** → go to **Action Verification**
+2. Approve Grace Wanjiku's pending action → watch **"Minting on Stellar…"** pulse
+3. Click the **Stellar Expert link** that appears — live on-chain proof
+4. Sign in as **member** → see GTK balance updated → go to **/withdraw** → request M-Pesa KES payout
 
 ---
 

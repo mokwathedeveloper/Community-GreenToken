@@ -5,13 +5,13 @@
 // Stellar flow: approve → POST /api/actions/verify → increment_token_balance RPC
 //               → after() fires ActionRegistry.verify_action() → GreenToken.mint() on Stellar
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
-import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload } from "@/components/icons";
+import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload, MOpenInNew } from "@/components/icons";
 
 type ActionStatus = "pending" | "verified" | "rejected";
 
@@ -37,13 +37,16 @@ const STATUS_TABS: { key: ActionStatus | "all"; label: string }[] = [
 export default function AdminActionsPage() {
   const { orgName, isLoading: userLoading } = useUser();
 
-  const [tab,      setTab]      = useState<ActionStatus | "all">("pending");
-  const [items,    setItems]    = useState<QueueItem[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [acting,   setActing]   = useState<string | null>(null);
-  const [tokenMap, setTokenMap] = useState<Record<string, number>>({});
-  const [page,     setPage]     = useState(1);
-  const [total,    setTotal]    = useState(0);
+  const [tab,        setTab]        = useState<ActionStatus | "all">("pending");
+  const [items,      setItems]      = useState<QueueItem[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [acting,     setActing]     = useState<string | null>(null);
+  const [tokenMap,   setTokenMap]   = useState<Record<string, number>>({});
+  const [page,       setPage]       = useState(1);
+  const [total,      setTotal]      = useState(0);
+  // mintingSet: action IDs currently waiting for Stellar tx_hash to appear
+  const [mintingSet, setMintingSet] = useState<Set<string>>(new Set());
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const LIMIT = 20;
 
   const loadActions = useCallback(() => {
@@ -62,6 +65,32 @@ export default function AdminActionsPage() {
 
   useEffect(() => { loadActions(); }, [loadActions]);
 
+  // Poll for stellar_tx_hash on recently verified actions (fires after after() resolves)
+  useEffect(() => {
+    if (mintingSet.size === 0) return;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 15; // 15 × 2s = 30s max wait
+    pollRef.current = setInterval(async () => {
+      attempts++;
+      try {
+        const res  = await fetch(`/api/actions?status=verified&limit=50&page=1`);
+        const json = await res.json();
+        const rows: QueueItem[] = json.data ?? [];
+        const updated: Record<string, string> = {};
+        rows.forEach(r => { if (r.stellar_tx_hash && mintingSet.has(r.id)) updated[r.id] = r.stellar_tx_hash; });
+        if (Object.keys(updated).length > 0) {
+          setItems(prev => prev.map(a => updated[a.id] ? { ...a, stellar_tx_hash: updated[a.id] } : a));
+          setMintingSet(prev => { const n = new Set(prev); Object.keys(updated).forEach(id => n.delete(id)); return n; });
+        }
+      } catch { /* non-fatal */ }
+      if (attempts >= MAX_ATTEMPTS) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        setMintingSet(new Set());
+      }
+    }, 2000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [mintingSet]);
+
   async function handleVerify(actionId: string, tokensToMint: number, approve: boolean) {
     setActing(actionId);
     try {
@@ -76,6 +105,8 @@ export default function AdminActionsPage() {
           alert(err.error?.message ?? "Verification failed");
           return;
         }
+        // Start polling for the Stellar tx_hash (after() runs async on server)
+        setMintingSet(prev => new Set(prev).add(actionId));
       }
       // Optimistically update row status
       setItems(prev => prev.map(a =>
@@ -179,6 +210,8 @@ export default function AdminActionsPage() {
                   const busy  = acting === a.id;
                   const isPending = a.status === "pending";
 
+                  const isMinting = mintingSet.has(a.id);
+
                   return (
                     <tr key={a.id} className={cn("hover:bg-gray-50 transition-colors", isPending && "bg-amber-50/30")}>
 
@@ -241,15 +274,21 @@ export default function AdminActionsPage() {
                             dot>
                             {a.status}
                           </Badge>
-                          {a.stellar_tx_hash && (
+                          {a.stellar_tx_hash ? (
                             <a
                               href={`https://stellar.expert/explorer/testnet/tx/${a.stellar_tx_hash}`}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 text-[10px] text-primary-600 hover:underline font-mono"
-                              title="View on Stellar Explorer">
-                              <MLink className="w-2.5 h-2.5" aria-hidden="true" /> {a.stellar_tx_hash.slice(0,8)}…
+                              title="View this transaction on Stellar Expert">
+                              <MOpenInNew className="w-2.5 h-2.5" aria-hidden="true" />
+                              <span>Stellar: {a.stellar_tx_hash.slice(0,8)}…</span>
                             </a>
-                          )}
+                          ) : isMinting ? (
+                            <span className="flex items-center gap-1 text-[10px] text-amber-600 animate-pulse">
+                              <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping" aria-hidden="true" />
+                              Minting on Stellar…
+                            </span>
+                          ) : null}
                         </div>
                       </td>
 
