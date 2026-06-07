@@ -79,19 +79,19 @@ export default function Navbar() {
         </div>
 
         {/* Auth Buttons */}
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
           <Link
             href="/signin"
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
           >
-            <MLogin className="w-3.5 h-3.5" aria-hidden="true" />
+            <MLogin className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
             Sign In
           </Link>
           <Link
             href="/org/setup"
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors duration-150 shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold whitespace-nowrap text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors duration-150 shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
-            <MLeaf className="w-3.5 h-3.5" aria-hidden="true" />
+            <MLeaf className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
             Get Started
           </Link>
         </div>

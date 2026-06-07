@@ -15,6 +15,9 @@ const PUBLIC_ROUTES = new Set([
   "/terms",
   "/signin",
   "/signup",
+  "/tokenomics",
+  "/leaderboard",
+  "/redeem",
 ]);
 
 // /join/[token] is public — the page handles its own auth
