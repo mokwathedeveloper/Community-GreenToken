@@ -142,8 +142,10 @@ export default function LeaderboardPage() {
             label: "Your Rank",
             value: loading ? "…" : (meta.my_rank ? `#${meta.my_rank}` : "—"),
             sub:   meta.my_rank
-              ? `Out of ${meta.total_participants}`
-              : "Submit an action to rank",
+              ? `Out of ${meta.total_participants} participants`
+              : period !== "all_time"
+              ? "No activity this period"
+              : "Join an org to rank",
           },
         ].map(({ label, value, sub }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
@@ -187,8 +189,18 @@ export default function LeaderboardPage() {
       ) : rows.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm py-16 text-center">
           <MTrophy className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-700">No rankings yet</p>
-          <p className="text-xs text-gray-400 mt-1">Be the first to submit a verified action!</p>
+          <p className="text-sm font-semibold text-gray-700">
+            {period === "all_time"
+              ? "No participants yet"
+              : period === "monthly"
+              ? "No activity this month"
+              : "No activity this week"}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {period === "all_time"
+              ? "Members will appear here once they join the org."
+              : "Rankings appear here when members get actions verified in this period."}
+          </p>
         </div>
       ) : (
         <>
