@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Set superadmin role in app_metadata (used by custom JWT hook)
-  const { error } = await supabase.auth.admin.updateUser(userId, {
+  const { error } = await (supabase as any).auth.admin.updateUserById(userId, {
     app_metadata: { role: "superadmin" },
   });
 

@@ -3,20 +3,9 @@ import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 
-/**
- * POST /api/invites/email
- *
- * Admin invites a user by email.
- * Flow:
- *   1. Admin submits email + role
- *   2. We create an invite token in the invites table
- *   3. We send a Supabase magic link (OTP) to the email
- *      — The link includes ?inviteToken=xxx so on landing they auto-join the org
- *   4. User clicks the link → lands on /join/[token] → already logged in → added to org
- *
- * If the user already has an account, the magic link logs them in.
- * If they are new, Supabase creates their account on first click.
- */
+const INVITE_WINDOW_HOURS = 48;
+const MAX_INVITES_PER_EMAIL = 2;
+
 export async function POST(req: NextRequest) {
   const auth  = await getAuthContext();
   const guard = requireOrgAdmin(auth);
@@ -27,11 +16,10 @@ export async function POST(req: NextRequest) {
   let expiresInDays: number;
 
   try {
-    const body = await req.json();
-    email        = (body.email ?? "").toLowerCase().trim();
-    role         = body.role === "admin" ? "admin" : "member";
+    const body   = await req.json();
+    email         = (body.email ?? "").toLowerCase().trim();
+    role          = body.role === "admin" ? "admin" : "member";
     expiresInDays = Number(body.expiresInDays ?? 7);
-
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { error: { code: "INVALID_EMAIL", message: "A valid email address is required." } },
@@ -45,40 +33,168 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase   = createAdminClient();
-  const expiresAt  = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString();
-  const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const supabase = createAdminClient();
+  const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  // ── 1. Create invite token in DB ──────────────────────────────────
-  const { data: invite, error: inviteErr } = await (supabase as any)
+  // ── 1. Already a member? ─────────────────────────────────────────────
+  // getUserByEmail is O(1) and doesn't page.
+  const { data: existingAuthUser } = await (supabase as any).auth.admin.getUserByEmail(email) as {
+    data: { id: string } | null
+  };
+  if (existingAuthUser?.id) {
+    const { data: member } = await (supabase as any)
+      .from("org_members")
+      .select("id")
+      .eq("org_id", auth!.orgId)
+      .eq("user_id", existingAuthUser.id)
+      .maybeSingle() as { data: { id: string } | null };
+
+    if (member) {
+      return NextResponse.json(
+        { error: { code: "ALREADY_MEMBER", message: `${email} is already a member of this organisation.` } },
+        { status: 409 }
+      );
+    }
+  }
+
+  // ── 2. Active invite already exists for this email? ──────────────────
+  // Requires migration 024 (invited_email column). If the column is absent the
+  // Supabase query returns rows without it and we skip this check gracefully.
+  const { data: existingInvites } = await (supabase as any)
+    .from("invites")
+    .select("id, invited_email, expires_at")
+    .eq("org_id", auth!.orgId)
+    .eq("invited_email", email)
+    .gt("expires_at", new Date().toISOString()) as {
+      data: { id: string; invited_email: string; expires_at: string }[] | null
+    };
+
+  if (existingInvites && existingInvites.length > 0) {
+    const earliest = existingInvites.reduce((a, b) =>
+      new Date(a.expires_at) < new Date(b.expires_at) ? a : b
+    );
+    const expiresOn = new Date(earliest.expires_at).toLocaleDateString("en-GB", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+    return NextResponse.json(
+      {
+        error: {
+          code: "INVITE_EXISTS",
+          message: `An active invite for ${email} already exists and expires on ${expiresOn}. Ask the member to check their inbox, or revoke the old invite first.`,
+        },
+      },
+      { status: 409 }
+    );
+  }
+
+  // ── 3. Rate limit: max 2 invites per email per 48-hour window ────────
+  const windowStart = new Date(
+    Date.now() - INVITE_WINDOW_HOURS * 60 * 60 * 1000
+  ).toISOString();
+
+  const { data: recentInvites } = await (supabase as any)
+    .from("invites")
+    .select("id, invited_email, created_at")
+    .eq("org_id", auth!.orgId)
+    .eq("invited_email", email)
+    .gte("created_at", windowStart) as {
+      data: { id: string; invited_email: string; created_at: string }[] | null
+    };
+
+  if (recentInvites && recentInvites.length >= MAX_INVITES_PER_EMAIL) {
+    const oldest = recentInvites.reduce((a, b) =>
+      new Date(a.created_at) < new Date(b.created_at) ? a : b
+    );
+    const retryAfter = new Date(
+      new Date(oldest.created_at).getTime() + INVITE_WINDOW_HOURS * 60 * 60 * 1000
+    );
+    const retryStr = retryAfter.toLocaleString("en-GB", {
+      day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+    });
+
+    return NextResponse.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: `${MAX_INVITES_PER_EMAIL} invites have already been sent to ${email} in the last ${INVITE_WINDOW_HOURS} hours. You can send another after ${retryStr}.`,
+        },
+      },
+      { status: 429 }
+    );
+  }
+
+  // ── 4. Create invite token ────────────────────────────────────────────
+  const expiresAt = new Date(
+    Date.now() + expiresInDays * 24 * 60 * 60 * 1000
+  ).toISOString();
+
+  type InviteRow = { id: string; token: string; role: string; expires_at: string };
+  let invite: InviteRow | null = null;
+
+  // Try inserting with invited_email (requires migration 024).
+  // If that column doesn't exist yet, fall back without it so the invite
+  // still works (just without the per-email locking until migration runs).
+  const { data: inviteWithEmail, error: errWithEmail } = await (supabase as any)
     .from("invites")
     .insert({
-      org_id:         auth!.orgId,
-      created_by:     auth!.userId,
+      org_id:        auth!.orgId,
+      created_by:    auth!.userId,
       role,
-      uses_left:      1,           // single-use invite
-      expires_at:     expiresAt,
-      invited_email:  email,       // only this email may accept
+      uses_left:     1,
+      expires_at:    expiresAt,
+      invited_email: email,
     })
     .select("id, token, role, expires_at")
     .single();
 
-  if (inviteErr || !invite) {
+  if (errWithEmail) {
+    const isMissingColumn =
+      (errWithEmail as { code?: string }).code === "42703" ||
+      String((errWithEmail as { message?: string }).message).includes("invited_email");
+
+    if (isMissingColumn) {
+      const { data: fallback, error: errFallback } = await (supabase as any)
+        .from("invites")
+        .insert({
+          org_id:     auth!.orgId,
+          created_by: auth!.userId,
+          role,
+          uses_left:  1,
+          expires_at: expiresAt,
+        })
+        .select("id, token, role, expires_at")
+        .single();
+
+      if (errFallback || !fallback) {
+        return NextResponse.json(
+          { error: { code: "DB_ERROR", message: "Could not create invite token. Please try again." } },
+          { status: 500 }
+        );
+      }
+      invite = fallback as InviteRow;
+    } else {
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Could not create invite token. Please try again." } },
+        { status: 500 }
+      );
+    }
+  } else {
+    invite = inviteWithEmail as InviteRow;
+  }
+
+  if (!invite) {
     return NextResponse.json(
       { error: { code: "DB_ERROR", message: "Could not create invite token." } },
       { status: 500 }
     );
   }
 
-  // ── 2. Build the join URL ─────────────────────────────────────────
-  // redirectTo goes to /auth/callback which exchanges the PKCE code,
-  // then ?next= sends the user to the actual invite join page.
-  const joinUrl      = `${appUrl}/join/${invite.token}`;
-  const callbackUrl  = `${appUrl}/auth/callback?next=/join/${invite.token}`;
+  // ── 5. Send magic link ────────────────────────────────────────────────
+  // callbackUrl goes through /auth/callback which exchanges the PKCE code
+  // for a session, then redirects the user straight to their join page.
+  const callbackUrl = `${appUrl}/auth/callback?next=/join/${invite.token}`;
+  const joinUrl     = `${appUrl}/join/${invite.token}`;
 
-  // ── 3. Send magic link via Supabase (acts as OTP / temp password) ─
-  // This sends an email to the user. They click the link, get logged in,
-  // and land on /join/[token] which adds them to the org automatically.
   const { error: emailErr } = await (supabase as any).auth.admin.inviteUserByEmail(email, {
     redirectTo: callbackUrl,
     data: {
@@ -88,19 +204,24 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // If user already exists, inviteUserByEmail may fail — fall back to OTP
+  // inviteUserByEmail fails if the user already has an account —
+  // fall back to a plain magic link in that case.
   if (emailErr) {
     const { error: otpErr } = await (supabase as any).auth.admin.generateLink({
-      type:       "magiclink",
+      type:    "magiclink",
       email,
       options: { redirectTo: callbackUrl },
     });
 
     if (otpErr) {
-      // Clean up the invite token we just created
       await (supabase as any).from("invites").delete().eq("id", invite.id);
       return NextResponse.json(
-        { error: { code: "EMAIL_FAILED", message: "Could not send invitation email. Check the email address and try again." } },
+        {
+          error: {
+            code: "EMAIL_FAILED",
+            message: "Could not send the invitation email. Check the address and try again.",
+          },
+        },
         { status: 500 }
       );
     }
@@ -121,21 +242,15 @@ export async function POST(req: NextRequest) {
   );
 }
 
-
-/**
- * GET /api/invites/email?orgId=xxx
- * Returns all pending invites for the current org (for the admin table)
- */
 export async function GET(_req: NextRequest) {
   const auth  = await getAuthContext();
   const guard = requireOrgAdmin(auth);
   if (guard) return guard;
 
   const supabase = createAdminClient();
-
   const { data: invites } = await (supabase as any)
     .from("invites")
-    .select("id, token, role, uses_left, expires_at, created_at")
+    .select("id, token, role, uses_left, expires_at, created_at, invited_email")
     .eq("org_id", auth!.orgId)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -143,11 +258,6 @@ export async function GET(_req: NextRequest) {
   return NextResponse.json({ data: invites ?? [] });
 }
 
-
-/**
- * DELETE /api/invites/email?token=xxx
- * Admin revokes/deletes a pending invite
- */
 export async function DELETE(req: NextRequest) {
   const auth  = await getAuthContext();
   const guard = requireOrgAdmin(auth);

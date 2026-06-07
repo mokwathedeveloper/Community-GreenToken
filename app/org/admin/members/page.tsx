@@ -56,6 +56,7 @@ type PendingInvite = {
   role:       MemberRole;
   expires_at: string;
   sent_at:    string;
+  status?:    "pending" | "accepted" | "expired";
 };
 
 const ROLE_STYLE: Record<MemberRole, string> = {
