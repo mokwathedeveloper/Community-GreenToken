@@ -5,6 +5,7 @@
 // Components: CurrentPlanCard · PlanUsageSummary · TrialCountdown · InvoiceList · PaymentMethodCard · BillingAlertBanner
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
@@ -46,13 +47,15 @@ const MOCK_INVOICES = [
 ];
 
 export default function BillingPage() {
-  const { orgName, orgId, isLoading: userLoading } = useUser();
+  const router = useRouter();
+  const { orgName, orgId, isLoading: userLoading, isOrgAdmin } = useUser();
   const [status,    setStatus]    = useState<BillingStatus | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [opening,   setOpening]   = useState(false);
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!userLoading && !isOrgAdmin) { router.replace("/dashboard"); return; }
     if (userLoading) return;
     fetch("/api/billing/status")
       .then((r) => r.json())

@@ -6,6 +6,7 @@
 //               → after() fires ActionRegistry.verify_action() → GreenToken.mint() on Stellar
 
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -35,7 +36,12 @@ const STATUS_TABS: { key: ActionStatus | "all"; label: string }[] = [
 ];
 
 export default function AdminActionsPage() {
-  const { orgName, isLoading: userLoading } = useUser();
+  const router = useRouter();
+  const { orgName, isLoading: userLoading, isOrgAdmin } = useUser();
+
+  useEffect(() => {
+    if (!userLoading && !isOrgAdmin) router.replace("/dashboard");
+  }, [userLoading, isOrgAdmin, router]);
 
   const [tab,        setTab]        = useState<ActionStatus | "all">("pending");
   const [items,      setItems]      = useState<QueueItem[]>([]);
@@ -50,7 +56,7 @@ export default function AdminActionsPage() {
   const LIMIT = 20;
 
   const loadActions = useCallback(() => {
-    if (userLoading) return;
+    if (userLoading || !isOrgAdmin) return;
     setLoading(true);
     const statusParam = tab === "all" ? "" : `&status=${tab}`;
     fetch(`/api/actions?limit=${LIMIT}&page=${page}${statusParam}`)
@@ -61,7 +67,7 @@ export default function AdminActionsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [userLoading, tab, page]);
+  }, [userLoading, isOrgAdmin, tab, page]);
 
   useEffect(() => { loadActions(); }, [loadActions]);
 

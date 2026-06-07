@@ -4,6 +4,7 @@
 // Spec: ux_ui/feature_specv2/org_settings_page_md.md
 
 import { useState, useEffect, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -23,7 +24,12 @@ const ACTION_TYPES = [
 ];
 
 export default function OrgSettingsPage() {
-  const { orgId, orgName, orgSlug } = useUser();
+  const router = useRouter();
+  const { orgId, orgName, orgSlug, isLoading: userLoading, isOrgAdmin } = useUser();
+
+  useEffect(() => {
+    if (!userLoading && !isOrgAdmin) router.replace("/dashboard");
+  }, [userLoading, isOrgAdmin, router]);
 
   const [tab,          setTab]          = useState<Tab>("profile");
   const [saving,       setSaving]       = useState(false);

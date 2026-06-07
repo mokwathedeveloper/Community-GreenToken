@@ -14,22 +14,30 @@ import Link from "next/link";
 import Image from "next/image";
 import { MDashboard, MBolt, MGift, MHeart, MTrophy, MBarChart, MSettings, MAttachMoney } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/useUser";
 
-// Member sidebar — NO billing (billing is owner-only in OrgAdminLayout)
-// RBAC: member sees personal finance (earn, redeem rewards, donate, withdraw cash)
-const NAV_ITEMS = [
-  { label: "Dashboard",   href: "/dashboard",          Icon: MDashboard    },
-  { label: "Actions",     href: "/submit-action",      Icon: MBolt         },
-  { label: "Rewards",     href: "/redeem",             Icon: MGift         },
-  { label: "Withdraw",    href: "/withdraw",           Icon: MAttachMoney  },
-  { label: "Donations",   href: "/donations",          Icon: MHeart        },
-  { label: "Leaderboard", href: "/leaderboard",        Icon: MTrophy       },
-  { label: "Analytics",   href: "/analytics",          Icon: MBarChart     },
-  { label: "Settings",    href: "/org/admin/settings", Icon: MSettings     },
-];
+// Base nav for all authenticated users.
+// adminHref: alternate destination shown to org admins/owners instead of href.
+const BASE_NAV = [
+  { label: "Dashboard",   href: "/dashboard",     Icon: MDashboard,   adminHref: undefined           },
+  { label: "Actions",     href: "/submit-action", Icon: MBolt,        adminHref: undefined           },
+  { label: "Rewards",     href: "/redeem",        Icon: MGift,        adminHref: undefined           },
+  { label: "Withdraw",    href: "/withdraw",      Icon: MAttachMoney, adminHref: undefined           },
+  { label: "Donations",   href: "/donations",     Icon: MHeart,       adminHref: undefined           },
+  { label: "Leaderboard", href: "/leaderboard",   Icon: MTrophy,      adminHref: undefined           },
+  { label: "Analytics",   href: "/analytics",     Icon: MBarChart,    adminHref: undefined           },
+  // Members → personal profile; Admins/Owners → org settings
+  { label: "Settings",    href: "/profile",       Icon: MSettings,    adminHref: "/org/admin/settings" },
+] as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isOrgAdmin } = useUser();
+
+  const NAV_ITEMS = BASE_NAV.map((item) => ({
+    ...item,
+    href: isOrgAdmin && item.adminHref ? item.adminHref : item.href,
+  }));
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);

@@ -6,10 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
-import { MLeaf, MBarChart, MPeople } from "@/components/icons";
+import { MLeaf, MBarChart, MPeople, MBolt } from "@/components/icons";
 
 type PendingAction = {
   id:             string;
@@ -39,12 +40,11 @@ export default function OrgAdminPage() {
   const [stats,   setStats]   = useState<OrgStats | null>(null);
   const [usage,   setUsage]   = useState<{ used: number; limit: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [acting,  setActing]  = useState<string | null>(null);
 
   const loadData = useCallback(() => {
     if (!orgId || !isOrgAdmin) return;
     Promise.all([
-      fetch("/api/actions/pending?limit=10").then((r) => r.json()),
+      fetch("/api/actions/pending?limit=5").then((r) => r.json()),
       fetch("/api/analytics/overview").then((r) => r.json()),
       fetch(`/api/orgs/${orgId}/usage`).then((r) => r.json()),
     ]).then(([pendingRes, statsRes, usageRes]) => {
@@ -55,27 +55,6 @@ export default function OrgAdminPage() {
   }, [orgId, isOrgAdmin]);
 
   useEffect(() => { if (!userLoading && isOrgAdmin) loadData(); }, [userLoading, isOrgAdmin, loadData]);
-
-  async function handleVerify(actionId: string, tokensToMint: number, approve: boolean) {
-    setActing(actionId);
-    try {
-      if (approve) {
-        const res = await fetch("/api/actions/verify", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ actionId, tokensToMint }),
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          alert(err.error?.message ?? "Verification failed");
-          return;
-        }
-      }
-      setQueue((q) => q.filter((a) => a.id !== actionId));
-    } finally {
-      setActing(null);
-    }
-  }
 
   const displayStats = [
     { label: "Total Actions",  value: loading ? "—" : String(stats?.totalActions ?? 0),    sub: "Submitted",     color: "text-blue-600"    },
@@ -126,67 +105,111 @@ export default function OrgAdminPage() {
 
       {/* Verification queue + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+        {/* Pending actions preview — review happens on /org/admin/actions */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex justify-between px-5 py-3.5 border-b border-gray-50">
-            <h3 className="text-sm font-semibold text-gray-900">
-              Action Verification Queue ({loading ? "…" : `${queue.length} Pending`})
-            </h3>
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-900">Pending Review</h3>
+              {!loading && queue.length > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                  {queue.length}
+                </span>
+              )}
+            </div>
+            <Link
+              href="/org/admin/actions"
+              className="text-xs font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:underline"
+            >
+              Review All →
+            </Link>
           </div>
+
           {loading ? (
-            <p className="text-center text-sm text-gray-400 py-6">Loading…</p>
+            <div className="px-5 py-4 space-y-3 animate-pulse">
+              {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-gray-100 rounded-lg" />)}
+            </div>
           ) : queue.length === 0 ? (
-            <p className="text-center text-sm text-gray-400 py-6">All caught up!</p>
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center mb-2">
+                <MBolt className="w-5 h-5 text-primary-400" aria-hidden="true" />
+              </div>
+              <p className="text-sm font-medium text-gray-700">All caught up!</p>
+              <p className="text-xs text-gray-400 mt-0.5">No actions awaiting review.</p>
+            </div>
           ) : (
-            <table className="w-full text-sm">
-              <caption className="sr-only">Action verification queue</caption>
-              <thead className="bg-gray-50">
-                <tr>
-                  {["Action", "By", "Date", "Tokens", ""].map((h) => (
-                    <th key={h} scope="col" className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {queue.map((a) => {
-                  const name = a.users?.display_name ?? a.users?.email ?? "Unknown";
-                  const date = a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : "—";
-                  const busy = acting === a.id;
-                  return (
-                    <tr key={a.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{a.action_type}</td>
-                      <td className="px-4 py-3 text-gray-600">{name}</td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{date}</td>
-                      <td className="px-4 py-3 text-primary-600 font-semibold">{a.tokens_awarded} GTK</td>
-                      <td className="px-4 py-3 flex gap-1.5">
-                        <button disabled={busy} onClick={() => handleVerify(a.id, a.tokens_awarded, true)}
-                          aria-label={`Approve ${a.action_type}`}
-                          className="px-2.5 py-1 text-xs bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-colors">
-                          {busy ? "…" : "✓"}
-                        </button>
-                        <button disabled={busy} onClick={() => handleVerify(a.id, a.tokens_awarded, false)}
-                          aria-label={`Reject ${a.action_type}`}
-                          className="px-2.5 py-1 text-xs bg-red-50 text-red-500 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors">
-                          ✗
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <>
+              <table className="w-full text-sm">
+                <caption className="sr-only">Pending action submissions — click Review to approve or reject</caption>
+                <thead className="bg-gray-50">
+                  <tr>
+                    {["Action type", "Submitted by", "Date", ""].map((h) => (
+                      <th key={h} scope="col" className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {queue.map((a) => {
+                    const name = a.users?.display_name ?? a.users?.email?.split("@")[0] ?? "Unknown";
+                    const date = a.submitted_at ? new Date(a.submitted_at).toLocaleDateString("en", { month: "short", day: "numeric" }) : "—";
+                    return (
+                      <tr key={a.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full">
+                            {a.action_type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-[10px] font-bold flex-shrink-0">
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs text-gray-700 truncate max-w-[100px]">{name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{date}</td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href="/org/admin/actions"
+                            className={cn(
+                              "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold",
+                              "bg-primary-500 hover:bg-primary-600 text-white transition-colors",
+                              "focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            )}
+                          >
+                            Review →
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="px-5 py-3 border-t border-gray-50 bg-amber-50/30">
+                <Link
+                  href="/org/admin/actions"
+                  className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-xs font-semibold text-amber-700 hover:text-amber-800 focus-visible:outline-none focus-visible:underline"
+                >
+                  <MBolt className="w-3.5 h-3.5" aria-hidden="true" />
+                  Open full verification queue — approve &amp; set token rewards
+                </Link>
+              </div>
+            </>
           )}
         </div>
 
+        {/* Quick Actions */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {[
-              { icon: <MLeaf className="w-5 h-5 text-primary-600" />, label: "Submit Action",  href: "/submit-action"    },
-              { icon: <MBarChart className="w-5 h-5 text-blue-600" />, label: "Analytics",     href: "/analytics"        },
-              { icon: <MPeople className="w-5 h-5 text-indigo-600" />, label: "Invite Members", href: "/org/admin/members" },
+              { icon: <MBolt   className="w-5 h-5 text-amber-500"    />, label: "Verify Actions", href: "/org/admin/actions"  },
+              { icon: <MPeople className="w-5 h-5 text-indigo-600"   />, label: "Invite Members", href: "/org/admin/members"  },
+              { icon: <MBarChart className="w-5 h-5 text-blue-600"   />, label: "Analytics",      href: "/analytics"          },
+              { icon: <MLeaf   className="w-5 h-5 text-primary-600"  />, label: "Submit Action",  href: "/submit-action"      },
             ].map(({ icon, label, href }) => (
               <Link key={label} href={href}
-                className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-gray-50 hover:bg-primary-50 border border-transparent hover:border-primary-200 transition-colors text-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 hover:bg-primary-50 border border-transparent hover:border-primary-200 transition-colors text-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
                 <span aria-hidden="true">{icon}</span>
                 <p className="text-xs font-medium text-gray-700 leading-tight">{label}</p>
               </Link>
