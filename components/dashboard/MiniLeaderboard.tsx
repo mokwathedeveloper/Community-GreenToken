@@ -27,12 +27,15 @@ export default function MiniLeaderboard({ entries, myRank }: MiniLeaderboardProp
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">🏆 Leaderboard</h3>
-        {myRank && (
+        <h3 className="text-sm font-semibold text-gray-900">Leaderboard</h3>
+        {myRank != null && myRank > 0 && (
           <span className="text-xs text-gray-400">Your rank: <strong className="text-primary-600">#{myRank}</strong></span>
         )}
       </div>
 
+      {entries.length === 0 && (
+        <p className="text-xs text-gray-400 text-center py-4">No leaderboard data yet.</p>
+      )}
       <div className="space-y-2.5">
         {entries.map((e) => (
           <div key={e.rank} className="flex items-center gap-3">

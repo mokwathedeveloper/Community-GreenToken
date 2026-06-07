@@ -6,43 +6,51 @@ import AppLayout from "@/components/layouts/AppLayout";
 import StatCard from "@/components/StatCard";
 import MiniLeaderboard from "@/components/dashboard/MiniLeaderboard";
 import DonationProgress from "@/components/dashboard/DonationProgress";
-import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
+import AnalyticsChart, { type ChartAction } from "@/components/dashboard/AnalyticsChart";
 import { useUser } from "@/hooks/useUser";
 import { MCoin, MCheckCircle, MHeart, MLeaf, MTrophy } from "@/components/icons";
 
-type LeaderEntry = { rank: number; name: string; handle: string; tokens: number };
-type DonationEntry = { id: string; name: string; status: "Ongoing" | "Completed"; raised: number; goal: number };
+type LeaderEntry  = { rank: number; name: string; handle: string; tokens: number };
+type DonationEntry= { id: string; name: string; status: "Ongoing" | "Completed"; raised: number; goal: number };
 
 export default function DashboardPage() {
   const { displayName, isLoading: userLoading } = useUser();
 
-  const [balance,     setBalance]     = useState(0);
-  const [totalEarned, setTotalEarned] = useState(0);
-  const [actions,     setActions]     = useState({ verified: 0, pending: 0 });
-  const [leaders,     setLeaders]     = useState<LeaderEntry[]>([]);
-  const [myRank,      setMyRank]      = useState<number | null>(null);
-  const [donations,   setDonations]   = useState<DonationEntry[]>([]);
-  const [loading,     setLoading]     = useState(true);
+  const [balance,      setBalance]      = useState(0);
+  const [totalEarned,  setTotalEarned]  = useState(0);
+  const [actions,      setActions]      = useState({ verified: 0, pending: 0 });
+  const [chartActions, setChartActions] = useState<ChartAction[]>([]);
+  const [leaders,      setLeaders]      = useState<LeaderEntry[]>([]);
+  const [myRank,       setMyRank]       = useState<number | null>(null);
+  const [donations,    setDonations]    = useState<DonationEntry[]>([]);
+  const [loading,      setLoading]      = useState(true);
 
   useEffect(() => {
     if (userLoading) return;
     Promise.all([
+      // Balance
       fetch("/api/tokens/balance").then((r) => r.json()),
-      fetch("/api/actions?limit=100").then((r) => r.json()),
+      // Verified actions — used for chart (limit=50) + exact total via pagination
+      fetch("/api/actions?status=verified&limit=50").then((r) => r.json()),
+      // Pending count only — limit=1, we only need pagination.total
+      fetch("/api/actions?status=pending&limit=1").then((r) => r.json()),
+      // Leaderboard top 5
       fetch("/api/leaderboard?limit=5").then((r) => r.json()),
+      // Active donation projects
       fetch("/api/donations/projects?limit=2").then((r) => r.json()),
-    ]).then(([balRes, actRes, lbRes, donRes]) => {
+    ]).then(([balRes, verifiedRes, pendingRes, lbRes, donRes]) => {
+
       if (balRes.data) {
-        setBalance(balRes.data.balance ?? 0);
+        setBalance(balRes.data.balance     ?? 0);
         setTotalEarned(balRes.data.totalEarned ?? 0);
       }
-      if (actRes.data) {
-        const rows = actRes.data as { status: string }[];
-        setActions({
-          verified: rows.filter((a) => a.status === "verified").length,
-          pending:  rows.filter((a) => a.status === "pending").length,
-        });
-      }
+
+      // Exact counts from pagination totals — immune to per-page cap
+      const verifiedTotal = verifiedRes.pagination?.total ?? (verifiedRes.data?.length ?? 0);
+      const pendingTotal  = pendingRes.pagination?.total  ?? 0;
+      setActions({ verified: verifiedTotal, pending: pendingTotal });
+      setChartActions((verifiedRes.data ?? []) as ChartAction[]);
+
       if (lbRes.data) {
         setLeaders(
           (lbRes.data as { rank: number; displayName: string; balance: number }[]).map((r) => ({
@@ -54,6 +62,7 @@ export default function DashboardPage() {
         );
         setMyRank(lbRes.meta?.my_rank ?? null);
       }
+
       if (donRes.data) {
         setDonations(
           (donRes.data as { id: string; name: string; raised_tokens: number; goal_tokens: number; is_active: boolean }[])
@@ -67,29 +76,38 @@ export default function DashboardPage() {
             }))
         );
       }
+
     }).catch(console.error).finally(() => setLoading(false));
   }, [userLoading]);
 
   const stats = [
     {
       icon: <MCoin className="w-6 h-6 text-green-600" />, iconBg: "bg-green-100", iconColor: "text-green-600",
-      label: "Token Balance",  value: loading ? "—" : balance.toLocaleString(),
-      change: "", changeType: "up" as const, sublabel: "GTK",
+      label: "Token Balance",
+      value: loading ? "—" : balance.toLocaleString(),
+      change: "", changeType: "up" as const,
+      sublabel: "GTK",
     },
     {
       icon: <MCheckCircle className="w-6 h-6 text-blue-600" />, iconBg: "bg-blue-100", iconColor: "text-blue-600",
-      label: "Actions Verified", value: loading ? "—" : String(actions.verified),
-      change: "", changeType: "up" as const, sublabel: `${actions.pending} pending`,
+      label: "Actions Verified",
+      value: loading ? "—" : String(actions.verified),
+      change: "", changeType: "up" as const,
+      sublabel: actions.pending > 0 ? `${actions.pending} pending` : "all clear",
     },
     {
       icon: <MHeart className="w-6 h-6 text-rose-500" />, iconBg: "bg-rose-100", iconColor: "text-rose-500",
-      label: "Total Earned",  value: loading ? "—" : totalEarned.toLocaleString(),
-      change: "", changeType: "up" as const, sublabel: "GTK lifetime",
+      label: "Total Earned",
+      value: loading ? "—" : totalEarned.toLocaleString(),
+      change: "", changeType: "up" as const,
+      sublabel: "GTK lifetime",
     },
     {
-      icon: <MLeaf className="w-6 h-6 text-teal-600" />, iconBg: "bg-teal-100", iconColor: "text-teal-600",
-      label: "Your Rank",  value: loading ? "—" : (myRank ? `#${myRank}` : "—"),
-      change: "", changeType: "up" as const, sublabel: "Community rank",
+      icon: <MTrophy className="w-6 h-6 text-teal-600" />, iconBg: "bg-teal-100", iconColor: "text-teal-600",
+      label: "Your Rank",
+      value: loading ? "—" : (myRank ? `#${myRank}` : "—"),
+      change: "", changeType: "up" as const,
+      sublabel: "Community rank",
     },
   ];
 
@@ -110,23 +128,32 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
         <div className="lg:col-span-1">
-          <MiniLeaderboard entries={leaders} myRank={myRank ?? 0} />
+          <MiniLeaderboard entries={leaders} myRank={myRank} />
         </div>
         <div className="lg:col-span-2">
-          <AnalyticsChart />
+          <AnalyticsChart actions={chartActions} />
         </div>
       </div>
 
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><MHeart className="w-4 h-4 text-rose-500" aria-hidden="true" /> Donation Progress</h3>
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+            <MHeart className="w-4 h-4 text-rose-500" aria-hidden="true" /> Donation Progress
+          </h3>
           <Link href="/donations" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
             View All Projects →
           </Link>
         </div>
         {donations.length > 0
           ? <DonationProgress projects={donations} />
-          : <p className="text-xs text-gray-400 text-center py-4">No donations yet. <Link href="/donations" className="text-primary-600 hover:underline">Support a project →</Link></p>
+          : (
+            <p className="text-xs text-gray-400 text-center py-4">
+              No donations yet.{" "}
+              <Link href="/donations" className="text-primary-600 hover:underline">
+                Support a project →
+              </Link>
+            </p>
+          )
         }
       </div>
     </AppLayout>
