@@ -36,40 +36,29 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  // ── 1. Already a member? ─────────────────────────────────────────────
-  // getUserByEmail is O(1) and doesn't page.
-  const { data: existingAuthUser } = await (supabase as any).auth.admin.getUserByEmail(email) as {
-    data: { id: string } | null
-  };
-  if (existingAuthUser?.id) {
-    const { data: member } = await (supabase as any)
-      .from("org_members")
-      .select("id")
-      .eq("org_id", auth!.orgId)
-      .eq("user_id", existingAuthUser.id)
-      .maybeSingle() as { data: { id: string } | null };
+  // Note: "already a member" is enforced at accept time (accept/route.ts returns 409).
+  // We skip the pre-check here because Supabase JS v2 has no getUserByEmail admin method.
 
-    if (member) {
-      return NextResponse.json(
-        { error: { code: "ALREADY_MEMBER", message: `${email} is already a member of this organisation.` } },
-        { status: 409 }
-      );
-    }
-  }
-
-  // ── 2. Active invite already exists for this email? ──────────────────
-  // Requires migration 024 (invited_email column). If the column is absent the
-  // Supabase query returns rows without it and we skip this check gracefully.
-  const { data: existingInvites } = await (supabase as any)
+  // ── 1. Active invite already exists for this email? ──────────────────
+  // These checks require migration 024 (invited_email column).
+  // If the column doesn't exist yet, the query returns an error and data=null —
+  // we skip the check gracefully and let the invite be created.
+  const { data: existingInvites, error: existErr } = await (supabase as any)
     .from("invites")
     .select("id, invited_email, expires_at")
     .eq("org_id", auth!.orgId)
     .eq("invited_email", email)
     .gt("expires_at", new Date().toISOString()) as {
-      data: { id: string; invited_email: string; expires_at: string }[] | null
+      data: { id: string; invited_email: string; expires_at: string }[] | null;
+      error: unknown;
     };
 
-  if (existingInvites && existingInvites.length > 0) {
+  if (existErr) {
+    // Column likely missing (migration 024 not yet run) — skip duplicate check.
+    console.warn("[invites/email] duplicate check skipped:", JSON.stringify(existErr));
+  }
+
+  if (!existErr && existingInvites && existingInvites.length > 0) {
     const earliest = existingInvites.reduce((a, b) =>
       new Date(a.expires_at) < new Date(b.expires_at) ? a : b
     );
@@ -87,21 +76,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── 3. Rate limit: max 2 invites per email per 48-hour window ────────
+  // ── 2. Rate limit: max 2 invites per email per 48-hour window ────────
   const windowStart = new Date(
     Date.now() - INVITE_WINDOW_HOURS * 60 * 60 * 1000
   ).toISOString();
 
-  const { data: recentInvites } = await (supabase as any)
+  const { data: recentInvites, error: recentErr } = await (supabase as any)
     .from("invites")
     .select("id, invited_email, created_at")
     .eq("org_id", auth!.orgId)
     .eq("invited_email", email)
     .gte("created_at", windowStart) as {
-      data: { id: string; invited_email: string; created_at: string }[] | null
+      data: { id: string; invited_email: string; created_at: string }[] | null;
+      error: unknown;
     };
 
-  if (recentInvites && recentInvites.length >= MAX_INVITES_PER_EMAIL) {
+  if (recentErr) {
+    console.warn("[invites/email] rate-limit check skipped:", JSON.stringify(recentErr));
+  }
+
+  if (!recentErr && recentInvites && recentInvites.length >= MAX_INVITES_PER_EMAIL) {
     const oldest = recentInvites.reduce((a, b) =>
       new Date(a.created_at) < new Date(b.created_at) ? a : b
     );
