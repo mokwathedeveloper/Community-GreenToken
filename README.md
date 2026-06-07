@@ -101,27 +101,27 @@ Every minted token is traceable to a verified real-world action. Every redemptio
 
 ```mermaid
 flowchart TD
-    subgraph Browser["🌐 Browser Layer"]
+    subgraph Browser[Browser Layer]
         FW[Freighter Wallet]
         UI[Next.js 16 App Router]
     end
 
-    subgraph API["⚡ Next.js API Routes (Edge + Node)"]
-        AUTH[Auth Middleware\n/api/auth/*]
-        ACTIONS[Action CRUD\n/api/actions/*]
-        TOKENS[Token Ops\n/api/tokens/*]
-        BILLING[Stripe Billing\n/api/billing/*]
-        STELLAR_API[Soroban Bridge\n/api/stellar/*]
-        ANALYTICS[Analytics\n/api/analytics/*]
+    subgraph API[Next.js API Routes - Edge and Node]
+        AUTH[Auth Middleware /api/auth]
+        ACTIONS[Action CRUD /api/actions]
+        TOKENS[Token Ops /api/tokens]
+        BILLING[Stripe Billing /api/billing]
+        STELLAR_API[Soroban Bridge /api/stellar]
+        ANALYTICS[Analytics /api/analytics]
     end
 
-    subgraph Blockchain["🔗 Stellar Blockchain (Testnet)"]
-        GTK[GreenToken GTK\nSEP-41 Token Contract]
-        AR[ActionRegistry\nProof Verification]
-        RM[RewardManager\nBurn & Redeem]
+    subgraph Blockchain[Stellar Blockchain - Testnet]
+        GTK[GreenToken GTK - SEP-41 Token]
+        AR[ActionRegistry - Proof Verification]
+        RM[RewardManager - Burn and Redeem]
     end
 
-    subgraph DB["🗄️ Supabase (PostgreSQL + Auth)"]
+    subgraph DB[Supabase - PostgreSQL and Auth]
         ORGS[(organizations)]
         MEMBERS[(org_members)]
         ACTS[(actions)]
@@ -130,7 +130,7 @@ flowchart TD
         LEDGER[(redemption_logs)]
     end
 
-    subgraph SaaS["💳 SaaS Layer"]
+    subgraph SaaS[SaaS Layer - Stripe]
         STRIPE[Stripe Payments]
         PLANS[Starter / Pro / Enterprise]
     end
