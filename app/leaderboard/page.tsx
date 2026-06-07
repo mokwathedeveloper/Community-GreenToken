@@ -248,90 +248,150 @@ export default function LeaderboardPage() {
         <>
           {/* ── Podium ─────────────────────────────────────────────────── */}
           {rankedTop3.length >= 1 && (
-            <div className="relative rounded-2xl overflow-hidden mb-5 shadow-xl">
+            <div className="relative rounded-3xl overflow-hidden mb-6 shadow-2xl">
 
-              {/* Background: dark green gradient with subtle pattern */}
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-emerald-950 to-gray-900" />
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(52,211,153,0.15),transparent_60%)]" />
+              {/* ── Layer 1: Brand deep-green base ── */}
+              <div className="absolute inset-0"
+                style={{ background: "linear-gradient(145deg, #052e16 0%, #14532d 40%, #166534 70%, #052e16 100%)" }} />
 
-              <div className="relative px-6 pt-6 pb-0">
+              {/* ── Layer 2: Radial spotlight from top-centre ── */}
+              <div className="absolute inset-0"
+                style={{ background: "radial-gradient(ellipse 80% 55% at 50% 0%, rgba(34,197,94,0.18) 0%, transparent 70%)" }} />
 
-                {/* Section title */}
-                <div className="flex items-center justify-center gap-2 mb-8">
-                  <MCrown className="w-4 h-4 text-yellow-400" aria-hidden="true" />
-                  <p className="text-xs font-bold text-white/60 uppercase tracking-[0.2em]">
-                    {periodLabel}
-                  </p>
-                  <MCrown className="w-4 h-4 text-yellow-400" aria-hidden="true" />
+              {/* ── Layer 3: Bottom vignette so podium blocks merge cleanly ── */}
+              <div className="absolute bottom-0 left-0 right-0 h-24"
+                style={{ background: "linear-gradient(to top, rgba(5,46,22,0.7), transparent)" }} />
+
+              {/* ── Layer 4: Decorative SVG sparkles ── */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+                {/* Scattered dots / stars */}
+                {[
+                  [10,12],[90,8],[20,55],[80,48],[5,75],[95,70],[50,5],[30,85],[70,80],[15,35],[85,30],
+                ].map(([cx, cy], i) => (
+                  <circle key={i} cx={`${cx}%`} cy={`${cy}%`}
+                    r={i % 3 === 0 ? "1.5" : "1"} fill="rgba(255,255,255,0.15)" />
+                ))}
+                {/* Leaf accent — top-left */}
+                <path d="M30 20 Q18 35 28 50 Q20 35 36 28 Z" fill="rgba(34,197,94,0.12)" />
+                {/* Leaf accent — top-right */}
+                <path d="M calc(100% - 30px) 20 Q calc(100% - 18px) 35 calc(100% - 28px) 50 Q calc(100% - 20px) 35 calc(100% - 36px) 28 Z" fill="rgba(34,197,94,0.10)" />
+              </svg>
+
+              {/* ── Content ── */}
+              <div className="relative px-6 pt-8 pb-0">
+
+                {/* Title row */}
+                <div className="flex items-center justify-center gap-3 mb-8">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20" />
+                  <div className="flex items-center gap-2">
+                    <MCrown className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                    <span className="text-[11px] font-black text-white/70 uppercase tracking-[0.25em]">
+                      {periodLabel}
+                    </span>
+                    <MCrown className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20" />
                 </div>
 
-                {/* Champion cards + podium blocks */}
-                <div className="flex items-end justify-center gap-3 sm:gap-6">
+                {/* Champion slots */}
+                <div className="flex items-end justify-center gap-2 sm:gap-5">
                   {podiumSlots.map((row, pi) => {
-                    if (!row) return <div key={pi} className="w-28 sm:w-32" />;
-                    const m   = MEDAL[podiumMedalIdx[pi]];
+                    if (!row) return <div key={pi} className="w-28 sm:w-36" />;
+                    const m       = MEDAL[podiumMedalIdx[pi]];
                     const isFirst = podiumMedalIdx[pi] === 0;
-                    return (
-                      <div key={row.userId} className="flex flex-col items-center w-28 sm:w-32">
+                    const tokens  = (sortBy === "balance" ? row.balance : row.totalEarned).toLocaleString();
 
-                        {/* Crown icon above rank 1 */}
-                        {isFirst && (
-                          <div className="mb-1 animate-bounce">
-                            <MCrown className="w-7 h-7 text-yellow-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" aria-hidden="true" />
+                    return (
+                      <div key={row.userId} className="flex flex-col items-center" style={{ width: isFirst ? 148 : 120 }}>
+
+                        {/* Floating crown above #1 */}
+                        {isFirst ? (
+                          <div className="mb-2" style={{ animation: "bounce 2s infinite" }}>
+                            <MCrown
+                              className="w-8 h-8 text-amber-400"
+                              style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,0.9))" }}
+                              aria-hidden="true"
+                            />
+                          </div>
+                        ) : (
+                          <div className="mb-2 w-8 h-8 flex items-center justify-center">
+                            {podiumMedalIdx[pi] === 1
+                              ? <MStar   className="w-5 h-5 text-gray-300/80" aria-hidden="true" />
+                              : <MTrophy className="w-5 h-5 text-amber-600/80" aria-hidden="true" />}
                           </div>
                         )}
 
                         {/* Avatar */}
-                        <div className={cn(
-                          "rounded-full ring-4 flex items-center justify-center font-black text-white shadow-2xl flex-shrink-0",
-                          `bg-gradient-to-br ${avatarGradient(row.userId)}`,
-                          m.avatarSize,
-                          m.ringColor,
-                          isFirst && "shadow-[0_0_24px_rgba(251,191,36,0.4)]"
-                        )}>
+                        <div
+                          className={cn(
+                            "rounded-full flex items-center justify-center font-black text-white flex-shrink-0",
+                            `bg-gradient-to-br ${avatarGradient(row.userId)}`,
+                            m.avatarSize,
+                          )}
+                          style={{
+                            boxShadow: isFirst
+                              ? "0 0 0 4px #fbbf24, 0 0 28px rgba(251,191,36,0.55), 0 8px 24px rgba(0,0,0,0.4)"
+                              : podiumMedalIdx[pi] === 1
+                              ? "0 0 0 4px #d1d5db, 0 8px 20px rgba(0,0,0,0.35)"
+                              : "0 0 0 4px #d97706, 0 8px 20px rgba(0,0,0,0.35)",
+                          }}>
                           {initials(row.displayName)}
                         </div>
 
-                        {/* "You" chip */}
+                        {/* "You" badge */}
                         {row.isMe && (
-                          <span className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-sm">
-                            <span className="material-icons text-[10px]">person</span>
+                          <div className="mt-2 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-md"
+                            style={{ background: "rgba(22,163,74,0.25)", borderColor: "rgba(34,197,94,0.4)", color: "#86efac" }}>
+                            <span className="material-icons" style={{ fontSize: 10 }}>person</span>
                             You
-                          </span>
+                          </div>
                         )}
 
-                        {/* Name */}
+                        {/* Display name */}
                         <p className={cn(
-                          "mt-2 font-bold text-white text-center leading-tight w-full truncate px-1",
-                          isFirst ? "text-sm" : "text-xs"
+                          "mt-2 font-bold text-center leading-snug w-full truncate px-2",
+                          isFirst ? "text-sm text-white" : "text-xs text-white/80"
                         )} title={row.displayName}>
                           {row.displayName}
                         </p>
 
-                        {/* Token count */}
-                        <div className={cn(
-                          "mt-1 mb-3 flex items-center gap-1 px-2.5 py-1 rounded-full border backdrop-blur-sm",
-                          m.badgeBg
-                        )}>
-                          <MCoin className="w-3 h-3 text-amber-300 flex-shrink-0" aria-hidden="true" />
-                          <span className={cn("text-xs font-bold", isFirst ? "text-white" : "text-white/80")}>
-                            {(sortBy === "balance" ? row.balance : row.totalEarned).toLocaleString()}
-                            <span className="font-normal ml-0.5 text-[10px] opacity-70">GTK</span>
+                        {/* GTK token pill */}
+                        <div className="mt-1.5 mb-4 flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-sm"
+                          style={{
+                            background: isFirst ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.08)",
+                            border:     isFirst ? "1px solid rgba(251,191,36,0.35)" : "1px solid rgba(255,255,255,0.15)",
+                          }}>
+                          <MCoin
+                            className="w-3.5 h-3.5 flex-shrink-0"
+                            style={{ color: isFirst ? "#fbbf24" : "#86efac" }}
+                            aria-hidden="true"
+                          />
+                          <span className={cn("text-xs font-extrabold", isFirst ? "text-amber-300" : "text-white/75")}>
+                            {tokens}
                           </span>
+                          <span className="text-[10px] font-medium opacity-60 text-white">GTK</span>
                         </div>
 
-                        {/* Podium block */}
-                        <div className={cn(
-                          "w-full rounded-t-2xl flex flex-col items-center justify-center gap-1 pt-3",
-                          m.podiumBg, m.height
-                        )}>
+                        {/* Podium step */}
+                        <div className={cn("w-full rounded-t-2xl flex flex-col items-center justify-center gap-0.5 pt-3", m.height)}
+                          style={{
+                            background: isFirst
+                              ? "linear-gradient(180deg,#fde68a 0%,#f59e0b 50%,#d97706 100%)"
+                              : podiumMedalIdx[pi] === 1
+                              ? "linear-gradient(180deg,#e5e7eb 0%,#9ca3af 50%,#6b7280 100%)"
+                              : "linear-gradient(180deg,#fcd34d 0%,#b45309 60%,#92400e 100%)",
+                            boxShadow: isFirst
+                              ? "inset 0 1px 0 rgba(255,255,255,0.4), 0 -4px 16px rgba(245,158,11,0.3)"
+                              : "inset 0 1px 0 rgba(255,255,255,0.2)",
+                          }}>
                           <span className={cn("text-2xl font-black leading-none", m.podiumText)}>
                             #{row.rank}
                           </span>
-                          <span className={cn("text-[10px] font-bold uppercase tracking-wider opacity-70", m.podiumText)}>
+                          <span className={cn("text-[9px] font-bold uppercase tracking-widest opacity-75", m.podiumText)}>
                             {m.label}
                           </span>
                         </div>
+
                       </div>
                     );
                   })}
