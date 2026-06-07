@@ -11,7 +11,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import UserMenu from "@/components/ui/UserMenu";
 import { useUser } from "@/hooks/useUser";
-import { MDashboard, MPeople, MBolt, MBarChart, MCreditCard, MBusiness, MPersonAdd, MGift } from "@/components/icons";
+import { MDashboard, MPeople, MBolt, MBarChart, MCreditCard, MBusiness, MPersonAdd, MGift, MPayments } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import NetworkBadge from "@/components/stellar/NetworkBadge";
 
@@ -22,8 +22,9 @@ const ORG_NAV = [
   { label: "Overview",              href: "/org/admin",          Icon: MDashboard,  ownerOnly: false },
   { label: "Members",               href: "/org/admin/members",  Icon: MPeople,     ownerOnly: false },
   { label: "Verify Actions",        href: "/org/admin/actions",  Icon: MBolt,       ownerOnly: false },
-  { label: "Rewards",               href: "/org/admin/rewards",  Icon: MGift,       ownerOnly: false },
-  { label: "Analytics",             href: "/analytics",          Icon: MBarChart,   ownerOnly: false },
+  { label: "Rewards",               href: "/org/admin/rewards",      Icon: MGift,      ownerOnly: false },
+  { label: "Withdrawals",           href: "/org/admin/withdrawals",  Icon: MPayments,  ownerOnly: false },
+  { label: "Analytics",             href: "/analytics",              Icon: MBarChart,  ownerOnly: false },
   { label: "Billing",               href: "/org/admin/billing",  Icon: MCreditCard, ownerOnly: true  },
   { label: "Organization Settings", href: "/org/admin/settings", Icon: MBusiness,   ownerOnly: false },
 ];
