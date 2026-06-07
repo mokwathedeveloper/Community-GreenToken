@@ -258,9 +258,8 @@ export default function AdminRewardsPage() {
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
         {([
-          { key: "catalog", label: "Reward Catalog", Icon: MGift    },
-          { key: "queue",   label: "Fulfillment Queue", Icon: MPeople,
-            badge: rdPending > 0 ? String(rdPending) : undefined },
+          { key: "catalog", label: "Reward Catalog",    Icon: MGift,    badge: undefined },
+          { key: "queue",   label: "Fulfillment Queue", Icon: MPeople,  badge: rdPending > 0 ? String(rdPending) : undefined },
         ] as const).map(({ key, label, Icon, badge }) => (
           <button
             key={key}
