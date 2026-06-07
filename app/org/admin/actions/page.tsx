@@ -47,6 +47,7 @@ export default function AdminActionsPage() {
   const [items,      setItems]      = useState<QueueItem[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [acting,     setActing]     = useState<string | null>(null);
+  const [actionErr,  setActionErr]  = useState<string | null>(null);
   const [tokenMap,   setTokenMap]   = useState<Record<string, number>>({});
   const [page,       setPage]       = useState(1);
   const [total,      setTotal]      = useState(0);
@@ -98,6 +99,14 @@ export default function AdminActionsPage() {
   }, [mintingSet]);
 
   async function handleVerify(actionId: string, tokensToMint: number, approve: boolean) {
+    setActionErr(null);
+
+    // Client-side guard: Zod requires tokensToMint to be a positive integer (min 1, max 1000)
+    if (approve && (tokensToMint < 1 || tokensToMint > 1000 || !Number.isInteger(tokensToMint))) {
+      setActionErr("GTK reward must be a whole number between 1 and 1,000 before approving.");
+      return;
+    }
+
     setActing(actionId);
     try {
       if (approve) {
@@ -108,13 +117,25 @@ export default function AdminActionsPage() {
         });
         if (!res.ok) {
           const err = await res.json();
-          alert(err.error?.message ?? "Verification failed");
+          setActionErr(err.error?.message ?? "Approval failed. Please try again.");
           return;
         }
-        // Start polling for the Stellar tx_hash (after() runs async on server)
         setMintingSet(prev => new Set(prev).add(actionId));
+      } else {
+        // Rejection is persisted server-side via dedicated reject route
+        const res = await fetch("/api/actions/reject", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ actionId, reason: "Rejected by admin" }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          setActionErr(err.error?.message ?? "Rejection failed. Please try again.");
+          return;
+        }
       }
-      // Optimistically update row status
+
+      // Optimistically update row status in the local list
       setItems(prev => prev.map(a =>
         a.id === actionId
           ? { ...a, status: approve ? "verified" : "rejected" }
@@ -131,7 +152,7 @@ export default function AdminActionsPage() {
     <OrgAdminLayout orgName={orgName ?? "Your Org"} plan="Pro Plan">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <MBolt className="w-6 h-6 text-amber-500" aria-hidden="true" /> Action Verification
@@ -146,6 +167,19 @@ export default function AdminActionsPage() {
           </span>
         )}
       </div>
+
+      {/* Inline action error — shown when approve/reject fails */}
+      {actionErr && (
+        <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
+          <span className="font-semibold">Error:</span> {actionErr}
+          <button
+            onClick={() => setActionErr(null)}
+            className="ml-auto text-red-400 hover:text-red-600 text-lg leading-none"
+            aria-label="Dismiss error">
+            ×
+          </button>
+        </div>
+      )}
 
       {/* ── Stellar blockchain info banner ── */}
       <div className="bg-primary-600 rounded-xl p-4 mb-6 flex items-start gap-3">
@@ -258,8 +292,8 @@ export default function AdminActionsPage() {
                             <input
                               type="number"
                               min={1} max={1000}
-                              value={tokenMap[a.id] ?? a.tokens_awarded}
-                              onChange={e => setTokenMap(m => ({ ...m, [a.id]: Number(e.target.value) }))}
+                              value={tokenMap[a.id] ?? (a.tokens_awarded > 0 ? a.tokens_awarded : 10)}
+                              onChange={e => setTokenMap(m => ({ ...m, [a.id]: Math.max(1, Math.floor(Number(e.target.value))) }))}
                               aria-label={`Token reward for ${a.action_type}`}
                               className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
                             />
@@ -304,7 +338,7 @@ export default function AdminActionsPage() {
                           <div className="flex gap-1.5">
                             <button
                               disabled={busy}
-                              onClick={() => handleVerify(a.id, tokenMap[a.id] ?? a.tokens_awarded, true)}
+                              onClick={() => handleVerify(a.id, tokenMap[a.id] ?? (a.tokens_awarded > 0 ? a.tokens_awarded : 10), true)}
                               aria-label={`Approve ${a.action_type} by ${name}`}
                               className="px-3 py-1.5 text-xs font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg disabled:opacity-50 transition-colors">
                               {busy ? "…" : "✓ Approve"}
