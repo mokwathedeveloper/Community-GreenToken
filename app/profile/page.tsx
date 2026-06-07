@@ -25,7 +25,6 @@ export default function ProfilePage() {
   const [wallet,      setWallet]      = useState("");
   const [saving,      setSaving]      = useState(false);
   const [changingPwd, setChangingPwd] = useState(false);
-  const [currentPwd,  setCurrentPwd]  = useState("");
   const [newPwd,      setNewPwd]      = useState("");
   const [confirmPwd,  setConfirmPwd]  = useState("");
   const [pwdLoading,  setPwdLoading]  = useState(false);
@@ -78,7 +77,7 @@ export default function ProfilePage() {
       const { error } = await supabase.auth.updateUser({ password: newPwd });
       if (error) { showToast(error.message, "error"); return; }
       showToast("Password changed successfully!", "success");
-      setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
+      setNewPwd(""); setConfirmPwd("");
       setChangingPwd(false);
     } catch {
       showToast("Could not change password. Please try again.", "error");

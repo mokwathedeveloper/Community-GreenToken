@@ -1,10 +1,6 @@
 "use client";
 
-// Rules: R-FE-01, R-COMP-01 (ProgressBar, Button, Badge), R-A11Y-01, R-FE-05
-// Spec: ux_ui/feature_specv2/donation_tracking_page_md.md
-// Mockup: mockup/donation_tracking_page_mockup.png
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -12,70 +8,118 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import { cn } from "@/lib/utils";
 import { MHeart, MCoin, MPeople, MLeaf, MTree, MRecycle, MWbSunny, MWaterDrop, MAttachMoney } from "@/components/icons";
 
-type StatusFilter = "All Projects" | "Ongoing" | "Completed" | "My Donations";
+type StatusFilter = "All Projects" | "Ongoing" | "Completed";
+const FILTERS: StatusFilter[] = ["All Projects", "Ongoing", "Completed"];
 
-const FILTERS: StatusFilter[] = ["All Projects", "Ongoing", "Completed", "My Donations"];
+// Icon mapping by project name keywords
+function projectIcon(name: string): {
+  Icon: typeof MTree;
+  iconColor: string;
+} {
+  const n = name.toLowerCase();
+  if (n.includes("tree") || n.includes("plant") || n.includes("forest"))
+    return { Icon: MTree,      iconColor: "text-green-700"  };
+  if (n.includes("solar") || n.includes("energy") || n.includes("sun"))
+    return { Icon: MWbSunny,   iconColor: "text-amber-500"  };
+  if (n.includes("water") || n.includes("clean water"))
+    return { Icon: MWaterDrop, iconColor: "text-sky-500"    };
+  if (n.includes("recycl") || n.includes("waste"))
+    return { Icon: MRecycle,   iconColor: "text-blue-600"   };
+  return { Icon: MLeaf, iconColor: "text-primary-600" };
+}
 
-const PROJECTS = [
-  { id: 1, name: "Tree Planting Initiative",    status: "Ongoing"   as const, raised: 80,  goal: 120, donors: 45,  desc: "Plant native trees in deforested areas across a 2km stretch. Every 10 GTK donations cover 1 tree.", Icon: MTree,      iconColor: "text-green-700"   },
-  { id: 2, name: "Recycling Drive",             status: "Ongoing"   as const, raised: 62,  goal: 100, donors: 31,  desc: "Distribute recycling bins in schools and communities. Promoting recycling initiatives and reducing waste.", Icon: MRecycle,   iconColor: "text-blue-600"    },
-  { id: 3, name: "Solar for Schools Initiative",status: "Ongoing"   as const, raised: 45,  goal: 150, donors: 22,  desc: "Install solar panels on local schools, reducing energy bills and carbon footprint.", Icon: MWbSunny,  iconColor: "text-amber-500"   },
-  { id: 4, name: "Clean Water Access",          status: "Completed" as const, raised: 120, goal: 120, donors: 68,  desc: "Provide clean drinking water access to rural communities through sustainable filtration systems.", Icon: MWaterDrop, iconColor: "text-sky-500"     },
-];
-
-const MY_TOTAL = 3450;
+type Project = {
+  id:            string;
+  name:          string;
+  description:   string | null;
+  goal_tokens:   number;
+  raised_tokens: number;
+  donor_count:   number;
+  is_active:     boolean;
+};
 
 export default function DonationsPage() {
-  const [filter,       setFilter]       = useState<StatusFilter>("All Projects");
-  const [donateModal,  setDonateModal]  = useState<number | null>(null);
-  const [donateAmount, setDonateAmount] = useState(10);
-  const [donating,     setDonating]     = useState(false);
+  const [filter,        setFilter]        = useState<StatusFilter>("All Projects");
+  const [projects,      setProjects]      = useState<Project[]>([]);
+  const [myDonations,   setMyDonations]   = useState<{ project_name: string }[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [donateTarget,  setDonateTarget]  = useState<Project | null>(null);
+  const [donateAmount,  setDonateAmount]  = useState(10);
+  const [donating,      setDonating]      = useState(false);
+  const [donateError,   setDonateError]   = useState<string | null>(null);
 
-  const filtered = filter === "All Projects" ? PROJECTS :
-                   filter === "My Donations"  ? PROJECTS.slice(0, 2) :
-                   PROJECTS.filter((p) => p.status === filter);
+  function loadData() {
+    setLoading(true);
+    Promise.all([
+      fetch("/api/donations/projects?status=all").then(r => r.json()),
+      fetch("/api/donations").then(r => r.json()),
+    ]).then(([projRes, myRes]) => {
+      setProjects(projRes.data ?? []);
+      setMyDonations(myRes.data ?? []);
+    }).catch(console.error).finally(() => setLoading(false));
+  }
+
+  useEffect(() => { loadData(); }, []);
+
+  const myProjectNames = new Set(myDonations.map(d => d.project_name));
+
+  const filtered = projects.filter(p => {
+    if (filter === "Ongoing")   return p.is_active;
+    if (filter === "Completed") return !p.is_active;
+    return true;
+  });
+
+  // Derived stats from real project data
+  const totalGTKRaised  = projects.reduce((s, p) => s + p.raised_tokens, 0);
+  const totalDonors     = projects.reduce((s, p) => s + p.donor_count, 0);
+  const activeCount     = projects.filter(p => p.is_active).length;
 
   async function handleDonate() {
-    if (!donatingProject) return;
-    setDonating(true);
+    if (!donateTarget) return;
+    if (donateAmount < 1) { setDonateError("Minimum donation is 1 GTK."); return; }
+    setDonating(true); setDonateError(null);
     try {
-      const res = await fetch("/api/donations", {
+      const res  = await fetch("/api/donations", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ projectName: donatingProject.name, tokensDonated: donateAmount }),
+        body:    JSON.stringify({ projectName: donateTarget.name, tokensDonated: donateAmount }),
       });
       const json = await res.json();
       if (!res.ok) {
-        alert(json.error?.message ?? "Donation failed. Please try again.");
+        setDonateError(json.error?.message ?? "Donation failed. Please try again.");
         return;
       }
-      setDonateModal(null);
+      setDonateTarget(null);
+      setDonateAmount(10);
+      loadData(); // Refresh project raised amounts + my donations
     } catch {
-      alert("Network error — please try again.");
+      setDonateError("Network error — please try again.");
     } finally {
       setDonating(false);
     }
   }
 
-  const donatingProject = PROJECTS.find((p) => p.id === donateModal);
-
   return (
     <AppLayout title="Donation Tracking">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><MHeart className="w-6 h-6 text-primary-600" /> Donation Tracking</h2>
-        <p className="text-sm text-gray-500 mt-1">Track the impact of your donations and support meaningful green projects.</p>
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <MHeart className="w-6 h-6 text-primary-600" /> Donation Tracking
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Track the impact of your donations and support meaningful green projects.
+        </p>
       </div>
 
-      {/* Stats */}
+      {/* Stats — from real project data */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {([
-          { label: "Total Donations",     value: "3,450",     Icon: MAttachMoney, color: "text-green-600"   },
-          { label: "Total Tokens Donated",value: "3,450 GTK", Icon: MCoin,        color: "text-amber-500"   },
-          { label: "Communities Impacted",value: "8",         Icon: MPeople,      color: "text-blue-500"    },
-          { label: "CO₂ Offset",          value: "2.45 t",    Icon: MLeaf,        color: "text-primary-600" },
+          { label: "Active Projects",     value: loading ? "—" : String(activeCount),                Icon: MLeaf,        color: "text-primary-600" },
+          { label: "Total GTK Donated",   value: loading ? "—" : `${totalGTKRaised.toLocaleString()} GTK`, Icon: MCoin, color: "text-amber-500"   },
+          { label: "Total Donors",        value: loading ? "—" : totalDonors.toLocaleString(),       Icon: MPeople,      color: "text-blue-500"    },
+          { label: "My Contributions",    value: loading ? "—" : `${myDonations.length} donations`,  Icon: MAttachMoney, color: "text-green-600"   },
         ] as const).map(({ label, value, Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-            <Icon className={`w-6 h-6 ${color}`} aria-hidden="true" />
+            <Icon className={`w-6 h-6 ${color} flex-shrink-0`} aria-hidden="true" />
             <div>
               <p className="text-base font-bold text-gray-900">{value}</p>
               <p className="text-xs text-gray-400">{label}</p>
@@ -88,73 +132,137 @@ export default function DonationsPage() {
       <div className="flex gap-2 mb-5 flex-wrap">
         {FILTERS.map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={cn("px-4 py-1.5 rounded-full text-xs font-medium transition-colors",
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-medium transition-colors",
               filter === f ? "bg-primary-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200",
               "focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             )}>
             {f}
           </button>
         ))}
-        <div className="ml-auto flex gap-2">
-          <select className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="Category filter">
-            <option>All Categories</option>
-          </select>
-          <select className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="Sort by">
-            <option>Sort by Recent</option>
-          </select>
-        </div>
       </div>
 
       {/* Project list */}
-      <div className="space-y-4">
-        {filtered.map((p) => (
-          <div key={p.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex gap-4 hover:shadow-md transition-shadow">
-            <div className="w-20 h-20 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-              <p.Icon className={`w-10 h-10 ${p.iconColor}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-3 mb-1">
-                <h3 className="text-sm font-semibold text-gray-900">{p.name}</h3>
-                <Badge color={p.status === "Ongoing" ? "blue" : "green"} dot>{p.status}</Badge>
-              </div>
-              <p className="text-xs text-gray-500 mb-3 leading-relaxed">{p.desc}</p>
-              <ProgressBar value={p.raised} max={p.goal} size="sm" showLabel label={`${p.raised} / ${p.goal} GTK`} />
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-gray-400">{p.donors} donors</p>
-                <div className="flex gap-2">
-                  <button className="text-xs text-primary-600 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
-                    Share Project
-                  </button>
-                  {p.status === "Ongoing" && (
-                    <Button variant="primary" size="xs" onClick={() => setDonateModal(p.id)}>
-                      Donate More
-                    </Button>
+      {loading ? (
+        <div className="space-y-4 animate-pulse">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 h-28" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <MLeaf className="w-10 h-10 text-gray-200 mx-auto mb-3" aria-hidden />
+          <p className="text-sm font-semibold text-gray-600">No projects found</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {filter === "Completed" ? "No completed projects yet." : "Your admin hasn't created any donation projects yet."}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((p) => {
+            const { Icon, iconColor } = projectIcon(p.name);
+            const isMine = myProjectNames.has(p.name);
+            return (
+              <div key={p.id}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex gap-4 hover:shadow-md transition-shadow">
+                <div className="w-20 h-20 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <Icon className={`w-10 h-10 ${iconColor}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3 mb-1 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold text-gray-900">{p.name}</h3>
+                      {isMine && (
+                        <span className="text-[10px] font-semibold text-primary-600 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-full">
+                          Your contribution
+                        </span>
+                      )}
+                    </div>
+                    <Badge color={p.is_active ? "blue" : "green"} dot>
+                      {p.is_active ? "Ongoing" : "Completed"}
+                    </Badge>
+                  </div>
+                  {p.description && (
+                    <p className="text-xs text-gray-500 mb-3 leading-relaxed line-clamp-2">{p.description}</p>
                   )}
-                  {p.status === "Completed" && (
-                    <Button variant="outline" size="xs">View Impact</Button>
-                  )}
+                  <ProgressBar
+                    value={Math.min(p.raised_tokens, p.goal_tokens)}
+                    max={p.goal_tokens}
+                    size="sm"
+                    showLabel
+                    label={`${p.raised_tokens.toLocaleString()} / ${p.goal_tokens.toLocaleString()} GTK`}
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-gray-400">{p.donor_count} donor{p.donor_count !== 1 ? "s" : ""}</p>
+                    <div className="flex gap-2">
+                      {p.is_active && (
+                        <Button variant="primary" size="xs" onClick={() => { setDonateTarget(p); setDonateError(null); }}>
+                          Donate
+                        </Button>
+                      )}
+                      {!p.is_active && (
+                        <span className="text-xs text-primary-600 font-medium">Goal reached!</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
-      <p className="text-center text-xs text-primary-600 mt-6 flex items-center justify-center gap-1"><MLeaf className="w-3.5 h-3.5" /> Every donation matters. Thank you for your support!</p>
+      <p className="text-center text-xs text-primary-600 mt-6 flex items-center justify-center gap-1">
+        <MLeaf className="w-3.5 h-3.5" aria-hidden /> Every donation matters. Thank you for your support!
+      </p>
 
       {/* Donate modal */}
-      {donatingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      {donateTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="donate-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+        >
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Donate to {donatingProject.name}</h3>
-            <p className="text-sm text-gray-500 mb-4">Allocate your GTK tokens to this project.</p>
-            <label htmlFor="donate-amount" className="text-sm font-medium text-gray-700 mb-1.5 block">Amount (GTK)</label>
-            <input id="donate-amount" type="number" min={1} max={1250} value={donateAmount}
-              onChange={(e) => setDonateAmount(Number(e.target.value))}
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <h3 id="donate-modal-title" className="text-lg font-bold text-gray-900 mb-1">
+              Donate to {donateTarget.name}
+            </h3>
+            <p className="text-sm text-gray-500 mb-1">Allocate your GTK tokens to this project.</p>
+            <p className="text-xs text-gray-400 mb-4">
+              Project needs: {(donateTarget.goal_tokens - donateTarget.raised_tokens).toLocaleString()} GTK more to reach goal.
+            </p>
+
+            {donateError && (
+              <div role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">
+                {donateError}
+              </div>
+            )}
+
+            <label htmlFor="donate-amount" className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Amount (GTK)
+            </label>
+            <input
+              id="donate-amount"
+              type="number"
+              min={1}
+              value={donateAmount}
+              onChange={(e) => setDonateAmount(Math.max(1, Number(e.target.value)))}
+              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
             <div className="flex gap-2">
-              <button onClick={() => setDonateModal(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">Cancel</button>
-              <Button variant="primary" size="md" fullWidth loading={donating} onClick={handleDonate} icon={<MHeart className="w-4 h-4" />}>
+              <button
+                onClick={() => { setDonateTarget(null); setDonateError(null); }}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+              >
+                Cancel
+              </button>
+              <Button
+                variant="primary" size="md" fullWidth
+                loading={donating}
+                onClick={handleDonate}
+                icon={<MHeart className="w-4 h-4" />}
+              >
                 Confirm Donation
               </Button>
             </div>
