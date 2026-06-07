@@ -100,18 +100,15 @@ export default function AnalyticsPage() {
   const [noOrg,    setNoOrg]    = useState(false);
   const [loading,  setLoading]  = useState(true);
 
-  // Wait for role to resolve before rendering any layout.
-  // Without this guard, isOrgAdmin starts false → AppLayout renders first →
-  // then flips to OrgAdminLayout once useUser() resolves, causing the flicker.
-  if (userLoading) return null;
-
+  // Hooks must always be called unconditionally (Rules of Hooks).
+  // Skip the fetch while userLoading — re-runs once role resolves.
   useEffect(()=>{
+    if (userLoading) return;
     Promise.all([
       fetch("/api/analytics/overview"),
       fetch("/api/analytics/actions"),
     ]).then(async([ovRes, actRes])=>{
       if(ovRes.status===422){
-        // Distinguish NO_ORGANIZATION (needs setup) from PLAN_LIMIT_EXCEEDED (needs upgrade)
         const body = await ovRes.json().catch(()=>({}));
         if(body?.error?.code === "NO_ORGANIZATION"){
           setNoOrg(true);
@@ -131,7 +128,11 @@ export default function AnalyticsPage() {
         setByType(actJson.data.by_type??[]);
       }
     }).catch(console.error).finally(()=>setLoading(false));
-  },[]);
+  },[userLoading]);
+
+  // Safe to return null here — all hooks above have already been called.
+  // Prevents layout flicker: don't commit any layout until role is known.
+  if (userLoading) return null;
 
   /* ── No org yet — guide user to setup ── */
   if(!loading && !userLoading && noOrg){
