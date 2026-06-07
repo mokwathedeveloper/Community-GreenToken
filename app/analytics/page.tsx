@@ -5,7 +5,9 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
+import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Link from "next/link";
+import { useUser } from "@/hooks/useUser";
 import { MCoin, MHeart, MCheckCircle, MTree, MAir, MWaterDrop, MRecycle, MBusiness, MLock, MBarChart } from "@/components/icons";
 
 type OverviewData = {
@@ -66,8 +68,30 @@ function DonutChart({
   );
 }
 
+/* ── Role-aware layout shell ─────────────────────────────────────────────── */
+// Admins stay inside OrgAdminLayout (keeps admin sidebar + nav context).
+// Members use AppLayout (member sidebar). One page, no duplication.
+function AnalyticsLayout({
+  children, isOrgAdmin, orgName,
+}: {
+  children: ReactNode;
+  isOrgAdmin: boolean;
+  orgName: string | null;
+}) {
+  if (isOrgAdmin) {
+    return (
+      <OrgAdminLayout orgName={orgName ?? "Your Org"} plan="Pro Plan">
+        {children}
+      </OrgAdminLayout>
+    );
+  }
+  return <AppLayout title="Analytics">{children}</AppLayout>;
+}
+
 /* ── Main page ───────────────────────────────────────────────────────────── */
 export default function AnalyticsPage() {
+  const { isOrgAdmin, orgName, isLoading: userLoading } = useUser();
+
   const [period,   setPeriod]   = useState("all_time");
   const [overview, setOverview] = useState<OverviewData|null>(null);
   const [trend,    setTrend]    = useState<TrendPoint[]>([]);
@@ -105,9 +129,9 @@ export default function AnalyticsPage() {
   },[]);
 
   /* ── No org yet — guide user to setup ── */
-  if(!loading && noOrg){
+  if(!loading && !userLoading && noOrg){
     return (
-      <AppLayout title="Analytics">
+      <AnalyticsLayout isOrgAdmin={isOrgAdmin} orgName={orgName}>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="flex justify-center mb-4"><MBusiness className="w-16 h-16 text-gray-300" /></div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Set up your organization first</h2>
@@ -116,14 +140,14 @@ export default function AnalyticsPage() {
             Set Up Organization →
           </Link>
         </div>
-      </AppLayout>
+      </AnalyticsLayout>
     );
   }
 
   /* ── Plan gate — needs Starter+ ── */
-  if(!loading && planOk===false){
+  if(!loading && !userLoading && planOk===false){
     return (
-      <AppLayout title="Analytics">
+      <AnalyticsLayout isOrgAdmin={isOrgAdmin} orgName={orgName}>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="flex justify-center mb-4"><MLock className="w-16 h-16 text-gray-300" /></div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Analytics requires Starter+</h2>
@@ -132,7 +156,7 @@ export default function AnalyticsPage() {
             View Plans
           </Link>
         </div>
-      </AppLayout>
+      </AnalyticsLayout>
     );
   }
 
@@ -210,7 +234,7 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <AppLayout title="Analytics">
+    <AnalyticsLayout isOrgAdmin={isOrgAdmin} orgName={orgName}>
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
@@ -371,6 +395,6 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
-    </AppLayout>
+    </AnalyticsLayout>
   );
 }
