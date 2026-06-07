@@ -197,7 +197,27 @@ export default function JoinPage() {
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) { showToast("Incorrect email or password.", "error"); return; }
+        if (error) {
+          // Accounts created via magic link invite have no password.
+          // Guide them to use OTP instead of showing a generic error.
+          const noPassword =
+            error.message.toLowerCase().includes("invalid login") ||
+            error.status === 400;
+          if (noPassword && invite?.invitedEmail) {
+            const joinUrl = typeof window !== "undefined" ? window.location.href.split("#")[0] : "";
+            await supabase.auth.signInWithOtp({
+              email: invite.invitedEmail,
+              options: { shouldCreateUser: false, emailRedirectTo: joinUrl },
+            });
+            showToast(
+              "Your account uses magic link login — no password needed. We just sent a new link to your inbox. Click it to join.",
+              "success"
+            );
+          } else {
+            showToast("Incorrect email or password.", "error");
+          }
+          return;
+        }
       }
       await acceptInvite();
     } finally {
@@ -273,19 +293,31 @@ export default function JoinPage() {
                     You'll be logged in automatically — no password needed
                   </li>
                 </ol>
-                <p className="text-xs text-gray-400">
-                  Didn't get the email? Check spam, or ask your admin to resend.
-                </p>
-
-                {/* Fallback: already have account */}
-                <div className="border-t pt-4">
-                  <p className="text-xs text-gray-500 mb-2">Already have an account?</p>
-                  <button
-                    onClick={() => { setMode("signin"); setStatus("valid"); }}
-                    className="text-sm text-primary-600 font-medium hover:underline"
+                {/* Resend magic link */}
+                <div className="border-t pt-4 space-y-2">
+                  <p className="text-xs text-gray-500">Didn&apos;t get the email or link expired?</p>
+                  <Button
+                    variant="outline" size="md" fullWidth loading={loading}
+                    icon={<MEmail className="w-4 h-4" />}
+                    onClick={async () => {
+                      if (!invite?.invitedEmail) return;
+                      setLoading(true);
+                      const supabase = createClient();
+                      const joinUrl  = typeof window !== "undefined" ? window.location.href.split("#")[0] : "";
+                      const { error } = await supabase.auth.signInWithOtp({
+                        email: invite.invitedEmail,
+                        options: { shouldCreateUser: false, emailRedirectTo: joinUrl },
+                      });
+                      setLoading(false);
+                      if (error) {
+                        showToast("Could not send link. Ask your admin to resend the invite.", "error");
+                      } else {
+                        showToast("New magic link sent! Check your inbox and click the link.", "success");
+                      }
+                    }}
                   >
-                    Sign in with your password instead →
-                  </button>
+                    Send me a new login link
+                  </Button>
                 </div>
               </div>
             </div>
