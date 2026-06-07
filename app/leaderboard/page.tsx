@@ -183,8 +183,9 @@ export default function LeaderboardPage() {
               : period !== "all_time" ? "No activity this period" : "Earn tokens to rank",
             icon:  <MTrophy />,
           },
-        ].map(({ label, value, sub }) => (
+        ].map(({ label, value, sub, icon }) => (
           <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
+            <div className="flex justify-center text-primary-400 mb-2">{icon}</div>
             <p className="text-2xl font-black text-gray-900 tracking-tight">{value}</p>
             <p className="text-xs font-semibold text-gray-700 mt-1">{label}</p>
             <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
@@ -273,8 +274,8 @@ export default function LeaderboardPage() {
                 ))}
                 {/* Leaf accent — top-left */}
                 <path d="M30 20 Q18 35 28 50 Q20 35 36 28 Z" fill="rgba(34,197,94,0.12)" />
-                {/* Leaf accent — top-right */}
-                <path d="M calc(100% - 30px) 20 Q calc(100% - 18px) 35 calc(100% - 28px) 50 Q calc(100% - 20px) 35 calc(100% - 36px) 28 Z" fill="rgba(34,197,94,0.10)" />
+                {/* Leaf accent — top-right (mirrored, fixed coords) */}
+                <path d="M570 20 Q582 35 572 50 Q580 35 564 28 Z" fill="rgba(34,197,94,0.10)" />
               </svg>
 
               {/* ── Content ── */}
@@ -306,7 +307,7 @@ export default function LeaderboardPage() {
 
                         {/* Floating crown above #1 */}
                         {isFirst ? (
-                          <div className="mb-2" style={{ animation: "bounce 2s infinite" }}>
+                          <div className="mb-2 animate-bounce">
                             <MCrown
                               className="w-8 h-8 text-amber-400"
                               style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,0.9))" }}
