@@ -50,8 +50,20 @@ export default function JoinPage() {
   useEffect(() => {
     if (!token) return;
 
+    const supabase = createClient();
+
+    // Listen for auth state changes — catches #access_token=... fragments
+    // that Supabase processes asynchronously after the page loads.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+          // Invite auto-accept when auth arrives via magic link fragment
+          acceptInvite();
+        }
+      }
+    );
+
     async function loadInvite() {
-      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
 
       // Fetch invite via admin-client API (bypasses RLS)
@@ -113,6 +125,8 @@ export default function JoinPage() {
     }
 
     loadInvite();
+
+    return () => subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 

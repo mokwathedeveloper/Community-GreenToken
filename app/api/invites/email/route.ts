@@ -196,13 +196,15 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 5. Send magic link ────────────────────────────────────────────────
-  // callbackUrl goes through /auth/callback which exchanges the PKCE code
-  // for a session, then redirects the user straight to their join page.
-  const callbackUrl = `${appUrl}/auth/callback?next=/join/${invite.token}`;
-  const joinUrl     = `${appUrl}/join/${invite.token}`;
+  // Use the join page as the redirectTo directly.
+  // Supabase invite emails redirect with #access_token=... URL fragments,
+  // NOT ?code= query params — so a server-side /auth/callback can't see
+  // them. The Supabase browser client on /join/[token] detects and processes
+  // the hash fragment automatically when getSession() is called.
+  const joinUrl = `${appUrl}/join/${invite.token}`;
 
   const { error: emailErr } = await (supabase as any).auth.admin.inviteUserByEmail(email, {
-    redirectTo: callbackUrl,
+    redirectTo: joinUrl,
     data: {
       invited_to_org: auth!.orgId,
       invite_token:   invite.token,
@@ -216,7 +218,7 @@ export async function POST(req: NextRequest) {
     const { error: otpErr } = await (supabase as any).auth.admin.generateLink({
       type:    "magiclink",
       email,
-      options: { redirectTo: callbackUrl },
+      options: { redirectTo: joinUrl },
     });
 
     if (otpErr) {
