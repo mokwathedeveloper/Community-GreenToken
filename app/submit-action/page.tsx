@@ -83,6 +83,7 @@ export default function ActionSubmissionPage() {
   // Live timestamp — updates every second
   useEffect(() => {
     const fmt = () => new Date().toISOString().slice(0, 19).replace("T", " ");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNow(fmt());
     const t = setInterval(() => setNow(fmt()), 1000);
     return () => clearInterval(t);

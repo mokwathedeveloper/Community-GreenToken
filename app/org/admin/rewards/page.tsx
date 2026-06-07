@@ -175,7 +175,6 @@ export default function AdminRewardsPage() {
   }
 
   async function handleDelete(r: Reward) {
-    if (!confirm(`Deactivate "${r.title}"? Members won't see it (history preserved).`)) return;
     setActing(r.id);
     try {
       await fetch(`/api/rewards/${r.id}`, { method: "DELETE" });

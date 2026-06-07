@@ -5,7 +5,7 @@ import AppLayout from "@/components/layouts/AppLayout";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-import { MCoin, MHeart, MCheckCircle, MTree, MAir, MWaterDrop, MRecycle, MBusiness, MLock, MBarChart, MLeaf } from "@/components/icons";
+import { MCoin, MHeart, MCheckCircle, MTree, MAir, MWaterDrop, MRecycle, MBusiness, MLock, MBarChart, MLeaf, MWarning } from "@/components/icons";
 
 type OverviewData = {
   totalActions: number; verifiedActions: number; pendingActions: number;
@@ -58,18 +58,19 @@ function DonutChart({ data, centerValue, centerLabel }: {
   centerLabel:  string;
 }) {
   const total = data.reduce((s, d) => s + d.pct, 0) || 1;
-  let cursor = -90;
   const r = 56, cx = 68, cy = 68;
-  const slices = data.map(d => {
-    const start = cursor;
-    const sweep = (d.pct / total) * 360;
-    cursor += sweep;
-    const a1 = (start * Math.PI) / 180, a2 = ((start + sweep) * Math.PI) / 180;
-    const large = sweep > 180 ? 1 : 0;
-    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-    const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
-    return { ...d, path: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z` };
-  });
+  const slices = data.reduce<{ label: string; pct: number; color: string; path: string }[]>(
+    (acc, d) => {
+      const start = acc.reduce((s, sl) => s + (sl.pct / total) * 360, -90);
+      const sweep = (d.pct / total) * 360;
+      const a1 = (start * Math.PI) / 180, a2 = ((start + sweep) * Math.PI) / 180;
+      const large = sweep > 180 ? 1 : 0;
+      const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+      const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
+      return [...acc, { ...d, path: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z` }];
+    },
+    []
+  );
   return (
     <svg viewBox="0 0 136 136" className="w-40 h-40 mx-auto" aria-label="Token distribution chart">
       {slices.map(s => <path key={s.label} d={s.path} fill={s.color} />)}
@@ -103,10 +104,12 @@ export default function AnalyticsPage() {
   const [planOk,   setPlanOk]   = useState<boolean | null>(null);
   const [noOrg,    setNoOrg]    = useState(false);
   const [loading,  setLoading]  = useState(true);
+  const [loadErr,  setLoadErr]  = useState<string | null>(null);
 
   // Re-fetch whenever period or user role changes
   useEffect(() => {
     if (userLoading) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
 
     const { from, to } = periodToRange(period);
@@ -141,7 +144,7 @@ export default function AnalyticsPage() {
         );
         setByType(actJson.data.by_type ?? []);
       }
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load analytics.")).finally(() => setLoading(false));
   }, [userLoading, period]);          // ← period is now a real dependency
 
   if (userLoading) return null;
@@ -253,6 +256,14 @@ export default function AnalyticsPage() {
 
   return (
     <AnalyticsLayout isOrgAdmin={isOrgAdmin} orgName={orgName}>
+
+      {loadErr && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">

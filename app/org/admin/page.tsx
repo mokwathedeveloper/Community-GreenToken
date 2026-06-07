@@ -6,11 +6,10 @@ import Image from "next/image";
 import Link from "next/link";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
-import { MLeaf, MBarChart, MPeople, MBolt } from "@/components/icons";
+import { MLeaf, MBarChart, MPeople, MBolt, MWarning } from "@/components/icons";
 
 type PendingAction = {
   id:             string;
@@ -40,6 +39,7 @@ export default function OrgAdminPage() {
   const [stats,   setStats]   = useState<OrgStats | null>(null);
   const [usage,   setUsage]   = useState<{ used: number; limit: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
 
   const loadData = useCallback(() => {
     if (!orgId || !isOrgAdmin) return;
@@ -51,7 +51,7 @@ export default function OrgAdminPage() {
       setQueue(pendingRes.data ?? []);
       if (statsRes.data) setStats(statsRes.data);
       if (usageRes?.data) setUsage({ used: usageRes.data.members_used ?? 0, limit: usageRes.data.member_limit ?? null });
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load overview data.")).finally(() => setLoading(false));
   }, [orgId, isOrgAdmin]);
 
   useEffect(() => { if (!userLoading && isOrgAdmin) loadData(); }, [userLoading, isOrgAdmin, loadData]);
@@ -65,6 +65,13 @@ export default function OrgAdminPage() {
 
   return (
     <OrgAdminLayout orgName={orgName ?? "Your Org"} plan="Pro Plan">
+      {loadErr && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
       {/* Hero */}
       <div className="relative h-36 rounded-2xl overflow-hidden mb-5">
         <Image src="/assets/image/pages/org-admin/org_admin_hero.png"

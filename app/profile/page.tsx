@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, useEffect } from "react";
+import Image from "next/image";
 import AppLayout from "@/components/layouts/AppLayout";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -31,6 +32,7 @@ export default function ProfilePage() {
 
   // Populate form from live user data once loaded
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (displayName) setName(displayName);
   }, [displayName]);
 
@@ -49,6 +51,7 @@ export default function ProfilePage() {
 
       // Update public.users profile row
       if (user?.id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any)
           .from("users")
           .update({
@@ -118,7 +121,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-5 px-6 py-6 border-b border-gray-50">
             <div className="relative flex-shrink-0">
               {avatarUrl ? (
-                <img src={avatarUrl} alt={displayName ?? "Avatar"}
+                <Image src={avatarUrl} alt={displayName ?? "Avatar"} width={80} height={80}
                   className="w-20 h-20 rounded-full object-cover ring-4 ring-primary-50" />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-2xl font-bold ring-4 ring-primary-50">
@@ -191,7 +194,7 @@ export default function ProfilePage() {
               { label: "Account Type", value: roleMeta?.label ?? "Member"        },
               { label: "Organization", value: orgName ?? "No organization yet"    },
               { label: "Member Since", value: (() => {
-                  const ts = (user as any)?.created_at as string | undefined;
+                  const ts = user?.created_at as string | undefined;
                   return ts ? new Date(ts).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "—";
               })() },
             ].map(({ label, value }) => (

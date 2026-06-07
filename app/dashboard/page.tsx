@@ -8,7 +8,7 @@ import MiniLeaderboard from "@/components/dashboard/MiniLeaderboard";
 import DonationProgress from "@/components/dashboard/DonationProgress";
 import AnalyticsChart, { type ChartAction } from "@/components/dashboard/AnalyticsChart";
 import { useUser } from "@/hooks/useUser";
-import { MCoin, MCheckCircle, MHeart, MLeaf, MTrophy } from "@/components/icons";
+import { MCoin, MCheckCircle, MHeart, MTrophy, MWarning } from "@/components/icons";
 
 type LeaderEntry  = { rank: number; name: string; handle: string; tokens: number };
 type DonationEntry= { id: string; name: string; status: "Ongoing" | "Completed"; raised: number; goal: number };
@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [myRank,       setMyRank]       = useState<number | null>(null);
   const [donations,    setDonations]    = useState<DonationEntry[]>([]);
   const [loading,      setLoading]      = useState(true);
+  const [loadErr,      setLoadErr]      = useState<string | null>(null);
 
   useEffect(() => {
     if (userLoading) return;
@@ -77,7 +78,7 @@ export default function DashboardPage() {
         );
       }
 
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load dashboard data.")).finally(() => setLoading(false));
   }, [userLoading]);
 
   const stats = [
@@ -113,6 +114,13 @@ export default function DashboardPage() {
 
   return (
     <AppLayout title="Dashboard" tokenBalance={BigInt(balance * 10_000_000)}>
+      {loadErr && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
       <div className="mb-5">
         <h2 className="text-2xl font-bold text-gray-900">
           Welcome back, {userLoading ? "..." : (displayName ?? "GreenUser")}!

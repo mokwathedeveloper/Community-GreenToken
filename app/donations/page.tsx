@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { cn } from "@/lib/utils";
-import { MHeart, MCoin, MPeople, MLeaf, MTree, MRecycle, MWbSunny, MWaterDrop, MAttachMoney } from "@/components/icons";
+import { MHeart, MCoin, MPeople, MLeaf, MTree, MRecycle, MWbSunny, MWaterDrop, MAttachMoney, MWarning } from "@/components/icons";
 
 type StatusFilter = "All Projects" | "Ongoing" | "Completed";
 const FILTERS: StatusFilter[] = ["All Projects", "Ongoing", "Completed"];
@@ -43,6 +43,7 @@ export default function DonationsPage() {
   const [projects,      setProjects]      = useState<Project[]>([]);
   const [myDonations,   setMyDonations]   = useState<{ project_name: string }[]>([]);
   const [loading,       setLoading]       = useState(true);
+  const [loadErr,       setLoadErr]       = useState<string | null>(null);
   const [donateTarget,  setDonateTarget]  = useState<Project | null>(null);
   const [donateAmount,  setDonateAmount]  = useState(10);
   const [donating,      setDonating]      = useState(false);
@@ -56,9 +57,10 @@ export default function DonationsPage() {
     ]).then(([projRes, myRes]) => {
       setProjects(projRes.data ?? []);
       setMyDonations(myRes.data ?? []);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load donation projects.")).finally(() => setLoading(false));
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, []);
 
   const myProjectNames = new Set(myDonations.map(d => d.project_name));
@@ -101,6 +103,14 @@ export default function DonationsPage() {
 
   return (
     <AppLayout title="Donation Tracking">
+      {loadErr && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{loadErr}</span>
+          <button onClick={() => setLoadErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <MHeart className="w-6 h-6 text-primary-600" /> Donation Tracking
