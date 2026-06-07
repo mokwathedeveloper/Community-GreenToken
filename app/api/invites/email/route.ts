@@ -148,9 +148,19 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (errWithEmail) {
+    // Log the real error so it appears in Vercel/server logs for diagnosis.
+    console.error("[invites/email] insert error:", JSON.stringify(errWithEmail));
+
+    // PostgREST returns PGRST204 when the column isn't in its schema cache yet.
+    // Postgres itself would return 42703 for an unknown column.
+    // Either way, if the error mentions invited_email we can retry without it.
+    const errCode = String((errWithEmail as { code?: string }).code ?? "");
+    const errMsg  = String((errWithEmail as { message?: string }).message ?? "").toLowerCase();
     const isMissingColumn =
-      (errWithEmail as { code?: string }).code === "42703" ||
-      String((errWithEmail as { message?: string }).message).includes("invited_email");
+      errCode === "42703" ||
+      errCode === "PGRST204" ||
+      errMsg.includes("invited_email") ||
+      errMsg.includes("could not find the column");
 
     if (isMissingColumn) {
       const { data: fallback, error: errFallback } = await (supabase as any)
@@ -166,6 +176,7 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (errFallback || !fallback) {
+        console.error("[invites/email] fallback insert error:", JSON.stringify(errFallback));
         return NextResponse.json(
           { error: { code: "DB_ERROR", message: "Could not create invite token. Please try again." } },
           { status: 500 }
@@ -173,6 +184,7 @@ export async function POST(req: NextRequest) {
       }
       invite = fallback as InviteRow;
     } else {
+      console.error("[invites/email] non-recoverable insert error:", JSON.stringify(errWithEmail));
       return NextResponse.json(
         { error: { code: "DB_ERROR", message: "Could not create invite token. Please try again." } },
         { status: 500 }
