@@ -4,7 +4,9 @@ import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 
 // GET /api/admin/redemptions?status=pending&limit=50&page=1
-// Admin view of all org redemption requests with member info.
+// Admin view of all org redemption requests with member and reward info.
+// Two-step query: redemption_logs has no FK to public.rewards / public.users,
+// so PostgREST implicit joins don't work. Fetch logs then look up separately.
 
 export async function GET(req: NextRequest) {
   const auth  = await getAuthContext();
@@ -19,22 +21,18 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // Step 1: fetch redemption logs
   let query = (supabase as any)
     .from("redemption_logs")
-    .select(
-      "id, user_id, tokens_spent, status, created_at, " +
-      "rewards(title, description, token_cost), " +
-      "users(display_name, email)",
-      { count: "exact" }
-    )
+    .select("id, user_id, reward_id, tokens_spent, status, created_at", { count: "exact" })
     .eq("org_id", auth!.orgId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (status) query = query.eq("status", status);
 
-  const { data, count, error } = await query as {
-    data: Record<string, unknown>[] | null;
+  const { data: logs, count, error } = await query as {
+    data: { id: string; user_id: string; reward_id: string | null; tokens_spent: number; status: string; created_at: string }[] | null;
     count: number | null;
     error: unknown;
   };
@@ -47,8 +45,39 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const rows = logs ?? [];
+
+  // Step 2a: look up reward titles
+  const rewardIds = [...new Set(rows.map(r => r.reward_id).filter(Boolean))] as string[];
+  let rewardMap: Record<string, { title: string; token_cost: number }> = {};
+  if (rewardIds.length > 0) {
+    const { data: rewardRows } = await (supabase as any)
+      .from("rewards")
+      .select("id, title, token_cost")
+      .in("id", rewardIds) as { data: { id: string; title: string; token_cost: number }[] | null };
+    for (const r of rewardRows ?? []) rewardMap[r.id] = { title: r.title, token_cost: r.token_cost };
+  }
+
+  // Step 2b: look up member names + emails from public.users
+  const userIds = [...new Set(rows.map(r => r.user_id))];
+  let userMap: Record<string, { display_name: string | null; email: string | null }> = {};
+  if (userIds.length > 0) {
+    const { data: userRows } = await (supabase as any)
+      .from("users")
+      .select("id, display_name, email")
+      .in("id", userIds) as { data: { id: string; display_name: string | null; email: string | null }[] | null };
+    for (const u of userRows ?? []) userMap[u.id] = { display_name: u.display_name, email: u.email };
+  }
+
+  // Merge
+  const data = rows.map(log => ({
+    ...log,
+    rewards: log.reward_id ? (rewardMap[log.reward_id] ?? null) : null,
+    users:   userMap[log.user_id] ?? null,
+  }));
+
   return NextResponse.json({
-    data: data ?? [],
+    data,
     pagination: { page, limit, total: count ?? 0 },
     meta: { org_id: auth!.orgId },
   });
