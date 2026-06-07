@@ -28,18 +28,24 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Fetch the action — ensure it belongs to admin's org (SoD: admin cannot verify own actions)
-  const { data: action, error: fetchErr } = await (supabase as any)
+  // Fetch the action — ensure it belongs to admin's org
+  // For superadmin (orgId = ""), look up the action by id only then validate it has an org_id.
+  const isSuperAdmin = auth!.role === "superadmin";
+  let actionQuery = (supabase as any)
     .from("actions")
-    .select("id, org_id, user_id, status, submitted_by")
-    .eq("id", actionId)
-    .eq("org_id", auth!.orgId)
-    .single() as {
-      data: { id: string; org_id: string; user_id: string; status: string; submitted_by?: string } | null;
-      error: unknown;
-    };
+    .select("id, org_id, user_id, status")
+    .eq("id", actionId);
+  if (!isSuperAdmin && auth!.orgId) {
+    actionQuery = actionQuery.eq("org_id", auth!.orgId);
+  }
+
+  const { data: action, error: fetchErr } = await actionQuery.single() as {
+    data: { id: string; org_id: string; user_id: string; status: string } | null;
+    error: unknown;
+  };
 
   if (fetchErr || !action) {
+    console.error("[api/actions/verify] Fetch error:", JSON.stringify(fetchErr), "orgId:", auth!.orgId, "actionId:", actionId);
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Action not found in your organization." } },
       { status: 404 }
