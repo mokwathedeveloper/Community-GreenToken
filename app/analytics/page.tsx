@@ -100,6 +100,11 @@ export default function AnalyticsPage() {
   const [noOrg,    setNoOrg]    = useState(false);
   const [loading,  setLoading]  = useState(true);
 
+  // Wait for role to resolve before rendering any layout.
+  // Without this guard, isOrgAdmin starts false → AppLayout renders first →
+  // then flips to OrgAdminLayout once useUser() resolves, causing the flicker.
+  if (userLoading) return null;
+
   useEffect(()=>{
     Promise.all([
       fetch("/api/analytics/overview"),
