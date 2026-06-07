@@ -30,7 +30,7 @@ export default function DashboardPage() {
       fetch("/api/tokens/balance").then((r) => r.json()),
       fetch("/api/actions?limit=100").then((r) => r.json()),
       fetch("/api/leaderboard?limit=5").then((r) => r.json()),
-      fetch("/api/donations?limit=3").then((r) => r.json()),
+      fetch("/api/donations/projects?limit=2").then((r) => r.json()),
     ]).then(([balRes, actRes, lbRes, donRes]) => {
       if (balRes.data) {
         setBalance(balRes.data.balance ?? 0);
@@ -56,14 +56,14 @@ export default function DashboardPage() {
       }
       if (donRes.data) {
         setDonations(
-          (donRes.data as { id: string; project_name: string; tokens_donated: number }[])
+          (donRes.data as { id: string; name: string; raised_tokens: number; goal_tokens: number; is_active: boolean }[])
             .slice(0, 2)
             .map((d) => ({
               id:     d.id,
-              name:   d.project_name,
-              status: "Ongoing" as const,
-              raised: d.tokens_donated,
-              goal:   Math.ceil(d.tokens_donated * 1.5),
+              name:   d.name,
+              status: d.is_active ? "Ongoing" as const : "Completed" as const,
+              raised: d.raised_tokens,
+              goal:   d.goal_tokens,
             }))
         );
       }

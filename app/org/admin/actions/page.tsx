@@ -64,7 +64,7 @@ export default function AdminActionsPage() {
       .then(r => r.json())
       .then(res => {
         setItems(res.data ?? []);
-        setTotal(res.meta?.total ?? 0);
+        setTotal(res.pagination?.total ?? 0);
       })
       .catch(console.error)
       .finally(() => setLoading(false));

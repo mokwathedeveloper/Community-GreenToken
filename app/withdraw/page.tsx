@@ -405,11 +405,9 @@ export default function WithdrawPage() {
         onClose={() => setSuccess(false)}
         title="Withdrawal Submitted! 🎉"
         icon={
-          <div className="w-16 h-16 rounded-full bg-primary-500 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-            </svg>
-          </div>
+          <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
         }
         description="Your withdrawal request has been received. Payment will be processed within 1–3 business days. Your tokens have been deducted."
       >

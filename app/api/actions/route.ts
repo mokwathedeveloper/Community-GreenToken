@@ -57,8 +57,26 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const list = data ?? [];
+
+  // For admins/owners, enrich each row with the submitting member's display name and email.
+  // Two-step pattern: no implicit FK join (avoids PGRST204 schema-cache errors).
+  let enriched: Record<string, unknown>[] = list;
+  if (auth.role !== "member" && list.length > 0) {
+    const userIds = [...new Set(list.map((r: any) => r.user_id as string))];
+    const { data: users } = await (supabase as any)
+      .from("users")
+      .select("id, display_name, email")
+      .in("id", userIds) as {
+        data: { id: string; display_name: string | null; email: string | null }[] | null;
+      };
+    const userMap: Record<string, { display_name: string | null; email: string | null }> = {};
+    for (const u of users ?? []) userMap[u.id] = { display_name: u.display_name, email: u.email };
+    enriched = list.map((row: any) => ({ ...row, users: userMap[row.user_id as string] ?? null }));
+  }
+
   return NextResponse.json({
-    data:       data ?? [],
+    data:       enriched,
     pagination: { page, per_page: limit, total: count ?? 0 },
     meta:       { org_id: auth.orgId },
   });
