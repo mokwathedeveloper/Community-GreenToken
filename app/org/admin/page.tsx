@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
@@ -27,7 +28,12 @@ type OrgStats = {
 };
 
 export default function OrgAdminPage() {
-  const { orgName, orgId, isLoading: userLoading } = useUser();
+  const router = useRouter();
+  const { orgName, orgId, isLoading: userLoading, isOrgAdmin } = useUser();
+
+  useEffect(() => {
+    if (!userLoading && !isOrgAdmin) router.replace("/dashboard");
+  }, [userLoading, isOrgAdmin, router]);
 
   const [queue,   setQueue]   = useState<PendingAction[]>([]);
   const [stats,   setStats]   = useState<OrgStats | null>(null);
@@ -36,7 +42,7 @@ export default function OrgAdminPage() {
   const [acting,  setActing]  = useState<string | null>(null);
 
   const loadData = useCallback(() => {
-    if (!orgId) return;
+    if (!orgId || !isOrgAdmin) return;
     Promise.all([
       fetch("/api/actions/pending?limit=10").then((r) => r.json()),
       fetch("/api/analytics/overview").then((r) => r.json()),
@@ -46,9 +52,9 @@ export default function OrgAdminPage() {
       if (statsRes.data) setStats(statsRes.data);
       if (usageRes?.data) setUsage({ used: usageRes.data.members_used ?? 0, limit: usageRes.data.member_limit ?? null });
     }).catch(console.error).finally(() => setLoading(false));
-  }, [orgId]);
+  }, [orgId, isOrgAdmin]);
 
-  useEffect(() => { if (!userLoading) loadData(); }, [userLoading, loadData]);
+  useEffect(() => { if (!userLoading && isOrgAdmin) loadData(); }, [userLoading, isOrgAdmin, loadData]);
 
   async function handleVerify(actionId: string, tokensToMint: number, approve: boolean) {
     setActing(actionId);

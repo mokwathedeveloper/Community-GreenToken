@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
-import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { checkPlanAccess } from "@/lib/middleware/planGate";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -18,9 +17,6 @@ export async function GET(req: NextRequest) {
       { data: { trend: [], by_type: [], total_actions: 0 }, meta: { org_id: "" } }
     );
   }
-
-  const guard = requireOrgAdmin(auth);
-  if (guard) return guard;
 
   const planGuard = await checkPlanAccess(auth, "analytics");
   if (planGuard) return planGuard;

@@ -27,6 +27,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import OrgAdminLayout from "@/components/layouts/OrgAdminLayout";
 import Button from "@/components/ui/Button";
@@ -66,8 +67,13 @@ const ROLE_STYLE: Record<MemberRole, string> = {
 };
 
 export default function MembersPage() {
+  const router = useRouter();
   const { show: showToast, node: toastNode } = useToast();
-  const { orgId, orgName, isLoading: userLoading } = useUser();
+  const { orgId, orgName, isLoading: userLoading, isOrgAdmin } = useUser();
+
+  useEffect(() => {
+    if (!userLoading && !isOrgAdmin) router.replace("/dashboard");
+  }, [userLoading, isOrgAdmin, router]);
 
   const [members,      setMembers]      = useState<Member[]>([]);
   const [invites,      setInvites]      = useState<PendingInvite[]>([]);
@@ -84,7 +90,7 @@ export default function MembersPage() {
   const appUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
 
   const loadData = useCallback(() => {
-    if (!orgId) return;
+    if (!orgId || !isOrgAdmin) return;
     Promise.all([
       fetch(`/api/orgs/${orgId}/members?limit=50`).then((r) => r.json()),
       fetch("/api/invites/email").then((r) => r.json()),
@@ -94,9 +100,9 @@ export default function MembersPage() {
       setInvites(invitesRes.data ?? []);
       if (usageRes?.data?.member_limit) setMemberLimit(usageRes.data.member_limit);
     }).catch(console.error).finally(() => setLoading(false));
-  }, [orgId]);
+  }, [orgId, isOrgAdmin]);
 
-  useEffect(() => { if (!userLoading) loadData(); }, [userLoading, loadData]);
+  useEffect(() => { if (!userLoading && isOrgAdmin) loadData(); }, [userLoading, isOrgAdmin, loadData]);
 
   const filtered = members.filter((m) => {
     const name  = m.users?.display_name ?? "";

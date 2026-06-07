@@ -14,10 +14,17 @@ import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 import { MLeaf, MCheckCircle, MCoin, MStar, MContentCopy as MClipboard, MWarning, MInfo, MAttachFile, MLink } from "@/components/icons";
 
-const ACTION_TYPES = [
-  "Recycling", "Tree Planting", "Carpooling", "Energy Saving",
-  "Water Saving", "Community Cleanup", "Composting", "Public Transport",
-  "Solar Energy Use", "Beach Cleanup",
+const ACTION_TYPES: { value: string; label: string }[] = [
+  { value: "Recycling",          label: "Recycling" },
+  { value: "TreePlanting",       label: "Tree Planting" },
+  { value: "Carpooling",         label: "Carpooling" },
+  { value: "EnergySaving",       label: "Energy Saving" },
+  { value: "WaterSaving",        label: "Water Saving" },
+  { value: "CommunityCleanup",   label: "Community Cleanup" },
+  { value: "CompostingOrganics", label: "Composting" },
+  { value: "PublicTransport",    label: "Public Transport" },
+  { value: "SolarEnergyUse",     label: "Solar Energy Use" },
+  { value: "BeachCleanup",       label: "Beach Cleanup" },
 ];
 
 const VERIFICATION_STEPS = [
@@ -228,8 +235,8 @@ export default function ActionSubmissionPage() {
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors appearance-none"
               >
                 <option value="">Select an action type...</option>
-                {ACTION_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {ACTION_TYPES.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </div>
@@ -335,7 +342,7 @@ export default function ActionSubmissionPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Type:</span>
-                  <Badge color="green">{actionType || "—"}</Badge>
+                  <Badge color="green">{ACTION_TYPES.find((t) => t.value === actionType)?.label || "—"}</Badge>
                 </div>
                 {description && (
                   <div>
