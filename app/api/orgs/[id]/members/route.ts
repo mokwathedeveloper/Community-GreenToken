@@ -28,9 +28,12 @@ export async function GET(
   const offset = (page - 1) * limit;
 
   const supabase = createAdminClient();
-  const { data, count, error } = await (supabase as any)
+
+  // Fetch org_members (without embedded user join — org_members.user_id FKs to
+  // auth.users, not public.users, so PostgREST cannot resolve the relation).
+  const { data: members, count, error } = await (supabase as any)
     .from("org_members")
-    .select("id, user_id, role, joined_at, users(display_name, email)", { count: "exact" })
+    .select("id, user_id, role, joined_at", { count: "exact" })
     .eq("org_id", id)
     .order("joined_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -42,8 +45,26 @@ export async function GET(
     );
   }
 
+  // Enrich with display_name + email from public.users (separate query)
+  const userIds: string[] = (members ?? []).map((m: { user_id: string }) => m.user_id);
+  let profileMap: Record<string, { display_name: string | null; email: string | null }> = {};
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await (supabase as any)
+      .from("users")
+      .select("id, display_name, email")
+      .in("id", userIds) as { data: { id: string; display_name: string | null; email: string | null }[] | null };
+
+    (profiles ?? []).forEach((p) => { profileMap[p.id] = { display_name: p.display_name, email: p.email }; });
+  }
+
+  const data = (members ?? []).map((m: { id: string; user_id: string; role: string; joined_at: string }) => ({
+    ...m,
+    users: profileMap[m.user_id] ?? { display_name: null, email: null },
+  }));
+
   return NextResponse.json({
-    data: data ?? [],
+    data,
     pagination: { page, per_page: limit, total: count ?? 0 },
     meta: { org_id: auth!.orgId },
   });

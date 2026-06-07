@@ -23,36 +23,46 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Single RPC call — all aggregation happens in Postgres (migration 021)
-  const { data, error } = await (supabase as any)
+  // Try the optimised RPC first (migration 021). Fall back to manual counts
+  // if the function doesn't exist yet (migrations not fully applied).
+  let overview = {
+    total_actions: 0, verified_actions: 0, pending_actions: 0,
+    tokens_minted: 0, active_members: 0, tokens_donated: 0,
+  };
+
+  const { data: rpcData, error: rpcErr } = await (supabase as any)
     .rpc("get_analytics_overview", { p_org_id: auth.orgId }) as {
-      data: {
-        total_actions: number;
-        verified_actions: number;
-        pending_actions: number;
-        tokens_minted: number;
-        active_members: number;
-        tokens_donated: number;
-      } | null;
-      error: unknown;
+      data: typeof overview | null;
+      error: { code?: string; message?: string } | null;
     };
 
-  if (error || !data) {
-    console.error("[api/analytics/overview] rpc error", error);
-    return NextResponse.json(
-      { error: { code: "DB_ERROR", message: "Failed to fetch analytics." } },
-      { status: 500 }
-    );
+  if (!rpcErr && rpcData) {
+    overview = rpcData;
+  } else {
+    // RPC missing (migration 021 not yet applied) — compute manually
+    const [actionsRes, balancesRes] = await Promise.all([
+      (supabase as any).from("actions").select("status", { count: "exact", head: false }).eq("org_id", auth.orgId),
+      (supabase as any).from("token_balances").select("total_earned, balance").eq("org_id", auth.orgId),
+    ]);
+
+    const actions: { status: string }[] = actionsRes.data ?? [];
+    overview.total_actions    = actions.length;
+    overview.verified_actions = actions.filter((a) => a.status === "verified").length;
+    overview.pending_actions  = actions.filter((a) => a.status === "pending").length;
+
+    const balances: { total_earned: number; balance: number }[] = balancesRes.data ?? [];
+    overview.tokens_minted  = balances.reduce((s, b) => s + (b.total_earned ?? 0), 0);
+    overview.active_members = balances.filter((b) => b.balance > 0).length;
   }
 
   return NextResponse.json({
     data: {
-      totalActions:    data.total_actions,
-      verifiedActions: data.verified_actions,
-      pendingActions:  data.pending_actions,
-      tokensMinted:    data.tokens_minted,
-      activeMembers:   data.active_members,
-      tokensDonated:   data.tokens_donated,
+      totalActions:    overview.total_actions,
+      verifiedActions: overview.verified_actions,
+      pendingActions:  overview.pending_actions,
+      tokensMinted:    overview.tokens_minted,
+      activeMembers:   overview.active_members,
+      tokensDonated:   overview.tokens_donated,
     },
     meta: { org_id: auth.orgId },
   });

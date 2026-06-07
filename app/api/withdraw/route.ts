@@ -133,9 +133,12 @@ export async function GET(_req: NextRequest) {
     .select("id, tokens_amount, cash_amount, currency, method, account_name, status, failure_reason, created_at, processed_at")
     .eq("user_id", auth.userId)
     .order("created_at", { ascending: false })
-    .limit(20) as { data: Record<string, unknown>[] | null; error: unknown };
+    .limit(20) as { data: Record<string, unknown>[] | null; error: { code?: string; message?: string } | null };
 
+  // Return empty list if table doesn't exist yet (migration 022 not applied)
   if (error) {
+    const missing = error.message?.includes("does not exist") || (error as { code?: string }).code === "42P01";
+    if (missing) return NextResponse.json({ data: [], meta: { org_id: auth.orgId } });
     return NextResponse.json(
       { error: { code: "DB_ERROR", message: "Failed to fetch withdrawal history." } },
       { status: 500 }
