@@ -35,6 +35,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${poppins.variable} h-full`}>
+      <head>
+        {/* Material Icons — used for inline icon glyphs on leaderboard and labels */}
+        <link
+          href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-full font-sans antialiased bg-white text-gray-900">
         {/* Single UserProvider = one Supabase auth subscription for the whole app */}
         <UserProvider>
