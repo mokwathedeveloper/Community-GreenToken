@@ -135,10 +135,28 @@ export async function GET(_req: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(20) as { data: Record<string, unknown>[] | null; error: { code?: string; message?: string } | null };
 
-  // Return empty list if table doesn't exist yet (migration 022 not applied)
+  // Return empty list if table/column doesn't exist (migration 022 not yet applied).
+  // PostgREST returns PGRST200 ("Could not find the relation…") when the table is
+  // absent from the schema cache, and PGRST204 for missing columns.
+  // Postgres itself returns 42P01 (undefined_table) or 42703 (undefined_column).
   if (error) {
-    const missing = error.message?.includes("does not exist") || (error as { code?: string }).code === "42P01";
-    if (missing) return NextResponse.json({ data: [], meta: { org_id: auth.orgId } });
+    const errCode = String((error as { code?: string }).code ?? "");
+    const errMsg  = (error.message ?? "").toLowerCase();
+    const isSchemaError =
+      errCode === "42P01"   ||   // Postgres: undefined_table
+      errCode === "42703"   ||   // Postgres: undefined_column
+      errCode === "PGRST200" ||  // PostgREST: relation not in schema cache
+      errCode === "PGRST204" ||  // PostgREST: column not in schema cache
+      errMsg.includes("does not exist") ||
+      errMsg.includes("could not find") ||
+      errMsg.includes("schema cache") ||
+      errMsg.includes("withdrawal_requests");
+
+    if (isSchemaError) {
+      console.warn("[api/withdraw GET] Schema error — run migration 022:", JSON.stringify(error));
+      return NextResponse.json({ data: [], meta: { org_id: auth.orgId } });
+    }
+    console.error("[api/withdraw GET] Unexpected DB error:", JSON.stringify(error));
     return NextResponse.json(
       { error: { code: "DB_ERROR", message: "Failed to fetch withdrawal history." } },
       { status: 500 }
