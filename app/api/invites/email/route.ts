@@ -70,13 +70,16 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 2. Build the join URL ─────────────────────────────────────────
-  const joinUrl = `${appUrl}/join/${invite.token}`;
+  // redirectTo goes to /auth/callback which exchanges the PKCE code,
+  // then ?next= sends the user to the actual invite join page.
+  const joinUrl      = `${appUrl}/join/${invite.token}`;
+  const callbackUrl  = `${appUrl}/auth/callback?next=/join/${invite.token}`;
 
   // ── 3. Send magic link via Supabase (acts as OTP / temp password) ─
   // This sends an email to the user. They click the link, get logged in,
   // and land on /join/[token] which adds them to the org automatically.
   const { error: emailErr } = await (supabase as any).auth.admin.inviteUserByEmail(email, {
-    redirectTo: joinUrl,
+    redirectTo: callbackUrl,
     data: {
       invited_to_org: auth!.orgId,
       invite_token:   invite.token,
@@ -89,7 +92,7 @@ export async function POST(req: NextRequest) {
     const { error: otpErr } = await (supabase as any).auth.admin.generateLink({
       type:       "magiclink",
       email,
-      options: { redirectTo: joinUrl },
+      options: { redirectTo: callbackUrl },
     });
 
     if (otpErr) {

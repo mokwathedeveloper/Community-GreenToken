@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? "localhost:3000";
-  const inviteUrl = `https://${auth!.orgId}.${appDomain}/join/${invite.token}`;
+  const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? `https://${process.env.NEXT_PUBLIC_APP_DOMAIN ?? "localhost:3000"}`;
+  const inviteUrl = `${appUrl}/join/${invite.token}`;
 
   return NextResponse.json(
     { data: { ...invite, inviteUrl }, meta: { org_id: auth!.orgId } },

@@ -21,7 +21,9 @@ const PUBLIC_ROUTES = new Set([
 ]);
 
 // /join/[token] is public — the page handles its own auth
-const isJoinRoute = (p: string) => p.startsWith("/join/");
+const isJoinRoute      = (p: string) => p.startsWith("/join/");
+// /auth/callback is public — handles Supabase PKCE code exchange for magic links
+const isAuthCallback   = (p: string) => p.startsWith("/auth/callback");
 
 const AUTH_ROUTES = new Set(["/signin", "/signup"]);
 
@@ -49,7 +51,7 @@ export async function proxy(req: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
 
   // ── 3. Protect authenticated routes ───────────────────────────────
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/api/") || isJoinRoute(pathname);
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/api/") || isJoinRoute(pathname) || isAuthCallback(pathname);
   const isAuthRoute   = AUTH_ROUTES.has(pathname);
 
   if (!session && !isPublicRoute) {

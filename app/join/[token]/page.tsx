@@ -56,32 +56,47 @@ export default function JoinPage() {
       // Check if user is already logged in
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Fetch invite + org from DB
-      const { data, error } = await supabase
-        .from("invites")
-        .select("role, expires_at, uses_left, organizations(name, slug)")
-        .eq("token", token)
-        .maybeSingle() as {
-          data: {
-            role: string;
-            expires_at: string;
-            uses_left: number | null;
-            organizations: { name: string; slug: string } | null;
-          } | null;
-          error: unknown;
-        };
+      // ── Fetch invite via the admin-client API endpoint ──────────────────
+      // DO NOT query the invites table directly from the browser client.
+      // RLS on invites blocks unauthenticated (and new-user) reads.
+      // GET /api/invites/[token] uses createAdminClient() — bypasses RLS.
+      let inviteData: {
+        role: string;
+        expires_at: string;
+        uses_left: number | null;
+        is_expired: boolean;
+        is_valid: boolean;
+        organizations: { name: string; slug: string } | null;
+      } | null = null;
 
-      if (error || !data) { setStatus("invalid"); return; }
+      try {
+        const res  = await fetch(`/api/invites/${token}`);
+        const json = await res.json();
+        if (!res.ok || !json.data) { setStatus("invalid"); return; }
+        inviteData = json.data;
+      } catch {
+        setStatus("invalid"); return;
+      }
 
-      if (new Date(data.expires_at) < new Date()) { setStatus("expired"); return; }
-      if (data.uses_left !== null && data.uses_left <= 0) { setStatus("expired"); return; }
+      if (!inviteData) { setStatus("invalid"); return; }
 
-      const org = data.organizations;
+      if (inviteData.is_expired || !inviteData.is_valid) {
+        setStatus("expired");
+        setInvite({
+          orgName:   inviteData.organizations?.name ?? "an organization",
+          orgSlug:   inviteData.organizations?.slug ?? "",
+          role:      inviteData.role,
+          expiresAt: inviteData.expires_at,
+        });
+        return;
+      }
+
+      const org = inviteData.organizations;
       setInvite({
         orgName:   org?.name   ?? "an organization",
         orgSlug:   org?.slug   ?? "",
-        role:      data.role,
-        expiresAt: data.expires_at,
+        role:      inviteData.role,
+        expiresAt: inviteData.expires_at,
       });
 
       // If already logged in, auto-accept
@@ -126,11 +141,27 @@ export default function JoinPage() {
 
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        // emailRedirectTo sends the user back to this exact invite URL after
+        // email confirmation, so they auto-join even if confirmation is required.
+        const joinUrl = typeof window !== "undefined" ? window.location.href : "";
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { display_name: name.trim() || email.split("@")[0] } },
+          options: {
+            data: { display_name: name.trim() || email.split("@")[0] },
+            emailRedirectTo: joinUrl,
+          },
         });
         if (error) { showToast(error.message, "error"); return; }
+
+        // If no session, email confirmation is required — user needs to verify email first
+        if (!signUpData.session) {
+          showToast(
+            "Check your email to confirm your account. Once confirmed, you'll be taken straight to the organisation.",
+            "success"
+          );
+          setLoading(false);
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { showToast("Incorrect email or password.", "error"); return; }
