@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -47,6 +47,13 @@ export default function JoinPage() {
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
 
+  // Guard: prevent acceptInvite() running twice simultaneously.
+  // onAuthStateChange fires SIGNED_IN for both magic links AND manual sign-in.
+  // Without this guard, both the listener and handleAuth call acceptInvite
+  // concurrently — causing a 409 race that leaves the button stuck loading.
+  const acceptingRef   = useRef(false);
+  const manualAuthRef  = useRef(false); // true while handleAuth is in flight
+
   useEffect(() => {
     if (!token) return;
 
@@ -54,10 +61,10 @@ export default function JoinPage() {
 
     // Listen for auth state changes — catches #access_token=... fragments
     // that Supabase processes asynchronously after the page loads.
+    // Skip when manualAuthRef is set — handleAuth already calls acceptInvite().
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-          // Invite auto-accept when auth arrives via magic link fragment
+        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session && !manualAuthRef.current) {
           acceptInvite();
         }
       }
@@ -131,25 +138,43 @@ export default function JoinPage() {
   }, [token]);
 
   async function acceptInvite() {
+    // Prevent concurrent calls — both magic link listener and handleAuth can trigger this.
+    if (acceptingRef.current) return;
+    acceptingRef.current = true;
+
     try {
       const res  = await fetch(`/api/invites/${token}/accept`, { method: "POST" });
       const json = await res.json();
 
-      if (res.status === 409) { setStatus("already_member"); setTimeout(() => router.push("/dashboard"), 2000); return; }
-      if (res.status === 403 && json.error?.code === "WRONG_EMAIL") { setStatus("wrong_email"); return; }
-      if (!res.ok) { showToast(json.error?.message ?? "Could not accept invite.", "error"); setStatus("invalid"); return; }
+      if (res.status === 409) {
+        setStatus("already_member");
+        setTimeout(() => router.push("/dashboard"), 2000);
+        return;
+      }
+      if (res.status === 403 && json.error?.code === "WRONG_EMAIL") {
+        setStatus("wrong_email");
+        return;
+      }
+      if (!res.ok) {
+        showToast(json.error?.message ?? "Could not accept invite.", "error");
+        setStatus("valid");    // stay on form so they can retry
+        acceptingRef.current = false;
+        return;
+      }
 
       setStatus("accepted");
       showToast(`Welcome to ${invite?.orgName ?? "the organization"}!`, "success");
       setTimeout(() => router.push("/dashboard"), 1800);
     } catch {
       showToast("Something went wrong. Please try again.", "error");
+      acceptingRef.current = false;  // allow retry on network error
     }
   }
 
   async function handleAuth(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
+    manualAuthRef.current = true;   // block onAuthStateChange from double-firing
     const supabase = createClient();
 
     try {
@@ -168,7 +193,6 @@ export default function JoinPage() {
             "Check your email to confirm your account — then click the confirmation link to join automatically.",
             "success"
           );
-          setLoading(false);
           return;
         }
       } else {
@@ -177,6 +201,7 @@ export default function JoinPage() {
       }
       await acceptInvite();
     } finally {
+      manualAuthRef.current = false;
       setLoading(false);
     }
   }
