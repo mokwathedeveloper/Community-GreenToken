@@ -34,6 +34,7 @@ export default function OrgSettingsPage() {
   const [tab,          setTab]          = useState<Tab>("profile");
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
+  const [errMsg,       setErrMsg]       = useState<string | null>(null);
   const [deleteConfirm,setDeleteConfirm]= useState("");
   const [actions,      setActions]      = useState(ACTION_TYPES);
 
@@ -83,12 +84,13 @@ export default function OrgSettingsPage() {
       });
       if (res.ok) {
         setSaved(true);
+        setErrMsg(null);
         setTimeout(() => setSaved(false), 2000);
       } else {
         const err = await res.json();
-        alert(err.error?.message ?? "Save failed");
+        setErrMsg(err.error?.message ?? "Save failed. Please try again.");
       }
-    } catch { alert("Network error — please try again."); }
+    } catch { setErrMsg("Network error — please try again."); }
     setSaving(false);
   }
 
@@ -100,11 +102,19 @@ export default function OrgSettingsPage() {
   ];
 
   return (
-    <OrgAdminLayout orgName="GreenFuture Org" plan="Pro Plan">
+    <OrgAdminLayout orgName={orgName ?? "Your Org"} plan="Pro Plan">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Organization Settings</h2>
         <p className="text-sm text-gray-500 mt-1">Configure your token, branding, and organization profile.</p>
       </div>
+
+      {errMsg && (
+        <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+          <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="flex-1">{errMsg}</span>
+          <button onClick={() => setErrMsg(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
@@ -235,7 +245,10 @@ export default function OrgSettingsPage() {
             variant="danger"
             size="md"
             disabled={deleteConfirm !== org.slug}
-            onClick={() => alert("Delete org — Phase 2: calls DELETE /api/orgs/:id")}
+            onClick={() => {
+              setTab("danger");
+              setErrMsg("To delete your organization, please contact support@greentoken.app. Our team will process the request within 24 hours.");
+            }}
           >
             Delete Organization
           </Button>

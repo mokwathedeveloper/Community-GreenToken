@@ -86,18 +86,24 @@ const RANK_BADGE: Record<number, string> = {
 };
 
 export default function LeaderboardPage() {
-  const [period,  setPeriod]  = useState<Period>("all_time");
-  const [sortBy,  setSortBy]  = useState<SortKey>("totalEarned");
-  const [rows,    setRows]    = useState<LeaderRow[]>([]);
-  const [meta,    setMeta]    = useState<{ my_rank: number | null; total_participants: number }>({
+  const [period,     setPeriod]     = useState<Period>("all_time");
+  const [sortBy,     setSortBy]     = useState<SortKey>("totalEarned");
+  const [rows,       setRows]       = useState<LeaderRow[]>([]);
+  const [meta,       setMeta]       = useState<{ my_rank: number | null; total_participants: number }>({
     my_rank: null, total_participants: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true); setError(null);
     fetch(`/api/leaderboard?period=${period}&limit=50`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`Request failed (${r.status})`);
+        return r.json();
+      })
       .then(res => {
         setRows(res.data ?? []);
         setMeta({
@@ -105,9 +111,9 @@ export default function LeaderboardPage() {
           total_participants: res.meta?.total_participants ?? 0,
         });
       })
-      .catch(console.error)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Failed to load leaderboard."))
       .finally(() => setLoading(false));
-  }, [period]);
+  }, [period, retryCount]);
 
   const sorted = useMemo(() => {
     if (sortBy === "balance") return [...rows].sort((a, b) => b.balance - a.balance);
@@ -225,6 +231,23 @@ export default function LeaderboardPage() {
           {[1,2,3,4,5].map(i => (
             <div key={i} className="h-14 bg-white rounded-xl border border-gray-100" />
           ))}
+        </div>
+
+      ) : error ? (
+        <div role="alert" className="bg-white rounded-2xl border border-red-100 shadow-sm py-16 text-center px-6">
+          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-gray-700">Failed to load leaderboard</p>
+          <p className="text-xs text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => setRetryCount(c => c + 1)}
+            className="mt-4 px-4 py-2 text-xs font-semibold text-primary-600 border border-primary-200 rounded-xl hover:bg-primary-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          >
+            Try Again
+          </button>
         </div>
 
       ) : rows.length === 0 ? (

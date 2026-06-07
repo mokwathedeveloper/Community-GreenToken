@@ -40,15 +40,10 @@ const PLAN_FEATURES: Record<string, { included: string[]; locked: string[] }> = 
   enterprise: { included: ["All Pro features","Dedicated contract","SLA agreement","Custom onboarding"], locked: [] },
 };
 
-const MOCK_INVOICES = [
-  { id: "INV-2025-0601", date: "Jun 1, 2025",  desc: "Pro Plan — Monthly",  amount: "$199.00", status: "Paid"   },
-  { id: "INV-2025-0501", date: "May 1, 2025",  desc: "Pro Plan — Monthly",  amount: "$199.00", status: "Paid"   },
-  { id: "INV-2025-0401", date: "Apr 1, 2025",  desc: "Starter Plan — Monthly", amount: "$49.00", status: "Paid" },
-];
 
 export default function BillingPage() {
   const router = useRouter();
-  const { orgName, orgId, isLoading: userLoading, isOrgAdmin } = useUser();
+  const { orgName, isLoading: userLoading, isOrgAdmin } = useUser();
   const [status,    setStatus]    = useState<BillingStatus | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [opening,   setOpening]   = useState(false);
@@ -62,7 +57,7 @@ export default function BillingPage() {
       .then((d) => setStatus(d.data ?? null))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [userLoading]);
+  }, [userLoading, isOrgAdmin, router]);
 
   async function openPortal() {
     setOpening(true);
@@ -368,55 +363,49 @@ export default function BillingPage() {
           <p className="text-xs text-gray-400 mt-2 text-center">Secured by Stripe</p>
         </div>
 
-        {/* InvoiceList */}
+        {/* InvoiceList — managed via Stripe portal */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recent Invoices</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice History</p>
             <button onClick={openPortal}
               className="text-xs text-primary-600 hover:underline font-medium focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
-              View All →
+              Open Portal →
             </button>
           </div>
 
           {loading ? (
             <div className="p-6 space-y-3 animate-pulse">
-              {[1,2,3].map(i=><div key={i} className="h-4 bg-gray-100 rounded"/>)}
+              {[1, 2, 3].map(i => <div key={i} className="h-4 bg-gray-100 rounded" />)}
             </div>
-          ) : MOCK_INVOICES.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No invoices yet.</p>
+          ) : !status?.stripe_subscription_id ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-gray-700">No invoices yet</p>
+              <p className="text-xs text-gray-400 mt-1">Invoices will appear here once you subscribe to a paid plan.</p>
+            </div>
           ) : (
-            <table className="w-full text-sm">
-              <caption className="sr-only">Recent billing invoices</caption>
-              <thead className="bg-gray-50">
-                <tr>
-                  {["Invoice","Date","Amount","Status"].map((h)=>(
-                    <th key={h} scope="col" className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {MOCK_INVOICES.map((inv)=>(
-                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-xs font-mono text-gray-600">{inv.id}</p>
-                      <p className="text-xs text-gray-400">{inv.desc}</p>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{inv.date}</td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-900">{inv.amount}</td>
-                    <td className="px-4 py-3">
-                      <Badge color="green">{inv.status}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-gray-800">Invoice history is in Stripe</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                All your receipts, PDF invoices, and payment history are available securely in the Stripe Customer Portal.
+              </p>
+              <Button variant="outline" size="sm" onClick={openPortal} loading={opening} className="mt-4">
+                View &amp; Download Invoices →
+              </Button>
+            </div>
           )}
 
           <div className="px-6 py-3 border-t border-gray-50">
-            <button onClick={openPortal}
-              className="text-xs text-primary-600 hover:underline font-medium focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded">
-              Download invoices via Stripe portal →
-            </button>
+            <p className="text-xs text-gray-400 text-center">Secured and managed by Stripe</p>
           </div>
         </div>
       </div>

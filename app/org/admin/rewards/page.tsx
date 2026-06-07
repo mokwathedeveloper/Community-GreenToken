@@ -117,6 +117,7 @@ export default function AdminRewardsPage() {
     finally  { setLoadQueue(false); }
   }, [isOrgAdmin, filterStatus]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (!userLoading && isOrgAdmin) { loadRewards(); loadRedemptions(); } },
     [userLoading, isOrgAdmin, loadRewards, loadRedemptions]);
 
@@ -199,8 +200,7 @@ export default function AdminRewardsPage() {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  const activeCount   = rewards.filter(r => r.is_active).length;
-  const inactiveCount = rewards.length - activeCount;
+  const activeCount = rewards.filter(r => r.is_active).length;
 
   const memberName = (rd: Redemption) =>
     rd.users?.display_name ?? rd.users?.email?.split("@")[0] ?? "Unknown member";
@@ -289,7 +289,19 @@ export default function AdminRewardsPage() {
           </div>
 
           {loadCat ? (
-            <div className="py-16 text-center text-sm text-gray-400">Loading…</div>
+            <div className="px-5 py-4 space-y-3 animate-pulse">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-9 h-9 rounded-lg bg-gray-100 flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 bg-gray-100 rounded w-1/3" />
+                    <div className="h-3 bg-gray-50 rounded w-1/2" />
+                  </div>
+                  <div className="h-3 bg-gray-100 rounded w-16" />
+                  <div className="h-5 bg-gray-100 rounded-full w-14" />
+                </div>
+              ))}
+            </div>
           ) : rewards.length === 0 ? (
             <div className="py-16 text-center">
               <div className="w-14 h-14 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -378,7 +390,7 @@ export default function AdminRewardsPage() {
               <p className="text-xs mt-0.5 text-blue-600 leading-relaxed">
                 When a member redeems a reward, their GTK is deducted automatically and a request appears here.
                 Contact the member (via email or in person) to deliver their reward, then click
-                <strong> "Mark as Delivered"</strong> to confirm fulfilment.
+                <strong> &ldquo;Mark as Delivered&rdquo;</strong> to confirm fulfilment.
               </p>
             </div>
           </div>
@@ -409,7 +421,19 @@ export default function AdminRewardsPage() {
             </div>
 
             {loadQueue ? (
-              <div className="py-16 text-center text-sm text-gray-400">Loading queue…</div>
+              <div className="px-5 py-4 space-y-3 animate-pulse">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3.5 bg-gray-100 rounded w-1/4" />
+                      <div className="h-3 bg-gray-50 rounded w-1/3" />
+                    </div>
+                    <div className="h-5 bg-gray-100 rounded-full w-20" />
+                    <div className="h-7 bg-gray-100 rounded-lg w-28" />
+                  </div>
+                ))}
+              </div>
             ) : redemptions.length === 0 ? (
               <div className="py-16 text-center">
                 <MAccessTime className="w-8 h-8 text-gray-300 mx-auto mb-3" />
