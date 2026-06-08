@@ -8,6 +8,7 @@ import {
   TransactionBuilder,
   Networks,
   BASE_FEE,
+  scValToNative,
   type Transaction,
   type FeeBumpTransaction,
 } from "@stellar/stellar-sdk";
@@ -91,6 +92,7 @@ export interface TxResult {
   status:        "SUCCESS" | "FAILED";
   ledger:        number;
   errorMessage?: string;
+  returnValue?:  bigint | null;
 }
 
 /**
@@ -112,7 +114,13 @@ export async function submitAndWait(signedXdr: string): Promise<TxResult> {
     const result = await server.getTransaction(hash);
 
     if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-      return { txHash: hash, status: "SUCCESS", ledger: result.ledger };
+      let returnValue: bigint | null = null;
+      try {
+        const sorobanMeta = (result as any).resultMetaXdr?.v3?.()?.sorobanMeta?.();
+        const retval      = sorobanMeta?.returnValue?.();
+        if (retval) returnValue = BigInt(scValToNative(retval) ?? 0);
+      } catch { /* non-critical — contract may not return a value */ }
+      return { txHash: hash, status: "SUCCESS", ledger: result.ledger, returnValue };
     }
     if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
       return { txHash: hash, status: "FAILED", ledger: result.ledger, errorMessage: "Transaction failed on-chain" };
