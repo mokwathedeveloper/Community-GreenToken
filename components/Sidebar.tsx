@@ -12,7 +12,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { MDashboard, MBolt, MGift, MHeart, MTrophy, MBarChart, MSettings, MAttachMoney } from "@/components/icons";
+import { MDashboard, MBolt, MGift, MHeart, MTrophy, MBarChart, MSettings, MAttachMoney, MCrown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 
@@ -22,8 +22,9 @@ const BASE_NAV = [
   { label: "Dashboard",   href: "/dashboard",     Icon: MDashboard,   adminHref: undefined           },
   { label: "Actions",     href: "/submit-action", Icon: MBolt,        adminHref: undefined           },
   { label: "Rewards",     href: "/redeem",        Icon: MGift,        adminHref: undefined           },
-  { label: "Withdraw",    href: "/withdraw",      Icon: MAttachMoney, adminHref: undefined           },
-  { label: "Donations",   href: "/donations",     Icon: MHeart,       adminHref: undefined           },
+  { label: "Withdraw",      href: "/withdraw",      Icon: MAttachMoney, adminHref: undefined           },
+  { label: "Certificates", href: "/certificates",  Icon: MCrown,       adminHref: undefined           },
+  { label: "Donations",    href: "/donations",     Icon: MHeart,       adminHref: undefined           },
   { label: "Leaderboard", href: "/leaderboard",   Icon: MTrophy,      adminHref: undefined           },
   { label: "Analytics",   href: "/analytics",     Icon: MBarChart,    adminHref: undefined           },
   // Members → personal profile; Admins/Owners → org settings
