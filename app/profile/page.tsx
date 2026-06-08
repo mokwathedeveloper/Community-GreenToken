@@ -34,6 +34,8 @@ export default function ProfilePage() {
   const [confirmPwd,      setConfirmPwd]      = useState("");
   const [pwdLoading,      setPwdLoading]      = useState(false);
 
+  const [memberSince,     setMemberSince]     = useState<string | null>(null);
+
   // Stellar wallet state
   const [walletAddress,   setWalletAddress]   = useState<string | null>(null);
   const [walletInput,     setWalletInput]     = useState("");
@@ -45,13 +47,15 @@ export default function ProfilePage() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-fills form when UserProvider resolves async displayName
   useEffect(() => { if (displayName) setName(displayName); }, [displayName]);
 
-  // Load wallet_address from DB on mount (UserProvider does not expose it)
+  // Load wallet_address and membership date from DB on mount (UserProvider does not expose them)
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
         const addr = d?.data?.user?.wallet_address as string | null | undefined;
         if (addr) setWalletAddress(addr);
+        const ts = d?.data?.user?.joined_at as string | null | undefined;
+        if (ts) setMemberSince(ts);
       })
       .catch(() => {});
   }, []);
@@ -421,10 +425,9 @@ export default function ProfilePage() {
               { label: "User ID",      value: user?.id ? user.id.slice(0, 8) + "…" : "—" },
               { label: "Account Type", value: roleMeta?.label ?? "Member"        },
               { label: "Organization", value: orgName ?? "No organization yet"    },
-              { label: "Member Since", value: (() => {
-                  const ts = user?.created_at as string | undefined;
-                  return ts ? new Date(ts).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "—";
-              })() },
+              { label: "Member Since", value: memberSince
+                  ? new Date(memberSince).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
+                  : "—" },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="text-xs text-gray-400 mb-0.5">{label}</p>

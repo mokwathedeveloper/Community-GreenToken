@@ -24,9 +24,16 @@ export async function GET() {
     .eq("id", auth.userId)
     .maybeSingle() as { data: Record<string, unknown> | null };
 
+  const { data: membership } = await (supabase as any)
+    .from("org_members")
+    .select("joined_at")
+    .eq("user_id", auth.userId)
+    .eq("org_id", auth.orgId)
+    .maybeSingle() as { data: { joined_at: string | null } | null };
+
   return NextResponse.json({
     data: {
-      user:    { ...user, userId: auth.userId, email: user?.email ?? auth.email },
+      user:    { ...user, userId: auth.userId, email: user?.email ?? auth.email, joined_at: membership?.joined_at ?? null },
       org,
       role:    auth.role,
     },
