@@ -12,7 +12,7 @@ import {
   MLeaf, MCheckCircle, MCoin, MWarning, MInfo,
   MAttachFile, MUpload, MLink, MBolt, MShield, MLocationPin,
 } from "@/components/icons";
-import { extractExif, buildProofHash, type ExifResult } from "@/lib/exif/parser";
+import { extractExif, type ExifResult } from "@/lib/exif/parser";
 
 const ACTION_TYPES: { value: string; label: string; emoji: string }[] = [
   { value: "Recycling",          label: "Recycling",           emoji: "♻️" },
@@ -67,7 +67,6 @@ export default function ActionSubmissionPage() {
   const [evidenceHash, setEvidenceHash] = useState<string | null>(null);
   const [exifData,     setExifData]     = useState<ExifResult | null>(null);
   const [exifLoading,  setExifLoading]  = useState(false);
-  const [proofHash,    setProofHash]    = useState<string | null>(null);
   const [dragOver,     setDragOver]     = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [success,      setSuccess]      = useState(false);
@@ -122,14 +121,11 @@ export default function ActionSubmissionPage() {
   async function handleFileSelected(file: File) {
     setEvidence(file);
     setExifData(null);
-    setProofHash(null);
     setExifLoading(true);
     try {
       const [hash, exif] = await Promise.all([hashFile(file), extractExif(file)]);
-      const ph = await buildProofHash(hash, exif);
       setEvidenceHash(hash);
       setExifData(exif);
-      setProofHash(ph);
     } finally {
       setExifLoading(false);
     }
@@ -144,7 +140,6 @@ export default function ActionSubmissionPage() {
     setEvidence(null);
     setEvidenceHash(null);
     setExifData(null);
-    setProofHash(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -153,24 +148,24 @@ export default function ActionSubmissionPage() {
     if (!actionType)        { setError("Please select an action type."); return; }
     if (!description.trim()){ setError("Please describe your action."); return; }
     if (!evidence)          { setError("Please upload photo evidence."); return; }
-    if (!evidenceHash)      { setError("Evidence hash not ready. Please re-upload."); return; }
+
+    // 4 MB client-side guard (Vercel serverless payload limit)
+    if (evidence.size > 4 * 1024 * 1024) {
+      setError("Photo is too large. Please use a photo under 4 MB.");
+      return;
+    }
 
     setLoading(true); setError(null);
     try {
+      // Send the actual image file — server extracts EXIF independently (GPS cannot be spoofed)
+      const form = new FormData();
+      form.append("actionType",   actionType);
+      form.append("description",  description.trim());
+      form.append("evidence",     evidence, evidence.name);
+
       const res  = await fetch("/api/actions/submit", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-        actionType,
-        description:    description.trim(),
-        evidenceHash,
-        exifLat:        exifData?.lat        ?? null,
-        exifLng:        exifData?.lng        ?? null,
-        exifCapturedAt: exifData?.capturedAt?.toISOString() ?? null,
-        exifDevice:     exifData?.device     ?? null,
-        exifPresent:    exifData?.present    ?? false,
-        proofHash,
-      }),
+        method: "POST",
+        body:   form,   // no Content-Type header — browser sets multipart boundary
       });
       const json = await res.json();
       if (!res.ok) {
@@ -416,7 +411,7 @@ export default function ActionSubmissionPage() {
                   <>
                     <MUpload className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
                     <p className="text-sm font-medium text-gray-600">Drop photo here or click to browse</p>
-                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, HEIC — up to 10 MB</p>
+                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, HEIC — up to 4 MB</p>
                   </>
                 )}
                 <input

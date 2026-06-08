@@ -1,43 +1,136 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
-import { parseBody, submitActionSchema } from "@/lib/validation/schemas";
+import { actionTypes } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
 import { checkRateLimit, rateLimitKey } from "@/lib/middleware/rateLimiter";
 
 // POST /api/actions/submit
-// Rule R-API-01: org_id extracted from JWT — never from request body
-// Rule: evidence_hash stored in dedicated column (not embedded in description)
-// Fix: rate limiting + proper evidence_hash column usage
+// Accepts multipart/form-data so the server can independently extract EXIF from
+// the raw image bytes — GPS coordinates are never trusted from the client body.
+// Rule R-API-01: org_id extracted from JWT — never from request body.
+
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB — Vercel serverless payload limit
+
+async function sha256Hex(data: ArrayBuffer): Promise<string> {
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+interface ServerExif {
+  lat:        number | null;
+  lng:        number | null;
+  capturedAt: Date   | null;
+  device:     string | null;
+  present:    boolean;
+  gpsPresent: boolean;
+}
+
+async function extractExifServer(buffer: ArrayBuffer): Promise<ServerExif> {
+  const empty: ServerExif = { lat: null, lng: null, capturedAt: null, device: null, present: false, gpsPresent: false };
+  try {
+    const exifr = (await import("exifr")).default;
+
+    const coords = await exifr.gps(buffer).catch(() => null);
+    const tags   = await exifr
+      .parse(buffer, { pick: ["DateTimeOriginal", "DateTime", "Model", "Make"], translateValues: true })
+      .catch(() => null);
+
+    const lat = coords?.latitude  ?? null;
+    const lng = coords?.longitude ?? null;
+
+    let capturedAt: Date | null = null;
+    const rawDate = tags?.DateTimeOriginal ?? tags?.DateTime;
+    if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+      capturedAt = rawDate;
+    } else if (typeof rawDate === "string") {
+      const iso = rawDate.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3");
+      const d   = new Date(iso);
+      if (!isNaN(d.getTime())) capturedAt = d;
+    }
+
+    const make   = typeof tags?.Make  === "string" ? tags.Make.trim()  : "";
+    const model  = typeof tags?.Model === "string" ? tags.Model.trim() : "";
+    const device = make && model
+      ? model.toLowerCase().startsWith(make.toLowerCase()) ? model : `${make} ${model}`
+      : model || make || null;
+
+    const gpsPresent = lat !== null && lng !== null;
+    const present    = gpsPresent || capturedAt !== null || device !== null;
+
+    return { lat, lng, capturedAt, device, present, gpsPresent };
+  } catch {
+    return empty;
+  }
+}
 
 export async function POST(req: NextRequest) {
-  // 1. Auth check
+  // 1. Auth
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
-  // 2. Rate limit: 10 submissions per minute per org (prevents token farming)
+  // 2. Rate limit — 10 submissions per minute per org
   const ip       = req.headers.get("x-forwarded-for")?.split(",")[0] ?? null;
   const rlKey    = rateLimitKey("action_submit", auth.orgId, ip);
   const rlResult = checkRateLimit(rlKey, "action_submit");
   if (rlResult) return rlResult;
 
-  // 3. Validate body — Zod ensures evidenceHash is exactly 64-char lowercase hex
-  const parsed = await parseBody(req, submitActionSchema);
-  if ("error" in parsed) return parsed.error;
-  const {
-    actionType, description, evidenceHash,
-    exifLat, exifLng, exifCapturedAt, exifDevice, exifPresent, proofHash,
-  } = parsed.data;
+  // 3. Parse multipart form
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json(
+      { error: { code: "INVALID_FORM", message: "Request must be multipart/form-data." } },
+      { status: 400 }
+    );
+  }
 
-  const orgId   = auth.orgId;  // Rule R-SAAS-01: always from JWT, never from body
+  const actionType  = (form.get("actionType")  as string | null)?.trim() ?? "";
+  const description = (form.get("description") as string | null)?.trim() ?? "";
+  const file        = form.get("evidence") as File | null;
 
-  // User must belong to an org before submitting actions
+  // 4. Validate text fields
+  if (!actionTypes.includes(actionType as any)) {
+    return NextResponse.json(
+      { error: { code: "VALIDATION_ERROR", message: "Invalid action type." } },
+      { status: 400 }
+    );
+  }
+  if (description.length < 5 || description.length > 200) {
+    return NextResponse.json(
+      { error: { code: "VALIDATION_ERROR", message: "Description must be 5–200 characters." } },
+      { status: 400 }
+    );
+  }
+
+  // 5. Validate file
+  if (!file || typeof file.arrayBuffer !== "function") {
+    return NextResponse.json(
+      { error: { code: "MISSING_FILE", message: "Photo evidence is required." } },
+      { status: 400 }
+    );
+  }
+  if (!file.type.startsWith("image/")) {
+    return NextResponse.json(
+      { error: { code: "INVALID_FILE_TYPE", message: "Only image files (JPEG, PNG, HEIC) are accepted." } },
+      { status: 400 }
+    );
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    return NextResponse.json(
+      { error: { code: "FILE_TOO_LARGE", message: "Photo must be under 4 MB." } },
+      { status: 413 }
+    );
+  }
+
+  const orgId = auth.orgId;
   if (!orgId) {
     return NextResponse.json(
       {
         error: {
-          code: "NO_ORGANIZATION",
-          message: "You need to set up your organization before submitting actions.",
+          code:     "NO_ORGANIZATION",
+          message:  "You need to set up your organization before submitting actions.",
           redirect: "/org/setup",
         },
       },
@@ -45,15 +138,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // 6. Read image bytes once — used for both hash and EXIF extraction
+  const imageBuffer = await file.arrayBuffer();
+
+  // 7. Server-side SHA-256 — client cannot forge this; it is derived from the actual uploaded bytes
+  const evidenceHash = await sha256Hex(imageBuffer);
+
+  // 8. Server-side EXIF extraction — client GPS/timestamp is never trusted
+  const exif = await extractExifServer(imageBuffer);
+
+  // 9. Server-side proof hash: SHA-256(evidenceHash | lat | lng | capturedAt)
+  //    Commits image identity + verified GPS + verified timestamp into one string
+  const proofPayload =
+    evidenceHash +
+    "|" + (exif.lat        !== null ? exif.lat.toFixed(7)          : "null") +
+    "|" + (exif.lng        !== null ? exif.lng.toFixed(7)          : "null") +
+    "|" + (exif.capturedAt !== null ? exif.capturedAt.toISOString() : "null");
+  const proofHash = await sha256Hex(new TextEncoder().encode(proofPayload).buffer as ArrayBuffer);
+
   const supabase = createAdminClient();
 
-  // 4a. Same-org duplicate check (hard reject)
+  // 10. Same-org duplicate check
   const { data: existing } = await (supabase as any)
     .from("actions")
     .select("id")
     .eq("org_id", orgId)
     .eq("evidence_hash", evidenceHash)
-    .neq("status", "rejected")    // rejected actions allow re-submission with same evidence
+    .neq("status", "rejected")
     .limit(1)
     .maybeSingle();
 
@@ -64,15 +175,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4b. EXIF age check — reject photos captured more than 30 days ago (prevents using old stockpile)
-  if (exifCapturedAt) {
-    const captureAge = Date.now() - new Date(exifCapturedAt).getTime();
+  // 11. EXIF age check — server-enforced, cannot be bypassed
+  if (exif.capturedAt) {
+    const captureAge = Date.now() - exif.capturedAt.getTime();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;
     if (captureAge > thirtyDays) {
       return NextResponse.json(
         {
           error: {
-            code: "EVIDENCE_TOO_OLD",
+            code:    "EVIDENCE_TOO_OLD",
             message: "Photo evidence is more than 30 days old. Please submit a recent photo.",
           },
         },
@@ -81,33 +192,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5. Insert action — include EXIF metadata columns (migration 029)
+  // 12. Insert — all EXIF fields are server-extracted, never from request body
   const insertResult = await (supabase as any)
     .from("actions")
     .insert({
       org_id:           orgId,
       user_id:          auth.userId,
-      type:             actionType,   // original column (NOT NULL)
-      action_type:      actionType,   // added in migration 020
+      type:             actionType,
+      action_type:      actionType,
       description,
       evidence_hash:    evidenceHash,
       status:           "pending",
       tokens_awarded:   0,
       submitted_at:     new Date().toISOString(),
-      // EXIF anti-fraud fields (migration 029) — null when metadata not available
-      exif_lat:         exifLat        ?? null,
-      exif_lng:         exifLng        ?? null,
-      exif_captured_at: exifCapturedAt ?? null,
-      exif_device:      exifDevice     ?? null,
-      exif_present:     exifPresent    ?? false,
-      proof_hash:       proofHash      ?? null,
+      exif_lat:         exif.lat,
+      exif_lng:         exif.lng,
+      exif_captured_at: exif.capturedAt?.toISOString() ?? null,
+      exif_device:      exif.device,
+      exif_present:     exif.present,
+      proof_hash:       proofHash,
     })
-    .select("id, action_type, status, submitted_at, created_at")
+    .select("id, action_type, status, submitted_at")
     .single();
 
-  const action = insertResult.data as {
-    id: string; action_type: string; status: string; submitted_at: string; created_at: string;
-  } | null;
+  const action  = insertResult.data as { id: string; action_type: string; status: string; submitted_at: string } | null;
   const dbError = insertResult.error;
 
   if (dbError || !action) {
@@ -118,8 +226,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 5b. Cross-org duplicate flag (non-blocking — runs after insert so it can update our new row)
-  // Uses the flag_cross_org_duplicate() RPC from migration 029
+  // 13. Cross-org duplicate flag (non-blocking)
   let isCrossOrgDup = false;
   try {
     const { data: flagResult } = await (supabase as any)
@@ -130,13 +237,12 @@ export async function POST(req: NextRequest) {
       });
     isCrossOrgDup = flagResult === true;
   } catch {
-    // Non-critical — fraud flag failure doesn't block submission
+    // Non-critical — fraud flag failure does not block submission
   }
 
-  // 6. Stellar on-chain: ActionRegistry.submit_action()
-  // Non-blocking — DB record is the source of truth, chain is secondary
-  let txHash:      string | null = null;
-  let explorerUrl: string | null = null;
+  // 14. Stellar on-chain commitment — proofHash encodes image + GPS + timestamp
+  let txHash:             string | null = null;
+  let explorerUrl:        string | null = null;
   let blockchainActionId: number | null = null;
 
   const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
@@ -145,22 +251,18 @@ export async function POST(req: NextRequest) {
       const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
       const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
-      // Pass proofHash to Stellar so the on-chain record commits to both
-      // the image AND its EXIF metadata (location + time). If no proofHash,
-      // fall back to evidenceHash alone.
       const result = await submitAction(
         adminSecret,
         auth.userId,
         actionType as import("@/lib/stellar/types").ActionType,
         description,
-        proofHash ?? evidenceHash,
+        proofHash,   // always the combined image+GPS+time hash — never evidenceHash alone
         orgHex
       );
-      txHash              = result.txHash;
-      explorerUrl         = result.explorerUrl;
-      blockchainActionId  = result.actionId ? Number(result.actionId) : null;
+      txHash             = result.txHash;
+      explorerUrl        = result.explorerUrl;
+      blockchainActionId = result.actionId ? Number(result.actionId) : null;
 
-      // Store on-chain references so verify can use the real on-chain action ID
       await (supabase as any).from("actions").update({
         stellar_tx_hash:      txHash,
         blockchain_action_id: blockchainActionId,
