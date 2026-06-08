@@ -1,5 +1,5 @@
 # Rust smart contracts — not needed for Next.js build
-contracts/
+/contracts/
 
 # Supabase CLI temp files — use exact path so it doesn't match lib/supabase/
 /supabase/
