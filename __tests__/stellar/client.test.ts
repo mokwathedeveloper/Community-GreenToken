@@ -187,11 +187,12 @@ describe("submitAndWait — SUCCESS path", () => {
       status:        "SUCCESS",
       ledger:        10,
       resultMetaXdr: {
-        v3: () => ({
+        v4: () => ({
           sorobanMeta: () => ({
             returnValue: () => mockRetval,
           }),
         }),
+        v3: () => null,
       },
     });
 
@@ -213,7 +214,7 @@ describe("submitAndWait — SUCCESS path", () => {
     mockGetTransaction.mockResolvedValue({
       status:        "SUCCESS",
       ledger:        1,
-      resultMetaXdr: { v3: () => null },
+      resultMetaXdr: { v4: () => null, v3: () => null },
     });
 
     const result = await submitAndWait("xdr");
@@ -227,11 +228,12 @@ describe("submitAndWait — SUCCESS path", () => {
       status:        "SUCCESS",
       ledger:        1,
       resultMetaXdr: {
-        v3: () => ({
+        v4: () => ({
           sorobanMeta: () => ({
             returnValue: () => ({ type: "scval" }),
           }),
         }),
+        v3: () => null,
       },
     });
 

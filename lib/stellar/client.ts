@@ -116,7 +116,9 @@ export async function submitAndWait(signedXdr: string): Promise<TxResult> {
     if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
       let returnValue: bigint | null = null;
       try {
-        const sorobanMeta = (result as any).resultMetaXdr?.v3?.()?.sorobanMeta?.();
+        // Protocol 26+ uses TransactionMeta v4; earlier protocols use v3
+        const meta        = (result as any).resultMetaXdr;
+        const sorobanMeta = meta?.v4?.()?.sorobanMeta?.() ?? meta?.v3?.()?.sorobanMeta?.();
         const retval      = sorobanMeta?.returnValue?.();
         if (retval) returnValue = BigInt(scValToNative(retval) ?? 0);
       } catch { /* non-critical — contract may not return a value */ }
