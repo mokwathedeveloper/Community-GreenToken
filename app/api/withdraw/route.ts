@@ -2,13 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { getExchangeRates } from "@/lib/exchange-rates";
 import { z } from "zod";
-
-// Conversion rates — in production these come from an exchange-rate API
-const RATES: Record<string, number> = {
-  KES: 0.50,   // 1 GTK = 0.50 KES  (adjust per real rate)
-  USD: 0.004,  // 1 GTK = $0.004 USD
-};
 
 const MIN_WITHDRAWAL_TOKENS = 500;  // minimum 500 GTK to withdraw
 
@@ -59,6 +54,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // Fetch live exchange rates (1-hour cache, falls back to hardcoded on API failure)
+  const rates        = await getExchangeRates();
+  const rateMap: Record<string, number> = { KES: rates.gtkToKes, USD: rates.gtkToUsd };
+
   // Check token balance
   const { data: bal } = await (supabase as any)
     .from("token_balances")
@@ -74,7 +73,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const exchangeRate = RATES[currency] ?? RATES.KES;
+  const exchangeRate = rateMap[currency] ?? rates.gtkToKes;
   const cashAmount   = parseFloat((tokensAmount * exchangeRate).toFixed(2));
 
   // Use atomic RPC pattern: deduct tokens + insert withdrawal in one transaction
