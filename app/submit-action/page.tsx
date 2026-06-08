@@ -68,9 +68,11 @@ export default function ActionSubmissionPage() {
   const [exifData,     setExifData]     = useState<ExifResult | null>(null);
   const [exifLoading,  setExifLoading]  = useState(false);
   const [dragOver,     setDragOver]     = useState(false);
-  const [loading,      setLoading]      = useState(false);
-  const [success,      setSuccess]      = useState(false);
-  const [error,        setError]        = useState<string | null>(null);
+  const [loading,             setLoading]             = useState(false);
+  const [success,             setSuccess]             = useState(false);
+  const [autoVerifyScheduled, setAutoVerifyScheduled] = useState(false);
+  const [confidenceScore,     setConfidenceScore]     = useState(0);
+  const [error,               setError]               = useState<string | null>(null);
   const [now,          setNow]          = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -194,6 +196,8 @@ export default function ActionSubmissionPage() {
         }
         return;
       }
+      setAutoVerifyScheduled(json.data?.autoVerifyScheduled ?? false);
+      setConfidenceScore(json.data?.confidenceScore ?? 0);
       setSuccess(true);
       setActionType(""); setDescription(""); clearFile();
     } catch {
@@ -711,18 +715,28 @@ export default function ActionSubmissionPage() {
       <Modal
         open={success}
         onClose={() => setSuccess(false)}
-        title="Action Submitted!"
+        title={autoVerifyScheduled ? "Auto-Verified! 🎉" : "Action Submitted!"}
         icon={
           <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         }
-        description="Thank you for contributing to a greener community! Your action is under review. You'll earn GTK tokens once an admin verifies it."
+        description={
+          autoVerifyScheduled
+            ? `Excellent quality (confidence ${confidenceScore}/100)! GTK tokens are being minted to your wallet automatically — no admin review needed.`
+            : confidenceScore >= 70
+              ? `Good submission (confidence ${confidenceScore}/100)! Your action is prioritised for quick admin review.`
+              : "Thank you for contributing! Your action is under review. You'll earn GTK tokens once an admin verifies it."
+        }
       >
         <div className="space-y-2">
-          <div className="bg-primary-50 border border-primary-100 rounded-xl p-3 text-center">
-            <MLeaf className="w-4 h-4 mx-auto mb-1 text-primary-500" aria-hidden />
-            <p className="text-xs text-primary-700 font-medium">Every verified action gets recorded on Stellar blockchain.</p>
+          <div className={`border rounded-xl p-3 text-center ${autoVerifyScheduled ? "bg-amber-50 border-amber-100" : "bg-primary-50 border-primary-100"}`}>
+            <MLeaf className={`w-4 h-4 mx-auto mb-1 ${autoVerifyScheduled ? "text-amber-500" : "text-primary-500"}`} aria-hidden />
+            <p className={`text-xs font-medium ${autoVerifyScheduled ? "text-amber-700" : "text-primary-700"}`}>
+              {autoVerifyScheduled
+                ? "Blockchain proof + carbon certificate being issued now."
+                : "Every verified action gets recorded on Stellar blockchain."}
+            </p>
           </div>
           <Button variant="primary" size="md" fullWidth onClick={() => setSuccess(false)}>
             Submit Another Action

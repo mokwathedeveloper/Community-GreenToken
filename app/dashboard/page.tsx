@@ -8,6 +8,7 @@ import MiniLeaderboard from "@/components/dashboard/MiniLeaderboard";
 import DonationProgress from "@/components/dashboard/DonationProgress";
 import AnalyticsChart, { type ChartAction } from "@/components/dashboard/AnalyticsChart";
 import ImpactSummary from "@/components/dashboard/ImpactSummary";
+import AchievementBadges from "@/components/dashboard/AchievementBadges";
 import { useUser } from "@/hooks/useUser";
 import { MCoin, MCheckCircle, MHeart, MTrophy, MWarning } from "@/components/icons";
 
@@ -139,6 +140,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-1 flex flex-col gap-5">
           <MiniLeaderboard entries={leaders} myRank={myRank} />
           <ImpactSummary />
+          <AchievementBadges />
         </div>
         <div className="lg:col-span-2">
           <AnalyticsChart actions={chartActions} />

@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse, after } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
-import { actionTypes } from "@/lib/validation/schemas";
+import { actionTypes, ACTION_TOKEN_AMOUNTS } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
 import { checkRateLimit, rateLimitKey } from "@/lib/middleware/rateLimiter";
+import { autoVerifyAction } from "@/lib/actions/autoVerify";
 
 // POST /api/actions/submit
 // Accepts multipart/form-data so the server can independently extract EXIF from
 // the raw image bytes — GPS coordinates are never trusted from the client body.
 // Rule R-API-01: org_id extracted from JWT — never from request body.
 
-const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB — Vercel serverless payload limit
+const MAX_FILE_BYTES      = 4 * 1024 * 1024; // 4 MB — Vercel serverless payload limit
+const AUTO_VERIFY_THRESHOLD = 85;             // confidence score that triggers instant token mint
 
 async function sha256Hex(data: ArrayBuffer): Promise<string> {
   const hash = await crypto.subtle.digest("SHA-256", data);
@@ -62,6 +64,45 @@ async function extractExifServer(buffer: ArrayBuffer): Promise<ServerExif> {
   } catch {
     return empty;
   }
+}
+
+// Server-side confidence scoring — all signals derived from unforgeable server-extracted data.
+// Score 0–100:
+//   GPS present         +35  (server-extracted from raw bytes, cannot be spoofed)
+//   Timestamp present   +20  (server-extracted)
+//   Photo taken < 24 h  +15  (freshness bonus on top of timestamp)
+//   Photo taken < 7 d   + 8  (partial freshness bonus)
+//   Camera device model + 5  (real device signature)
+//   File > 1 MB         +10  (typical modern camera photo)
+//   File > 200 KB       + 5  (at least a decent image)
+//   Description ≥ 100c  +10  (detailed description signals genuine effort)
+//   Description ≥  50c  + 6
+//   Description ≥  20c  + 3
+function computeConfidenceScore(exif: ServerExif, fileSizeBytes: number, description: string): number {
+  let score = 0;
+
+  if (exif.gpsPresent) score += 35;
+
+  if (exif.capturedAt) {
+    score += 20;
+    const ageMs       = Date.now() - exif.capturedAt.getTime();
+    const ONE_DAY_MS  = 86_400_000;
+    const ONE_WEEK_MS = 7 * ONE_DAY_MS;
+    if (ageMs < ONE_DAY_MS)  score += 15;
+    else if (ageMs < ONE_WEEK_MS) score += 8;
+  }
+
+  if (exif.device) score += 5;
+
+  if (fileSizeBytes > 1_000_000)      score += 10;
+  else if (fileSizeBytes > 200_000)   score += 5;
+
+  const descLen = description.length;
+  if (descLen >= 100)      score += 10;
+  else if (descLen >= 50)  score += 6;
+  else if (descLen >= 20)  score += 3;
+
+  return Math.min(score, 100);
 }
 
 export async function POST(req: NextRequest) {
@@ -171,6 +212,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // 11. Confidence score — computed from server-extracted signals only
+  const confidenceScore = computeConfidenceScore(exif, file.size, description);
+
   // 12. Same-org duplicate check
   const { data: existing } = await (supabase as any)
     .from("actions")
@@ -205,7 +249,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 12. Insert — all EXIF fields are server-extracted, never from request body
+  // 14. Insert — all EXIF fields are server-extracted, never from request body
   const insertResult = await (supabase as any)
     .from("actions")
     .insert({
@@ -224,6 +268,7 @@ export async function POST(req: NextRequest) {
       exif_device:      exif.device,
       exif_present:     exif.present,
       proof_hash:       proofHash,
+      confidence_score: confidenceScore,
     })
     .select("id, action_type, status, submitted_at")
     .single();
@@ -239,7 +284,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 13. Cross-org duplicate flag (non-blocking)
+  // 15. Cross-org duplicate flag (non-blocking)
   let isCrossOrgDup = false;
   try {
     const { data: flagResult } = await (supabase as any)
@@ -253,53 +298,79 @@ export async function POST(req: NextRequest) {
     // Non-critical — fraud flag failure does not block submission
   }
 
-  // 14. Stellar on-chain commitment — runs after response to avoid blocking 15-30s
+  // 16. Post-response work — runs after response to avoid blocking the HTTP round-trip.
+  //     Order matters: (a) submit on-chain → get blockchainActionId, (b) auto-verify if score ≥ threshold.
+  const autoVerifyScheduled = confidenceScore >= AUTO_VERIFY_THRESHOLD;
+  const tokensToMint        = ACTION_TOKEN_AMOUNTS[actionType] ?? 10;
+  const capturedActionId    = action.id;
+  const capturedUserId      = auth.userId;
+
   after(async () => {
     const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
-    if (!adminSecret || !process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) return;
-    try {
-      const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
-      const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
+    let blockchainActionId: number | null = null;
 
-      // Look up the member's linked Stellar wallet address.
-      // Falls back to the platform admin pubkey for users without a linked wallet.
-      const { data: profile } = await (supabase as any)
-        .from("users")
-        .select("wallet_address")
-        .eq("id", auth.userId)
-        .maybeSingle();
-      const stellarUserAddress = (profile?.wallet_address as string | null)
-        ?? process.env.STELLAR_ADMIN_PUBLIC_KEY
-        ?? "";
+    // (a) Stellar on-chain submission
+    if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
+      try {
+        const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
+        const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
-      const result = await submitAction(
-        adminSecret,
-        stellarUserAddress,
-        actionType as import("@/lib/stellar/types").ActionType,
-        description,
-        proofHash,
-        orgHex,
-      );
-      await (supabase as any).from("actions").update({
-        stellar_tx_hash:      result.txHash,
-        blockchain_action_id: result.actionId ? Number(result.actionId) : null,
-      }).eq("id", action.id);
-    } catch (stellarErr) {
-      console.error("[api/actions/submit] Stellar after() failed:", stellarErr);
+        const { data: profile } = await (supabase as any)
+          .from("users")
+          .select("wallet_address")
+          .eq("id", capturedUserId)
+          .maybeSingle();
+        const stellarUserAddress = (profile?.wallet_address as string | null)
+          ?? process.env.STELLAR_ADMIN_PUBLIC_KEY
+          ?? "";
+
+        const result = await submitAction(
+          adminSecret,
+          stellarUserAddress,
+          actionType as import("@/lib/stellar/types").ActionType,
+          description,
+          proofHash,
+          orgHex,
+        );
+        blockchainActionId = result.actionId ? Number(result.actionId) : null;
+        await (supabase as any).from("actions").update({
+          stellar_tx_hash:      result.txHash,
+          blockchain_action_id: blockchainActionId,
+        }).eq("id", capturedActionId);
+      } catch (stellarErr) {
+        console.error("[api/actions/submit] Stellar submitAction failed:", stellarErr);
+      }
+    }
+
+    // (b) Auto-verify high-confidence submissions — instant GTK mint, no admin queue
+    if (autoVerifyScheduled) {
+      await autoVerifyAction({
+        actionId:           capturedActionId,
+        userId:             capturedUserId,
+        orgId,
+        tokensToMint,
+        blockchainActionId,
+      });
     }
   });
+
+  const message = autoVerifyScheduled
+    ? "High-confidence submission! GTK tokens are being minted automatically."
+    : "Action submitted. Awaiting admin verification.";
 
   return NextResponse.json(
     {
       data: {
-        actionId:      action.id,
-        type:          action.action_type,
-        status:        action.status,
-        createdAt:     action.submitted_at,
-        txHash:        null,
-        explorerUrl:   null,
+        actionId:             action.id,
+        type:                 action.action_type,
+        status:               action.status,
+        createdAt:            action.submitted_at,
+        txHash:               null,
+        explorerUrl:          null,
         isCrossOrgDup,
-        message:       "Action submitted. Awaiting admin verification.",
+        confidenceScore,
+        autoVerifyScheduled,
+        message,
       },
       meta: { org_id: orgId },
     },

@@ -43,6 +43,21 @@ export const actionTypes = [
   "PublicTransport", "SolarEnergyUse", "BeachCleanup",
 ] as const;
 
+// Canonical GTK token awards per action type (used by auto-verification).
+// Impact-weighted: tree planting / beach cleanup = highest CO₂ offset per action.
+export const ACTION_TOKEN_AMOUNTS: Record<string, number> = {
+  Recycling:          10,
+  TreePlanting:       25,
+  Carpooling:         15,
+  EnergySaving:       12,
+  WaterSaving:        10,
+  CommunityCleanup:   20,
+  CompostingOrganics: 10,
+  PublicTransport:     8,
+  SolarEnergyUse:     20,
+  BeachCleanup:       25,
+};
+
 // submitActionSchema validates only the text fields sent as FormData strings.
 // The image file is validated directly in the route handler.
 // EXIF (GPS, timestamp, device) is extracted server-side from the raw image bytes
