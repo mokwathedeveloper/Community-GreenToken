@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { parseBody, rejectActionSchema } from "@/lib/validation/schemas";
@@ -24,14 +24,14 @@ export async function POST(req: NextRequest) {
   const isSuperAdmin = auth!.role === "superadmin";
   let actionQuery = (supabase as any)
     .from("actions")
-    .select("id, org_id, user_id, status")
+    .select("id, org_id, user_id, status, blockchain_action_id")
     .eq("id", actionId);
   if (!isSuperAdmin && auth!.orgId) {
     actionQuery = actionQuery.eq("org_id", auth!.orgId);
   }
 
   const { data: action, error: fetchErr } = await actionQuery.single() as {
-    data: { id: string; org_id: string; user_id: string; status: string } | null;
+    data: { id: string; org_id: string; user_id: string; status: string; blockchain_action_id: number | null } | null;
     error: unknown;
   };
 
@@ -66,6 +66,18 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  // Propagate rejection to the on-chain ActionRegistry (fire-and-forget)
+  after(async () => {
+    const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
+    if (!adminSecret || !action.blockchain_action_id || !process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) return;
+    try {
+      const { rejectAction } = await import("@/lib/stellar/contracts/action-registry");
+      await rejectAction(adminSecret, BigInt(action.blockchain_action_id));
+    } catch (err) {
+      console.error("[api/actions/reject] Stellar rejectAction failed:", err);
+    }
+  });
 
   return NextResponse.json(
     {
