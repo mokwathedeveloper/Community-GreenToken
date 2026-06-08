@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { actionTypes } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -253,13 +253,10 @@ export async function POST(req: NextRequest) {
     // Non-critical — fraud flag failure does not block submission
   }
 
-  // 14. Stellar on-chain commitment — proofHash encodes image + GPS + timestamp
-  let txHash:             string | null = null;
-  let explorerUrl:        string | null = null;
-  let blockchainActionId: number | null = null;
-
-  const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
-  if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
+  // 14. Stellar on-chain commitment — runs after response to avoid blocking 15-30s
+  after(async () => {
+    const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
+    if (!adminSecret || !process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) return;
     try {
       const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
       const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
@@ -281,21 +278,16 @@ export async function POST(req: NextRequest) {
         actionType as import("@/lib/stellar/types").ActionType,
         description,
         proofHash,
-        orgHex
+        orgHex,
       );
-      txHash             = result.txHash;
-      explorerUrl        = result.explorerUrl;
-      blockchainActionId = result.actionId ? Number(result.actionId) : null;
-
       await (supabase as any).from("actions").update({
-        stellar_tx_hash:      txHash,
-        blockchain_action_id: blockchainActionId,
+        stellar_tx_hash:      result.txHash,
+        blockchain_action_id: result.actionId ? Number(result.actionId) : null,
       }).eq("id", action.id);
-
     } catch (stellarErr) {
-      console.error("[api/actions/submit] Stellar submit failed (DB record saved):", stellarErr);
+      console.error("[api/actions/submit] Stellar after() failed:", stellarErr);
     }
-  }
+  });
 
   return NextResponse.json(
     {
@@ -304,8 +296,8 @@ export async function POST(req: NextRequest) {
         type:          action.action_type,
         status:        action.status,
         createdAt:     action.submitted_at,
-        txHash,
-        explorerUrl,
+        txHash:        null,
+        explorerUrl:   null,
         isCrossOrgDup,
         message:       "Action submitted. Awaiting admin verification.",
       },
