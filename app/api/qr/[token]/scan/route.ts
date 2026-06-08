@@ -5,27 +5,12 @@ import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { parseBody, qrScanSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
 import { checkRateLimit, rateLimitKey } from "@/lib/middleware/rateLimiter";
+import { haversineMetres, sha256Hex } from "@/lib/qr/utils";
 
 // POST /api/qr/[token]/scan
 // Member submits their GPS location at a QR event.
 // Action is auto-verified (no admin review needed).
 // proofHash = SHA-256(qrToken | memberLat | memberLng | scanTime) → committed to Stellar.
-
-function haversineMetres(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R  = 6_371_000;
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
-  const a  = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-async function sha256Hex(text: string): Promise<string> {
-  const buf  = new TextEncoder().encode(text);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
 
 type QrEventRow = {
   id:           string;
@@ -226,9 +211,20 @@ export async function POST(
         const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
         const orgHex = event.org_id.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
+        // Look up the member's linked Stellar wallet address.
+        // Falls back to the platform admin pubkey for users without a linked wallet.
+        const { data: profile } = await (supabase as any)
+          .from("users")
+          .select("wallet_address")
+          .eq("id", auth.userId)
+          .maybeSingle();
+        const stellarUserAddress = (profile?.wallet_address as string | null)
+          ?? process.env.STELLAR_ADMIN_PUBLIC_KEY
+          ?? "";
+
         const result = await submitAction(
           adminSecret,
-          auth.userId,
+          stellarUserAddress,
           event.action_type as import("@/lib/stellar/types").ActionType,
           `QR: ${event.label}`,
           proofHash,
