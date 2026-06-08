@@ -102,6 +102,27 @@ export const tokenBalanceSchema = z.object({
   address: stellarPublicKey,
 });
 
+// ── QR Events ─────────────────────────────────────────────────────────────
+export const createQrEventSchema = z.object({
+  actionType:  z.enum(actionTypes),
+  label:       z.string().min(3).max(100),
+  description: z.string().max(300).optional(),
+  lat:         z.number().min(-90).max(90).optional(),
+  lng:         z.number().min(-180).max(180).optional(),
+  radiusM:     z.number().int().min(50).max(50000).default(200),
+  tokensAward: z.number().int().min(1).max(10000).default(10),
+  validFrom:   z.string().datetime(),
+  validUntil:  z.string().datetime(),
+}).refine(d => new Date(d.validUntil) > new Date(d.validFrom), {
+  message: "validUntil must be after validFrom",
+  path: ["validUntil"],
+});
+
+export const qrScanSchema = z.object({
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+});
+
 // ── Members ───────────────────────────────────────────────────────────────
 export const changeMemberRoleSchema = z.object({
   role: z.enum(["admin", "member"]),
