@@ -29,7 +29,7 @@ import PricingTable from "@/components/pricing/PricingTable";
 import SocialProof from "@/components/pricing/SocialProof";
 import ExitIntentPopup from "@/components/pricing/ExitIntentPopup";
 import { cn } from "@/lib/utils";
-import { MGift, MBusiness } from "@/components/icons";
+import { MGift, MBusiness, MWarning } from "@/components/icons";
 import {
   PLANS, ENTERPRISE_PLAN, COMPARISON_ROWS, FAQ_ITEMS, SOCIAL_PROOF_ORGS,
   annualSavings, monthlyFromAnnual,
@@ -39,11 +39,13 @@ import {
 export default function PricingPage() {
   const [annual,       setAnnual]      = useState(false);
   const [loadingPlan,  setLoadingPlan] = useState<string | null>(null);
+  const [checkoutErr,  setCheckoutErr] = useState<string | null>(null);
 
   async function handleSelect(plan: Plan) {
     if (plan.href) { window.location.assign(plan.href); return; }
 
     setLoadingPlan(plan.id);
+    setCheckoutErr(null);
     try {
       // Send planId ("starter" | "pro") — server maps it to the Stripe price ID
       // from its own env vars (STRIPE_STARTER_PRICE_ID / STRIPE_PRO_PRICE_ID).
@@ -57,10 +59,10 @@ export default function PricingPage() {
       if (json.data?.url) {
         window.location.assign(json.data.url);
       } else {
-        console.error("[pricing] checkout failed:", json.error);
+        setCheckoutErr(json.error?.message ?? "Could not start checkout. Please try again.");
       }
-    } catch (err) {
-      console.error("[pricing] checkout error:", err);
+    } catch {
+      setCheckoutErr("Network error — please try again.");
     } finally {
       setLoadingPlan(null);
     }
@@ -138,6 +140,14 @@ export default function PricingPage() {
       {/* ── PLAN CARDS (FREE / STARTER / PRO) ─────────────────────────────── */}
       <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
+
+          {checkoutErr && (
+            <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-6">
+              <MWarning className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+              <span className="flex-1">{checkoutErr}</span>
+              <button onClick={() => setCheckoutErr(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-600">✕</button>
+            </div>
+          )}
 
           {/* 3-column grid — spec §2: FREE STARTER PRO */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

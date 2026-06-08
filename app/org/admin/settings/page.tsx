@@ -64,7 +64,7 @@ export default function OrgSettingsPage() {
           });
         }
       })
-      .catch(console.error);
+      .catch((err: unknown) => setErrMsg(err instanceof Error ? err.message : "Failed to load organization settings."));
   }, [orgId, orgName, orgSlug]);
 
   async function save(e: FormEvent) {
