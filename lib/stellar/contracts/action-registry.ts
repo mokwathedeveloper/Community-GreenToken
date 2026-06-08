@@ -48,6 +48,16 @@ export async function submitAction(
   const adminKp  = Keypair.fromSecret(adminSecret);
   const contract = getContract();
 
+  // Validate userAddress — fall back to admin pubkey when a non-Stellar value
+  // (e.g. a Supabase UUID) is passed for users who have not linked a wallet yet.
+  let stellarUser: string;
+  try {
+    new Address(userAddress);
+    stellarUser = userAddress;
+  } catch {
+    stellarUser = adminKp.publicKey();
+  }
+
   // Convert evidenceHash hex → BytesN<32>
   const hashBytes = Buffer.from(evidenceHash, "hex");
   const orgBytes  = Buffer.from(orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64), "hex");
@@ -55,7 +65,7 @@ export async function submitAction(
   const tx = (await buildBaseTx(adminKp.publicKey()))
     .addOperation(contract.call(
       "submit_action",
-      new Address(userAddress).toScVal(),
+      new Address(stellarUser).toScVal(),
       actionTypeToScVal(actionType),
       nativeToScVal(description, { type: "string" }),
       xdrSdk.ScVal.scvBytes(hashBytes),
@@ -68,9 +78,17 @@ export async function submitAction(
   const assembled = assembleTx(tx, sim);
   assembled.sign(adminKp);
 
-  const result  = await submitAndWait(assembled.toXDR());
-  // Extract action_id from simulation return value
-  const actionId = BigInt(0); // TODO: parse from sim result retval
+  const result = await submitAndWait(assembled.toXDR());
+
+  // Parse actionId from simulation return value (u64 returned by ActionRegistry)
+  let actionId = BigInt(0);
+  if ("result" in sim && sim.result) {
+    try {
+      actionId = BigInt(scValToNative(sim.result.retval) ?? 0);
+    } catch {
+      // Non-critical — proof was committed on-chain; actionId tracking unavailable
+    }
+  }
 
   return { actionId, txHash: result.txHash, explorerUrl: getTxExplorerUrl(result.txHash) };
 }
