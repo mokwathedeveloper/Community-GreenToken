@@ -69,15 +69,22 @@ export default function RedeemPage() {
   const [errMsg,    setErrMsg]    = useState<string | null>(null);
   const [loadErr,   setLoadErr]   = useState<string | null>(null);
   const [redeemed,  setRedeemed]  = useState<{ title: string; tokens: number } | null>(null);
+  const [gtkToKes,  setGtkToKes]  = useState(0.50);
+  const [gtkToUsd,  setGtkToUsd]  = useState(0.004);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/rewards").then(r => r.json()),
       fetch("/api/tokens/balance").then(r => r.json()),
       fetch("/api/redeem/history?limit=10").then(r => r.json()),
-    ]).then(([rewardsRes, balRes, histRes]) => {
+      fetch("/api/exchange-rates").then(r => r.json()),
+    ]).then(([rewardsRes, balRes, histRes, ratesRes]) => {
       setRewards(rewardsRes.data ?? []);
       setBalance(balRes.data?.balance ?? 0);
+      if (ratesRes?.data) {
+        setGtkToKes(ratesRes.data.gtkToKes ?? 0.50);
+        setGtkToUsd(ratesRes.data.gtkToUsd ?? 0.004);
+      }
       const logs: RedemptionLog[] = histRes.data ?? [];
       setHistory(logs);
       setTotalRed(histRes.pagination?.total ?? logs.length);
@@ -139,9 +146,8 @@ export default function RedeemPage() {
   const statusLabel = (s: string) =>
     s === "confirmed" ? "Fulfilled" : s === "pending" ? "Pending" : "Failed";
 
-  // GTK value in KES (same rate as withdrawal)
-  const GTK_RATE_KES = 0.50;
-  const balanceKes   = (balance * GTK_RATE_KES).toFixed(2);
+  const balanceKes = (balance * gtkToKes).toFixed(2);
+  const balanceUsd = (balance * gtkToUsd).toFixed(2);
 
   return (
     <AppLayout title="Redeem Tokens" tokenBalance={BigInt(balance * 10_000_000)}>
@@ -183,7 +189,7 @@ export default function RedeemPage() {
           {
             label: "Token Balance",
             value: dataLoad ? "…" : `${balance.toLocaleString()} GTK`,
-            sub:   dataLoad ? "" : `≈ KES ${Number(balanceKes).toLocaleString("en-KE")} available`,
+            sub:   dataLoad ? "" : `≈ KES ${Number(balanceKes).toLocaleString("en-KE")} / $${balanceUsd}`,
             Icon:  MCoin,
             color: "text-amber-500",
             bg:    "bg-amber-50",
@@ -340,9 +346,14 @@ export default function RedeemPage() {
                   )}
 
                   <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-50">
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-gray-900">
-                      <MCoin className="w-4 h-4 text-amber-500" aria-hidden />
-                      {r.token_cost.toLocaleString()} GTK
+                    <span className="flex flex-col">
+                      <span className="flex items-center gap-1 text-sm font-bold text-gray-900">
+                        <MCoin className="w-4 h-4 text-amber-500" aria-hidden />
+                        {r.token_cost.toLocaleString()} GTK
+                      </span>
+                      <span className="text-[10px] text-gray-400 mt-0.5">
+                        ≈ KES {(r.token_cost * gtkToKes).toFixed(2)} / ${(r.token_cost * gtkToUsd).toFixed(3)}
+                      </span>
                     </span>
                     <span className={cn(
                       "px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors",
@@ -369,7 +380,7 @@ export default function RedeemPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-white leading-tight">{selectedReward.title}</p>
-              <p className="text-xs text-white/70">{selectedReward.token_cost.toLocaleString()} GTK → KES {(selectedReward.token_cost * 0.50).toFixed(2)} value</p>
+              <p className="text-xs text-white/70">{selectedReward.token_cost.toLocaleString()} GTK → KES {(selectedReward.token_cost * gtkToKes).toFixed(2)} / ${(selectedReward.token_cost * gtkToUsd).toFixed(3)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
