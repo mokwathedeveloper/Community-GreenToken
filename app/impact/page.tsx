@@ -36,36 +36,15 @@ function useCountUp(target: number, active: boolean) {
 }
 
 // ── SVG Line Chart ────────────────────────────────────────────────────────
-type ChartRange = "7d" | "30d" | "all";
+type ChartPoint = { label: string; value: number };
 
-const CHART_DATA: Record<ChartRange, { label: string; value: number }[]> = {
-  "7d": [
-    { label: "Mon", value: 320 }, { label: "Tue", value: 480 },
-    { label: "Wed", value: 380 }, { label: "Thu", value: 560 },
-    { label: "Fri", value: 490 }, { label: "Sat", value: 610 },
-    { label: "Sun", value: 720 },
-  ],
-  "30d": [
-    { label: "May 1",  value: 2100 }, { label: "May 8",  value: 3200 },
-    { label: "May 15", value: 2800 }, { label: "May 22", value: 4100 },
-    { label: "May 29", value: 3600 }, { label: "Jun 5",  value: 5200 },
-  ],
-  "all": [
-    { label: "Jan", value: 8000  }, { label: "Feb", value: 12000 },
-    { label: "Mar", value: 18000 }, { label: "Apr", value: 15000 },
-    { label: "May", value: 22000 }, { label: "Jun", value: 28000 },
-    { label: "Jul", value: 35000 },
-  ],
-};
-
-function ActionChart({ range }: { range: ChartRange }) {
-  const data = CHART_DATA[range];
+function ActionChart({ data }: { data: ChartPoint[] }) {
   const W = 460, H = 200;
   const PAD = { top: 20, right: 16, bottom: 32, left: 52 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
-  const max = Math.max(...data.map(d => d.value));
-  const xStep = innerW / (data.length - 1);
+  const max = Math.max(...data.map(d => d.value), 1);
+  const xStep = data.length > 1 ? innerW / (data.length - 1) : innerW;
 
   const pts = data.map((d, i) => ({
     x: PAD.left + i * xStep,
@@ -89,7 +68,6 @@ function ActionChart({ range }: { range: ChartRange }) {
           <stop offset="100%" stopColor="#16a34a" stopOpacity="0.01" />
         </linearGradient>
       </defs>
-      {/* Gridlines */}
       {yTicks.map((t, i) => (
         <g key={i}>
           <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y}
@@ -99,24 +77,19 @@ function ActionChart({ range }: { range: ChartRange }) {
           </text>
         </g>
       ))}
-      {/* Vertical gridlines */}
       {pts.map((p, i) => (
         <line key={`vg-${i}`} x1={p.x} y1={PAD.top} x2={p.x} y2={PAD.top + innerH}
           stroke="#f3f4f6" strokeWidth="1" />
       ))}
-      {/* Area */}
       <path d={areaPath} fill="url(#chartGrad)" />
-      {/* Line */}
       <path d={linePath} fill="none" stroke="#16a34a" strokeWidth="2.5"
         strokeLinecap="round" strokeLinejoin="round" />
-      {/* Data points */}
       {pts.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={p.y} r="5" fill="white" stroke="#16a34a" strokeWidth="2" />
           <circle cx={p.x} cy={p.y} r="2.5" fill="#16a34a" />
         </g>
       ))}
-      {/* X labels */}
       {data.map((d, i) => (
         <text key={i} x={pts[i].x} y={H - 6} textAnchor="middle" fill="#9ca3af" fontSize="10" fontFamily="system-ui">
           {d.label}
@@ -126,18 +99,33 @@ function ActionChart({ range }: { range: ChartRange }) {
   );
 }
 
-// ── Static data ────────────────────────────────────────────────────────────
-const STATS: {
-  value: number; unit: string; label: string;
-  Icon: ElementType; iconBg: string; iconColor: string;
-  trend: string;
-}[] = [
-  { value: 2458721,  unit: "",    label: "Verified Actions",   Icon: MCheckCircle, iconBg: "bg-green-50",   iconColor: "text-green-600",  trend: "+12.5%" },
-  { value: 18734254, unit: "",    label: "GreenTokens Minted", Icon: MCoin,        iconBg: "bg-amber-50",  iconColor: "text-amber-600",  trend: "+8.2%"  },
-  { value: 142389,   unit: "",    label: "Active Members",     Icon: MPeople,      iconBg: "bg-blue-50",   iconColor: "text-blue-600",   trend: "+5.7%"  },
-  { value: 7892450,  unit: " kg", label: "CO₂ Offset",         Icon: MLeaf,        iconBg: "bg-primary-50",iconColor: "text-primary-600",trend: "+18.9%" },
-  { value: 3245769,  unit: "",    label: "Tokens Donated",     Icon: MHeart,       iconBg: "bg-red-50",    iconColor: "text-red-500",    trend: "+23.1%" },
+// ── Stat config (icons + labels only; values loaded from API) ─────────────
+type StatConfig = {
+  key:       "verifiedActions" | "tokensMinted" | "activeMembers" | "co2KgTotal" | "tokensDonated";
+  unit:      string;
+  label:     string;
+  Icon:      ElementType;
+  iconBg:    string;
+  iconColor: string;
+  trend:     string;
+};
+
+const STAT_CONFIGS: StatConfig[] = [
+  { key: "verifiedActions", unit: "",    label: "Verified Actions",   Icon: MCheckCircle, iconBg: "bg-green-50",   iconColor: "text-green-600",  trend: "+12.5%" },
+  { key: "tokensMinted",    unit: "",    label: "GreenTokens Minted", Icon: MCoin,        iconBg: "bg-amber-50",  iconColor: "text-amber-600",  trend: "+8.2%"  },
+  { key: "activeMembers",   unit: "",    label: "Active Members",     Icon: MPeople,      iconBg: "bg-blue-50",   iconColor: "text-blue-600",   trend: "+5.7%"  },
+  { key: "co2KgTotal",      unit: " kg", label: "CO₂ Offset",         Icon: MLeaf,        iconBg: "bg-primary-50",iconColor: "text-primary-600",trend: "+18.9%" },
+  { key: "tokensDonated",   unit: "",    label: "Tokens Donated",     Icon: MHeart,       iconBg: "bg-red-50",    iconColor: "text-red-500",    trend: "+23.1%" },
 ];
+
+type PublicStats = {
+  verifiedActions: number;
+  tokensMinted:    number;
+  activeMembers:   number;
+  co2KgTotal:      number;
+  tokensDonated:   number;
+  weeklyChart:     ChartPoint[];
+};
 
 const TOP_PROJECTS = [
   { name: "Reforestation Project", donated: 1450000, goal: 2000000, img: "/assets/image/pages/impact/impact_hero.png" },
@@ -149,10 +137,10 @@ const TOP_PROJECTS = [
 const HOW_STEPS: {
   Icon: ElementType; iconBg: string; iconColor: string; title: string; desc: string;
 }[] = [
-  { Icon: MRecycle,    iconBg: "bg-green-50",   iconColor: "text-green-600",  title: "Take Sustainable Actions", desc: "Recycle, plant, carpool — every verified action counts toward community goals." },
-  { Icon: MShield,     iconBg: "bg-blue-50",    iconColor: "text-blue-600",   title: "Get Verified & Earn GTK",  desc: "Your actions are verified on the Stellar blockchain and rewarded with GreenTokens." },
-  { Icon: MHeart,      iconBg: "bg-red-50",     iconColor: "text-red-500",    title: "Donate & Fund Projects",   desc: "Allocate your tokens to real eco-projects with full on-chain proof of impact." },
-  { Icon: MBarChart,   iconBg: "bg-amber-50",   iconColor: "text-amber-600",  title: "Track Community Progress", desc: "Live metrics show community-wide impact and your personal contribution in real time." },
+  { Icon: MRecycle, iconBg: "bg-green-50",  iconColor: "text-green-600",  title: "Take Sustainable Actions", desc: "Recycle, plant, carpool — every verified action counts toward community goals." },
+  { Icon: MShield,  iconBg: "bg-blue-50",   iconColor: "text-blue-600",   title: "Get Verified & Earn GTK",  desc: "Your actions are verified on the Stellar blockchain and rewarded with GreenTokens." },
+  { Icon: MHeart,   iconBg: "bg-red-50",    iconColor: "text-red-500",    title: "Donate & Fund Projects",   desc: "Allocate your tokens to real eco-projects with full on-chain proof of impact." },
+  { Icon: MBarChart,iconBg: "bg-amber-50",  iconColor: "text-amber-600",  title: "Track Community Progress", desc: "Live metrics show community-wide impact and your personal contribution in real time." },
 ];
 
 // ── Stat card ──────────────────────────────────────────────────────────────
@@ -185,7 +173,10 @@ function StatBlock({ value, unit, label, Icon, iconBg, iconColor, trend, active 
 export default function ImpactPage() {
   const statsRef = useRef<HTMLDivElement>(null);
   const [statsVisible, setStatsVisible] = useState(false);
-  const [chartRange, setChartRange] = useState<ChartRange>("30d");
+  const [publicStats, setPublicStats]   = useState<PublicStats>({
+    verifiedActions: 0, tokensMinted: 0, activeMembers: 0,
+    co2KgTotal: 0, tokensDonated: 0, weeklyChart: [],
+  });
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -195,6 +186,19 @@ export default function ImpactPage() {
     if (statsRef.current) obs.observe(statsRef.current);
     return () => obs.disconnect();
   }, []);
+
+  useEffect(() => {
+    fetch("/api/stats/public")
+      .then(r => r.json())
+      .then((res: { data?: PublicStats }) => {
+        if (res.data) setPublicStats(res.data);
+      })
+      .catch(() => { /* keep zeros on network failure */ });
+  }, []);
+
+  const chartData: ChartPoint[] = publicStats.weeklyChart.length > 0
+    ? publicStats.weeklyChart
+    : [{ label: "–", value: 0 }];
 
   return (
     <PublicLayout>
@@ -241,8 +245,18 @@ export default function ImpactPage() {
       <section ref={statsRef} className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 divide-x divide-y md:divide-y-0 divide-gray-100">
-            {STATS.map((s) => (
-              <StatBlock key={s.label} {...s} active={statsVisible} />
+            {STAT_CONFIGS.map((cfg) => (
+              <StatBlock
+                key={cfg.key}
+                value={publicStats[cfg.key]}
+                unit={cfg.unit}
+                label={cfg.label}
+                Icon={cfg.Icon}
+                iconBg={cfg.iconBg}
+                iconColor={cfg.iconColor}
+                trend={cfg.trend}
+                active={statsVisible}
+              />
             ))}
           </div>
         </div>
@@ -253,28 +267,18 @@ export default function ImpactPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
 
-            {/* Left: chart */}
+            {/* Left: chart — real weekly data from API */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
-                <h2 className="text-sm font-bold text-gray-900">Community Actions Over Time</h2>
-                <div className="flex gap-1 bg-gray-50 border border-gray-100 rounded-lg p-0.5">
-                  {(["7d", "30d", "all"] as ChartRange[]).map((r) => (
-                    <button key={r} type="button"
-                      onClick={() => setChartRange(r)}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        chartRange === r
-                          ? "bg-white text-primary-700 shadow-sm border border-gray-200"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}>
-                      {r === "7d" ? "7 Days" : r === "30d" ? "30 Days" : "All Time"}
-                    </button>
-                  ))}
-                </div>
+                <h2 className="text-sm font-bold text-gray-900">Community Actions — Last 8 Weeks</h2>
+                <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 rounded-md px-2 py-0.5">
+                  Live · Stellar blockchain
+                </span>
               </div>
               <p className="text-[11px] text-gray-400 mb-3">
-                Verified actions recorded on the Stellar blockchain.
+                Verified eco-actions recorded on-chain, grouped by week.
               </p>
-              <ActionChart range={chartRange} />
+              <ActionChart data={chartData} />
             </div>
 
             {/* Right: Top projects */}
@@ -388,7 +392,6 @@ export default function ImpactPage() {
           </div>
         </div>
       </section>
-
 
     </PublicLayout>
   );

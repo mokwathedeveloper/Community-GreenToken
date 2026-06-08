@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 
 // Google Material Icons — filled SVG paths
 
@@ -18,10 +18,10 @@ function IconCoin() {
     </svg>
   );
 }
-function IconTree() {
+function IconLeaf() {
   return (
     <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor" aria-hidden="true">
-      <path d="M17 12h-5V7h5l-2.5-5-2.5 5H7V7H2l5 5H5l7 7 7-7h-2z"/>
+      <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-.5c.7-1.4 1.36-2.63 2.11-3.72C9.76 21.12 12.44 22 16 22c4.42 0 8-3.58 8-8s-3.58-8-8-8zm0 14c-3.04 0-5.17-.86-6.71-2.4C11.29 17.97 12.5 16 14 15l-1-1C11 15.5 9.5 17.5 8.5 20.5c-.7-1.4-1.24-2.92-1.5-4.5C8 11 11 9 17 8c1.5 0 2.9.4 4.1 1.1.67.37 1.9 1.4 1.9 1.4A5.97 5.97 0 0 1 23 14c0 3.31-2.69 6-6 6z"/>
     </svg>
   );
 }
@@ -33,11 +33,18 @@ function IconRecycle() {
   );
 }
 
-const STATS = [
-  { value: 128547,  suffix: "",    label: "Actions Verified", IconComp: IconCheck  },
-  { value: 2543889, suffix: "",    label: "Tokens Earned",    IconComp: IconCoin   },
-  { value: 45672,   suffix: "",    label: "Trees Planted",    IconComp: IconTree   },
-  { value: 312840,  suffix: " kg", label: "Waste Collected",  IconComp: IconRecycle},
+type StatItem = {
+  value:    number;
+  suffix:   string;
+  label:    string;
+  IconComp: () => ReactElement;
+};
+
+const DEFAULT_STATS: StatItem[] = [
+  { value: 0, suffix: "",    label: "Actions Verified", IconComp: IconCheck  },
+  { value: 0, suffix: "",    label: "Tokens Earned",    IconComp: IconCoin   },
+  { value: 0, suffix: "",    label: "Active Members",   IconComp: IconLeaf   },
+  { value: 0, suffix: " kg", label: "CO₂ Offset",       IconComp: IconRecycle},
 ];
 
 function useCountUp(target: number, duration = 1500, active: boolean) {
@@ -45,7 +52,6 @@ function useCountUp(target: number, duration = 1500, active: boolean) {
   useEffect(() => {
     if (!active) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // Defer to next animation frame — avoids synchronous setState inside effect body
       const raf = requestAnimationFrame(() => setCount(target));
       return () => cancelAnimationFrame(raf);
     }
@@ -61,7 +67,7 @@ function useCountUp(target: number, duration = 1500, active: boolean) {
   return count;
 }
 
-function StatCard({ value, suffix, label, IconComp }: typeof STATS[0]) {
+function StatCard({ value, suffix, label, IconComp }: StatItem) {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
   const count = useCountUp(value, 1400, active);
@@ -90,11 +96,29 @@ function StatCard({ value, suffix, label, IconComp }: typeof STATS[0]) {
 }
 
 export default function StatsRow() {
+  const [stats, setStats] = useState<StatItem[]>(DEFAULT_STATS);
+
+  useEffect(() => {
+    fetch("/api/stats/public")
+      .then(r => r.json())
+      .then((res: { data?: { verifiedActions?: number; tokensMinted?: number; activeMembers?: number; co2KgTotal?: number } }) => {
+        if (!res.data) return;
+        const d = res.data;
+        setStats([
+          { value: d.verifiedActions ?? 0, suffix: "",    label: "Actions Verified", IconComp: IconCheck   },
+          { value: d.tokensMinted    ?? 0, suffix: "",    label: "Tokens Earned",    IconComp: IconCoin    },
+          { value: d.activeMembers   ?? 0, suffix: "",    label: "Active Members",   IconComp: IconLeaf    },
+          { value: d.co2KgTotal      ?? 0, suffix: " kg", label: "CO₂ Offset",       IconComp: IconRecycle },
+        ]);
+      })
+      .catch(() => { /* keep zero placeholders on network failure */ });
+  }, []);
+
   return (
     <section aria-label="Platform statistics" className="bg-primary-800 py-14">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
-          {STATS.map((s) => <StatCard key={s.label} {...s} />)}
+          {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </div>
     </section>
