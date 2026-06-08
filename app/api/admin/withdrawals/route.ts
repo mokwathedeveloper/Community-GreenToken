@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 import { isMpesaConfigured } from "@/lib/payments/mpesa";
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
 
   // Step 2: look up member info from public.users
   const userIds = [...new Set(list.map((r: any) => r.user_id as string))];
-  let userMap: Record<string, { display_name: string | null; email: string | null }> = {};
+  const userMap: Record<string, { display_name: string | null; email: string | null }> = {};
   if (userIds.length > 0) {
     const { data: users } = await (supabase as any)
       .from("users")

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { checkPlanFeature } from "@/lib/middleware/planGate";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -6,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 // GET /api/analytics/overview
 // Rule: Starter+ plan only — Rule R-API-05 + planGate
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 

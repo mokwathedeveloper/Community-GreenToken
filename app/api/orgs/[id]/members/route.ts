@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -47,7 +48,7 @@ export async function GET(
 
   // Enrich with display_name + email from public.users (separate query)
   const userIds: string[] = (members ?? []).map((m: { user_id: string }) => m.user_id);
-  let profileMap: Record<string, { display_name: string | null; email: string | null }> = {};
+  const profileMap: Record<string, { display_name: string | null; email: string | null }> = {};
 
   if (userIds.length > 0) {
     const { data: profiles } = await (supabase as any)

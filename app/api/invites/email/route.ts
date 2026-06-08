@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -250,7 +251,7 @@ export async function POST(req: NextRequest) {
   );
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const auth  = await getAuthContext();
   const guard = requireOrgAdmin(auth);
   if (guard) return guard;

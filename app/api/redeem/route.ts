@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { parseBody, redeemSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
-import { getTxExplorerUrl } from "@/lib/stellar/config";
 
 // POST /api/redeem — member redeems GTK tokens for a reward.
 //
@@ -83,7 +83,6 @@ export async function POST(req: NextRequest) {
 
   if (signedXdr && process.env.NEXT_PUBLIC_REWARD_MANAGER_CONTRACT_ID) {
     try {
-      // @ts-ignore — optional Stellar integration, lib resolves at runtime
       const { redeemReward } = await import("@/lib/stellar/contracts/reward-manager");
       const result = await redeemReward(signedXdr);
       txHash      = result.txHash;

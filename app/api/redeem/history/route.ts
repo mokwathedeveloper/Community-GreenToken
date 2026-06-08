@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
 
   // Step 2: look up reward titles for any reward_ids present
   const rewardIds = [...new Set(rows.map(r => r.reward_id).filter(Boolean))] as string[];
-  let rewardMap: Record<string, string> = {};
+  const rewardMap: Record<string, string> = {};
 
   if (rewardIds.length > 0) {
     const { data: rewardRows } = await (supabase as any)

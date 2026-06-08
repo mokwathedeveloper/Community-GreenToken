@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { checkPlanAccess } from "@/lib/middleware/planGate";
@@ -8,7 +9,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 // Spec: saas/saas_api_endpoints.md — Analytics (Starter+ plan)
 // Returns token distribution, velocity, top earners for the org.
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 

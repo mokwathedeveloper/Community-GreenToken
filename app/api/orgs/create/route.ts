@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { parseBody, createOrgSchema } from "@/lib/validation/schemas";
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseBody(req, createOrgSchema);
   if ("error" in parsed) return parsed.error;
-  const { name, slug, type, tokenName, tokenSymbol, primaryColor } = parsed.data;
+  const { name, slug, tokenName, tokenSymbol, primaryColor } = parsed.data;
 
   const supabase = createAdminClient();
 

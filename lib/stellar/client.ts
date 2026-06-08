@@ -8,7 +8,6 @@ import {
   TransactionBuilder,
   Networks,
   BASE_FEE,
-  Keypair,
   type Transaction,
   type FeeBumpTransaction,
 } from "@stellar/stellar-sdk";

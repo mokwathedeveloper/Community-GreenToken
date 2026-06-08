@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
@@ -21,8 +22,7 @@ export async function createServerSupabaseClient() {
   // Pass the resolved store as a synchronous function so auth-helpers
   // can read cookies without needing to await a Promise itself.
   return createRouteHandlerClient<Database>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    { cookies: () => cookieStore as any },
+      { cookies: () => cookieStore as any },
     {
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
       supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

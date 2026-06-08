@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { parseBody, verifyActionSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -106,8 +107,7 @@ export async function POST(req: NextRequest) {
   if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
     after(async () => {
       try {
-        // @ts-ignore — optional Stellar integration, lib resolves at runtime
-        const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
+          const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
         const { toStroops }    = await import("@/lib/utils");
 
         const { data: actionFull } = await (supabase as any)

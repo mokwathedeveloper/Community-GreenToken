@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ data: withdrawal, meta: { org_id: auth.orgId } }, { status: 201 });
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
   if (!auth.orgId) return NextResponse.json({ data: [], meta: { org_id: "" } });

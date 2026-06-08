@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { parseBody } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";

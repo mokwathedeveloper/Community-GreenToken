@@ -4,7 +4,7 @@
 // Spec: architecture/stellar_sdk_api_spec.md Section 3
 // Rule R-FRQ-04: MUST show "Install Freighter" if not installed
 
-import { STELLAR_CONFIG, type StellarNetwork } from "./config";
+import { STELLAR_CONFIG } from "./config";
 
 export interface WalletStatus {
   isInstalled:  boolean;

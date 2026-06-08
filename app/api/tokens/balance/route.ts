@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -6,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 // Rule R-SDK-08: display balance = raw stroops / 10^7
 // Rule: returns both Supabase (fast) and on-chain (authoritative) balance
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
 
@@ -43,7 +44,6 @@ export async function GET(req: NextRequest) {
 
     const walletAddress = walletAddressResult?.data?.wallet_address;
     if (walletAddress && process.env.NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID) {
-      // @ts-ignore — optional Stellar integration, lib resolves at runtime
       const { getDisplayBalance } = await import("@/lib/stellar/contracts/green-token");
       onChainBalance = (await getDisplayBalance(walletAddress)) as number | null;
       if (onChainBalance !== null) {

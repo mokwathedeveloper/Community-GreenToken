@@ -4,12 +4,6 @@
 
 export type StellarNetwork = "testnet" | "mainnet";
 
-function requireEnv(key: string, fallback?: string): string {
-  const val = process.env[key] ?? fallback;
-  if (!val) throw new Error(`Missing required env var: ${key}`);
-  return val;
-}
-
 export const STELLAR_CONFIG = {
   network: (process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? "testnet") as StellarNetwork,
 

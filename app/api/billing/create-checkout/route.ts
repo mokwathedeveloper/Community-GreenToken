@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgOwner } from "@/lib/middleware/adminGuard";
 import { parseBody, createCheckoutSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";

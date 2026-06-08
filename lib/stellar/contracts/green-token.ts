@@ -8,7 +8,6 @@ import {
   nativeToScVal,
   scValToNative,
   Address,
-  xdr,
 } from "@stellar/stellar-sdk";
 import { STELLAR_CONFIG, getTxExplorerUrl } from "../config";
 import {

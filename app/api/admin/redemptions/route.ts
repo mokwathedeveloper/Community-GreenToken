@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgAdmin } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
 
   // Step 2a: look up reward titles
   const rewardIds = [...new Set(rows.map(r => r.reward_id).filter(Boolean))] as string[];
-  let rewardMap: Record<string, { title: string; token_cost: number }> = {};
+  const rewardMap: Record<string, { title: string; token_cost: number }> = {};
   if (rewardIds.length > 0) {
     const { data: rewardRows } = await (supabase as any)
       .from("rewards")
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
 
   // Step 2b: look up member names + emails from public.users
   const userIds = [...new Set(rows.map(r => r.user_id))];
-  let userMap: Record<string, { display_name: string | null; email: string | null }> = {};
+  const userMap: Record<string, { display_name: string | null; email: string | null }> = {};
   if (userIds.length > 0) {
     const { data: userRows } = await (supabase as any)
       .from("users")

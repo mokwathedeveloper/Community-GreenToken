@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { parseBody, submitActionSchema } from "@/lib/validation/schemas";
@@ -47,7 +48,6 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
 
   // 4a. Same-org duplicate check (hard reject)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existing } = await (supabase as any)
     .from("actions")
     .select("id")
@@ -82,7 +82,6 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Insert action — include EXIF metadata columns (migration 029)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const insertResult = await (supabase as any)
     .from("actions")
     .insert({
@@ -123,8 +122,7 @@ export async function POST(req: NextRequest) {
   // Uses the flag_cross_org_duplicate() RPC from migration 029
   let isCrossOrgDup = false;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: flagResult } = await (supabase as any)
+      const { data: flagResult } = await (supabase as any)
       .rpc("flag_cross_org_duplicate", {
         p_action_id:     action.id,
         p_org_id:        orgId,
@@ -163,8 +161,7 @@ export async function POST(req: NextRequest) {
       blockchainActionId  = result.actionId ? Number(result.actionId) : null;
 
       // Store on-chain references so verify can use the real on-chain action ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from("actions").update({
+          await (supabase as any).from("actions").update({
         stellar_tx_hash:      txHash,
         blockchain_action_id: blockchainActionId,
       }).eq("id", action.id);

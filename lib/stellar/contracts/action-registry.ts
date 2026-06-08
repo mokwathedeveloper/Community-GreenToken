@@ -11,7 +11,7 @@ import {
 } from "@stellar/stellar-sdk";
 import { STELLAR_CONFIG, getTxExplorerUrl } from "../config";
 import { buildBaseTx, simulateTx, assembleTx, submitAndWait, type TxResult } from "../client";
-import { type ActionType, type OnChainAction, type ActionStatus } from "../types";
+import { type ActionType } from "../types";
 
 function getContract(): Contract {
   const id = STELLAR_CONFIG.contracts.actionRegistry;
@@ -21,11 +21,6 @@ function getContract(): Contract {
 
 /** Convert ActionType string to Soroban enum ScVal */
 function actionTypeToScVal(actionType: ActionType) {
-  const ACTION_ENUM_INDEX: Record<string, number> = {
-    Recycling: 0, TreePlanting: 1, Carpooling: 2, EnergySaving: 3, WaterSaving: 4,
-    CommunityCleanup: 5, CompostingOrganics: 6, PublicTransport: 7, SolarEnergyUse: 8, BeachCleanup: 9,
-  };
-  const idx = ACTION_ENUM_INDEX[actionType] ?? 0;
   return xdr.ScVal.scvVec([xdr.ScVal.scvSymbol(actionType)]);
 }
 

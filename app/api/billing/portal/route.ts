@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
+import { getAuthContext } from "@/lib/middleware/auth";
 import { requireOrgOwner } from "@/lib/middleware/adminGuard";
 import { createAdminClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 
 // POST /api/billing/portal — open Stripe Customer Portal
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const auth  = await getAuthContext();
   const guard = requireOrgOwner(auth);
   if (guard) return guard;

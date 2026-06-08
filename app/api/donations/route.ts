@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { parseBody, createDonationSchema } from "@/lib/validation/schemas";
@@ -6,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 // GET /api/donations — user's donation history
 // POST /api/donations — allocate tokens to a project
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const auth = await getAuthContext();
   if (!auth) return unauthorized();
   if (!auth.orgId) return NextResponse.json({ data: [], meta: { org_id: "" } });
