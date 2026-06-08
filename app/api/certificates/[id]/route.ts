@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { generateCertificateSvg } from "@/lib/certificates/generate";
 
 // GET /api/certificates/[id]
-// Returns the SVG certificate for a verified action.
-// Members see only their own; org admins see their org's.
+// PUBLIC — anyone with the certificate URL can view/download the SVG.
+// Certificates are shareable proof documents; no auth required.
 
 export async function GET(
   _req: NextRequest,
@@ -14,20 +13,19 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const auth = await getAuthContext();
-  if (!auth) return unauthorized();
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_ID", message: "Invalid certificate ID." } },
+      { status: 400 },
+    );
+  }
 
   const supabase = createAdminClient();
 
+  // 1. Fetch certificate row
   const { data: cert } = await (supabase as any)
     .from("certificates")
-    .select(`
-      id, cert_number, action_type, tokens_earned, co2_kg_offset,
-      proof_hash, stellar_tx_hash, issued_at,
-      user_id, org_id,
-      users!certificates_user_id_fkey(display_name),
-      organizations!certificates_org_id_fkey(name)
-    `)
+    .select("id, cert_number, action_type, tokens_earned, co2_kg_offset, proof_hash, stellar_tx_hash, issued_at, user_id, org_id")
     .eq("id", id)
     .single() as {
       data: {
@@ -41,8 +39,6 @@ export async function GET(
         issued_at:       string;
         user_id:         string;
         org_id:          string;
-        users:           { display_name: string | null } | null;
-        organizations:   { name: string | null } | null;
       } | null;
     };
 
@@ -53,22 +49,24 @@ export async function GET(
     );
   }
 
-  // Authorization: member must own it OR be an admin/owner of the org
-  const isOwner = cert.user_id === auth.userId;
-  const isAdmin = auth.orgId === cert.org_id &&
-    (auth.role === "admin" || auth.role === "owner" || auth.role === "superadmin");
+  // 2. Fetch member display name (no FK join — avoids PGRST200 schema-cache errors)
+  const { data: user } = await (supabase as any)
+    .from("users")
+    .select("display_name")
+    .eq("id", cert.user_id)
+    .maybeSingle() as { data: { display_name: string | null } | null };
 
-  if (!isOwner && !isAdmin) {
-    return NextResponse.json(
-      { error: { code: "FORBIDDEN", message: "You do not have access to this certificate." } },
-      { status: 403 },
-    );
-  }
+  // 3. Fetch org name
+  const { data: org } = await (supabase as any)
+    .from("organizations")
+    .select("name")
+    .eq("id", cert.org_id)
+    .maybeSingle() as { data: { name: string | null } | null };
 
   const svg = generateCertificateSvg({
     certNumber:    cert.cert_number,
-    memberName:    cert.users?.display_name ?? "Member",
-    orgName:       cert.organizations?.name ?? "GreenToken Community",
+    memberName:    user?.display_name ?? "Member",
+    orgName:       org?.name ?? "GreenToken Community",
     actionType:    cert.action_type,
     tokensEarned:  cert.tokens_earned,
     co2KgOffset:   Number(cert.co2_kg_offset),
