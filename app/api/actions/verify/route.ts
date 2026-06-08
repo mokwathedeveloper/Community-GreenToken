@@ -100,32 +100,67 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Post-response work: Stellar commit + certificate issuance ────────────
-  // after() runs after the response is flushed — never adds to API latency.
-  // DB is always the source of truth; Stellar and certificate are supplemental.
   after(async () => {
     const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
     if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
       try {
-        const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
-        const { toStroops }    = await import("@/lib/utils");
+        const { submitAction, verifyAction } = await import("@/lib/stellar/contracts/action-registry");
+        const { toStroops } = await import("@/lib/utils");
+        const { Keypair }   = await import("@stellar/stellar-sdk");
 
+        // Fetch action fields needed for submitAction (in case blockchain_action_id is missing)
         const { data: actionFull } = await (supabase as any)
           .from("actions")
-          .select("blockchain_action_id")
+          .select("blockchain_action_id, action_type, description, proof_hash, org_id")
           .eq("id", actionId)
-          .single() as { data: { blockchain_action_id: number | null } | null };
+          .single() as {
+            data: {
+              blockchain_action_id: number | null;
+              action_type: string;
+              description: string;
+              proof_hash: string | null;
+              org_id: string;
+            } | null;
+          };
 
-        const onChainActionId = BigInt(actionFull?.blockchain_action_id ?? 0);
-        const stroops         = toStroops(tokensToMint);
-        const result          = await verifyAction(adminSecret, onChainActionId, stroops);
+        if (!actionFull) return;
 
-        await (supabase as any).from("actions")
-          .update({ stellar_tx_hash: result.txHash })
-          .eq("id", actionId);
-        // Keep certificate in sync — cert was issued before tx hash existed
-        await (supabase as any).from("certificates")
-          .update({ stellar_tx_hash: result.txHash })
-          .eq("action_id", actionId);
+        let blockchainActionId = actionFull.blockchain_action_id;
+
+        // If action was never submitted on-chain (submitAction failed during original submit),
+        // submit it now so we have a valid ID to pass to verifyAction.
+        if (blockchainActionId === null) {
+          const stellarUserAddress = Keypair.fromSecret(adminSecret).publicKey();
+          const orgHex    = actionFull.org_id.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
+          const proofHash = actionFull.proof_hash ?? "0".repeat(64);
+
+          const submitResult = await submitAction(
+            adminSecret,
+            stellarUserAddress,
+            actionFull.action_type as import("@/lib/stellar/types").ActionType,
+            actionFull.description,
+            proofHash,
+            orgHex,
+          );
+
+          blockchainActionId = submitResult.actionId !== undefined ? Number(submitResult.actionId) : null;
+          if (blockchainActionId !== null) {
+            await (supabase as any).from("actions")
+              .update({ blockchain_action_id: blockchainActionId })
+              .eq("id", actionId);
+          }
+        }
+
+        if (blockchainActionId !== null) {
+          const stroops = toStroops(tokensToMint);
+          const result  = await verifyAction(adminSecret, BigInt(blockchainActionId), stroops);
+          await (supabase as any).from("actions")
+            .update({ stellar_tx_hash: result.txHash })
+            .eq("id", actionId);
+          await (supabase as any).from("certificates")
+            .update({ stellar_tx_hash: result.txHash })
+            .eq("action_id", actionId);
+        }
       } catch (stellarErr) {
         console.error("[api/actions/verify] Stellar background call failed:", stellarErr);
       }
