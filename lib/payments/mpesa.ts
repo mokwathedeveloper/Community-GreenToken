@@ -66,11 +66,16 @@ export async function b2cPayment(params: {
   const token = await getAccessToken();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://community-greentoken.vercel.app";
 
+  // MPESA_B2C_COMMAND_ID defaults to "BusinessPayment".
+  // If Safaricom rejects with "Credit Party customer type" error (ResultCode 17),
+  // try "PromotionPayment" — it is more permissive in sandbox and for some shortcode types.
+  const commandId = process.env.MPESA_B2C_COMMAND_ID ?? "BusinessPayment";
+
   const payload = {
     OriginatorConversationID: `gtk-${params.withdrawalId.slice(0, 16)}-${Date.now()}`,
     InitiatorName:            process.env.MPESA_INITIATOR_NAME,
     SecurityCredential:       process.env.MPESA_INITIATOR_PASSWORD,
-    CommandID:                "BusinessPayment",
+    CommandID:                commandId,
     Amount:                   Math.round(params.amountKes),
     PartyA:                   process.env.MPESA_SHORTCODE,
     PartyB:                   formatPhone(params.phoneNumber),
