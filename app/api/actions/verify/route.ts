@@ -99,15 +99,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Stellar on-chain: fire after response so client isn't blocked ─────────
-  // Rule R-SC-09: minting ONLY through ActionRegistry cross-contract call.
-  // after() runs the callback after the response is flushed — Stellar latency
-  // never adds to API response time. DB is the source of truth either way.
-  const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
-  if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
-    after(async () => {
+  // ── Post-response work: Stellar commit + certificate issuance ────────────
+  // after() runs after the response is flushed — never adds to API latency.
+  // DB is always the source of truth; Stellar and certificate are supplemental.
+  after(async () => {
+    const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
+    if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
       try {
-          const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
+        const { verifyAction } = await import("@/lib/stellar/contracts/action-registry");
         const { toStroops }    = await import("@/lib/utils");
 
         const { data: actionFull } = await (supabase as any)
@@ -118,8 +117,7 @@ export async function POST(req: NextRequest) {
 
         const onChainActionId = BigInt(actionFull?.blockchain_action_id ?? 0);
         const stroops         = toStroops(tokensToMint);
-
-        const result = await verifyAction(adminSecret, onChainActionId, stroops);
+        const result          = await verifyAction(adminSecret, onChainActionId, stroops);
 
         await (supabase as any).from("actions")
           .update({ stellar_tx_hash: result.txHash })
@@ -127,8 +125,16 @@ export async function POST(req: NextRequest) {
       } catch (stellarErr) {
         console.error("[api/actions/verify] Stellar background call failed:", stellarErr);
       }
-    });
-  }
+    }
+
+    // Carbon credit certificate — always issued for every verified action
+    try {
+      const { issueCertificate } = await import("@/lib/certificates/issue");
+      await issueCertificate(actionId, supabase);
+    } catch (certErr) {
+      console.error("[api/actions/verify] Certificate issuance failed:", certErr);
+    }
+  });
 
   return NextResponse.json({
     data: {
