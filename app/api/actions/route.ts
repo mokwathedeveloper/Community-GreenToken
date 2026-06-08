@@ -32,7 +32,11 @@ export async function GET(req: NextRequest) {
   // Use action_type (added in migration 020) and submitted_at — not the legacy type/created_at columns
   let query = (supabase as any)
     .from("actions")
-    .select("id, action_type, description, status, tokens_awarded, submitted_at, stellar_tx_hash, user_id", { count: "exact" })
+    .select(
+      "id, action_type, description, status, tokens_awarded, submitted_at, stellar_tx_hash, user_id, " +
+      "exif_present, exif_lat, exif_lng, exif_captured_at, exif_device, is_cross_org_dup, qr_event_id",
+      { count: "exact" }
+    )
     .eq("org_id", auth.orgId)
     .order("submitted_at", { ascending: false })
     .range(offset, offset + limit - 1);

@@ -33,6 +33,7 @@ type QueueItem = {
   exif_device:      string | null;
   exif_present:     boolean;
   is_cross_org_dup: boolean;
+  qr_event_id:      string | null;
 };
 
 const STATUS_TABS: { key: ActionStatus | "all"; label: string }[] = [
@@ -310,9 +311,17 @@ export default function AdminActionsPage() {
                             </span>
                           )}
 
-                          {/* No EXIF at all */}
-                          {!a.exif_present && (
-                            <span title="No GPS or timestamp found in photo — may be a screenshot or edited image"
+                          {/* QR scan — proof is GPS-based, not photo EXIF */}
+                          {a.qr_event_id && (
+                            <span title="Verified via QR scan GPS proof — no photo EXIF required"
+                              className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                              <MShield className="w-2.5 h-2.5" aria-hidden /> QR Scan
+                            </span>
+                          )}
+
+                          {/* No EXIF — only flag for photo submissions, not QR scans */}
+                          {!a.exif_present && !a.qr_event_id && (
+                            <span title="No GPS or timestamp found in photo — review carefully"
                               className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
                               <MWarning className="w-2.5 h-2.5" aria-hidden /> No EXIF
                             </span>
