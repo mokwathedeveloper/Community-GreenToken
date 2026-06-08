@@ -26,7 +26,7 @@ const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { key: "tokens_100",      label: "Token Collector",  icon: "💰", desc: "Earned 100 GTK tokens" },
   { key: "tokens_500",      label: "GTK Legend",       icon: "🌟", desc: "Earned 500 GTK tokens" },
   { key: "tree_planter",    label: "Tree Planter",     icon: "🌳", desc: "Planted 3 trees" },
-  { key: "community_hero",  label: "Community Hero",   icon: "🦸", desc: "5 community cleanups" },
+  { key: "community_hero",  label: "Community Hero",   icon: "🦸", desc: "3 community cleanups" },
 ];
 
 function resolveEarned(
