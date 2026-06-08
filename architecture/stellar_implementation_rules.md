@@ -377,7 +377,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 npm install @stellar/stellar-sdk @stellar/freighter-api
 
 # Rust toolchain (for building contracts)
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 cargo install --locked stellar-cli --features opt
 
 # Build contracts

@@ -7,9 +7,44 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short,
-    Address, Env, String,
+    contract, contractevent, contractimpl, contracttype,
+    Address, BytesN, Env, String,
 };
+
+// ── Events ────────────────────────────────────────────────────────────────────
+#[contractevent]
+pub struct Mint {
+    pub to:     Address,
+    pub amount: i128,
+}
+
+#[contractevent]
+pub struct Burn {
+    pub from:   Address,
+    pub amount: i128,
+}
+
+#[contractevent]
+pub struct Transfer {
+    pub from:   Address,
+    pub to:     Address,
+    pub amount: i128,
+}
+
+#[contractevent]
+pub struct Approve {
+    pub from:              Address,
+    pub spender:           Address,
+    pub amount:            i128,
+    pub expiration_ledger: u32,
+}
+
+#[contractevent]
+pub struct BurnFrom {
+    pub spender: Address,
+    pub from:    Address,
+    pub amount:  i128,
+}
 
 // ── Storage Keys ─────────────────────────────────────────────────────────────
 #[contracttype]
@@ -105,10 +140,7 @@ impl GreenToken {
         let bal = Self::balance(env.clone(), to.clone());
         env.storage().persistent().set(&DataKey::Balance(to.clone()), &(bal + amount));
 
-        env.events().publish(
-            (symbol_short!("mint"), symbol_short!("gtok")),
-            (admin, to, amount),
-        );
+        Mint { to: to.clone(), amount }.publish(&env);
     }
 
     /// Burn tokens from `from`. Token holder only.
@@ -121,10 +153,7 @@ impl GreenToken {
 
         env.storage().persistent().set(&DataKey::Balance(from.clone()), &(bal - amount));
 
-        env.events().publish(
-            (symbol_short!("burn"), symbol_short!("gtok")),
-            (from, amount),
-        );
+        Burn { from: from.clone(), amount }.publish(&env);
     }
 
     /// Transfer tokens between addresses.
@@ -139,10 +168,7 @@ impl GreenToken {
         let to_bal = Self::balance(env.clone(), to.clone());
         env.storage().persistent().set(&DataKey::Balance(to.clone()), &(to_bal + amount));
 
-        env.events().publish(
-            (symbol_short!("transfer"), symbol_short!("gtok")),
-            (from, to, amount),
-        );
+        Transfer { from: from.clone(), to: to.clone(), amount }.publish(&env);
     }
 
     /// Approve spender to spend `amount` from `from`.
@@ -174,10 +200,7 @@ impl GreenToken {
             }
         }
 
-        env.events().publish(
-            (symbol_short!("approve"), symbol_short!("gtok")),
-            (from, spender, amount, expiration_ledger),
-        );
+        Approve { from: from.clone(), spender: spender.clone(), amount, expiration_ledger }.publish(&env);
     }
 
     /// Burn tokens from `from` using an approved allowance. Required by SEP-41.
@@ -204,10 +227,7 @@ impl GreenToken {
         assert!(bal >= amount, "insufficient balance");
         env.storage().persistent().set(&DataKey::Balance(from.clone()), &(bal - amount));
 
-        env.events().publish(
-            (symbol_short!("burn"), symbol_short!("gtok")),
-            (spender, from, amount),
-        );
+        BurnFrom { spender: spender.clone(), from: from.clone(), amount }.publish(&env);
     }
 
     /// Transfer on behalf of `from` using an approved allowance.
@@ -243,6 +263,17 @@ impl GreenToken {
         let stored: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         assert!(admin == stored, "not admin");
         env.storage().instance().set(&DataKey::Admin, &new_admin);
+    }
+
+    /// Upgrade the contract WASM in-place. Admin only.
+    /// All storage (balances, allowances, config) is preserved across upgrades.
+    /// Upload the new WASM first with `stellar contract upload`, pass the
+    /// returned hash here to atomically swap the contract code.
+    pub fn upgrade(env: Env, admin: Address, new_wasm_hash: BytesN<32>) {
+        admin.require_auth();
+        let stored: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        assert!(admin == stored, "not admin");
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
 

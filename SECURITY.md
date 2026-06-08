@@ -5,7 +5,7 @@
 | Component | Version | Supported |
 |---|---|---|
 | Frontend (Next.js) | 16.x | ✅ |
-| Smart Contracts (Soroban/Rust) | soroban-sdk 22 | ✅ |
+| Smart Contracts (Soroban/Rust) | soroban-sdk 26.0.1 | ✅ |
 | Stellar JS SDK | 13.1.0 | ✅ |
 | Supabase Auth Helpers | Latest | ✅ |
 | Stripe | 17.x | ✅ |

@@ -8,9 +8,28 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short,
+    contract, contractevent, contractimpl, contracttype, symbol_short,
     Address, BytesN, Env, String, Vec,
 };
+
+// ── Events ────────────────────────────────────────────────────────────────────
+#[contractevent]
+pub struct ActionSubmitted {
+    pub action_id: u64,
+    pub user:      Address,
+    pub timestamp: u64,
+}
+
+#[contractevent]
+pub struct ActionVerified {
+    pub action_id: u64,
+    pub tokens:    i128,
+}
+
+#[contractevent]
+pub struct ActionRejected {
+    pub action_id: u64,
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 #[contracttype]
@@ -166,10 +185,7 @@ impl ActionRegistry {
         user_actions.push_back(action_id);
         env.storage().persistent().set(&DataKey::UserActions(user.clone()), &user_actions);
 
-        env.events().publish(
-            (symbol_short!("submitted"), symbol_short!("action")),
-            (action_id, user, env.ledger().timestamp()),
-        );
+        ActionSubmitted { action_id, user: user.clone(), timestamp: env.ledger().timestamp() }.publish(&env);
 
         action_id
     }
@@ -210,10 +226,7 @@ impl ActionRegistry {
             ],
         );
 
-        env.events().publish(
-            (symbol_short!("verified"), symbol_short!("action")),
-            (action_id, tokens),
-        );
+        ActionVerified { action_id, tokens }.publish(&env);
     }
 
     /// Admin rejects an action.
@@ -231,10 +244,7 @@ impl ActionRegistry {
         action.status = ActionStatus::Rejected;
         env.storage().persistent().set(&DataKey::Action(action_id), &action);
 
-        env.events().publish(
-            (symbol_short!("rejected"), symbol_short!("action")),
-            (action_id,),
-        );
+        ActionRejected { action_id }.publish(&env);
     }
 
     /// Admin sets custom token reward for an action type.
@@ -243,6 +253,15 @@ impl ActionRegistry {
         let stored_admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         assert!(admin == stored_admin, "not admin");
         env.storage().instance().set(&DataKey::TokenReward(action_type), &tokens);
+    }
+
+    /// Upgrade the contract WASM in-place. Admin only.
+    /// All storage (actions, evidence hashes, reward config) is preserved.
+    pub fn upgrade(env: Env, admin: Address, new_wasm_hash: BytesN<32>) {
+        admin.require_auth();
+        let stored_admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        assert!(admin == stored_admin, "not admin");
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
 

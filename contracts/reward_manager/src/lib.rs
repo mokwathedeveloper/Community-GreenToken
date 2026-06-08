@@ -8,9 +8,24 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short,
+    contract, contractevent, contractimpl, contracttype, symbol_short,
     Address, BytesN, Env, String, Vec,
 };
+
+// ── Events ────────────────────────────────────────────────────────────────────
+#[contractevent]
+pub struct RewardAdded {
+    pub reward_id:   u32,
+    pub token_cost:  i128,
+}
+
+#[contractevent]
+pub struct RewardRedeemed {
+    pub redemption_id: u64,
+    pub user:          Address,
+    pub reward_id:     u32,
+    pub tokens_burned: i128,
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 #[contracttype]
@@ -133,10 +148,7 @@ impl RewardManager {
         let count: u32 = env.storage().instance().get(&DataKey::RewardCount).unwrap_or(0);
         env.storage().instance().set(&DataKey::RewardCount, &count.max(reward_id));
 
-        env.events().publish(
-            (symbol_short!("added"), symbol_short!("reward")),
-            (reward_id, token_cost),
-        );
+        RewardAdded { reward_id, token_cost }.publish(&env);
     }
 
     /// User redeems tokens for a reward.
@@ -198,10 +210,12 @@ impl RewardManager {
         user_reds.push_back(redemption_id);
         env.storage().persistent().set(&DataKey::UserRedemptions(user.clone()), &user_reds);
 
-        env.events().publish(
-            (symbol_short!("redeemed"), symbol_short!("reward")),
-            (redemption_id, user, reward_id, reward.token_cost),
-        );
+        RewardRedeemed {
+            redemption_id,
+            user: user.clone(),
+            reward_id,
+            tokens_burned: reward.token_cost,
+        }.publish(&env);
 
         redemption_id
     }
@@ -219,6 +233,15 @@ impl RewardManager {
         reward.token_cost = token_cost;
         reward.is_active  = is_active;
         env.storage().persistent().set(&DataKey::Reward(reward_id), &reward);
+    }
+
+    /// Upgrade the contract WASM in-place. Admin only.
+    /// All storage (rewards, redemptions, total burned) is preserved.
+    pub fn upgrade(env: Env, admin: Address, new_wasm_hash: BytesN<32>) {
+        admin.require_auth();
+        let stored_admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        assert!(admin == stored_admin, "not admin");
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
 

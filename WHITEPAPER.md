@@ -122,8 +122,8 @@ User sees new GTK balance on /dashboard
 
 ### 4.1 🌿 GreenToken.rs — SEP-41 Fungible Token
 
-**Contract ID:** `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH`
-[View on Stellar Expert ↗](https://stellar.expert/explorer/testnet/contract/CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH)
+**Contract ID:** `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK`
+[View on Stellar Expert ↗](https://stellar.expert/explorer/testnet/contract/CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK)
 
 ```rust
 pub fn mint(env: Env, to: Address, amount: i128);        // admin only
@@ -143,8 +143,8 @@ Key design decisions:
 
 ### 4.2 📋 ActionRegistry.rs — Eco-Action Verification
 
-**Contract ID:** `CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO`
-[View on Stellar Expert ↗](https://stellar.expert/explorer/testnet/contract/CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO)
+**Contract ID:** `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS`
+[View on Stellar Expert ↗](https://stellar.expert/explorer/testnet/contract/CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS)
 
 ```rust
 pub fn register_action(
@@ -165,8 +165,8 @@ pub fn verify_action(
 
 ### 4.3 🎁 RewardManager.rs — Token Redemption
 
-**Contract ID:** `CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR`
-[View on Stellar Expert ↗](https://stellar.expert/explorer/testnet/contract/CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR)
+**Contract ID:** `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE`
+[View on Stellar Expert ↗](https://stellar.expert/explorer/testnet/contract/CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE)
 
 ```rust
 pub fn create_reward(env: Env, org_id: u64, name: String, gtk_cost: i128, stock: u32) -> u64;

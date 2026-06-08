@@ -31,7 +31,7 @@ The token is deflationary by design — redemptions permanently destroy GTK — 
 | **Burn Mechanism** | Every redemption destroys GTK on-chain |
 | **Transaction Fee** | $0.000001 per transaction (Stellar) |
 | **Finality** | ~5 seconds |
-| **Contract** | `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH` |
+| **Contract** | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` |
 
 ---
 

@@ -33,21 +33,21 @@ Layer 1 — Blockchain        Stellar Soroban · 3 Rust contracts · SEP-41 · F
 
 | Contract | Language | SDK Version | Contract ID (Testnet) |
 |---|---|---|---|
-| GreenToken (GTK) | Rust | soroban-sdk 22 | `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH` |
-| ActionRegistry | Rust | soroban-sdk 22 | `CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO` |
-| RewardManager | Rust | soroban-sdk 22 | `CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR` |
+| GreenToken (GTK) | Rust | soroban-sdk 26.0.1 | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` |
+| ActionRegistry | Rust | soroban-sdk 26.0.1 | `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS` |
+| RewardManager | Rust | soroban-sdk 26.0.1 | `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE` |
 
 **Toolchain:**
 ```bash
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 cargo install --locked stellar-cli --features opt
 ```
 
 **Build:**
 ```bash
 cd contracts
-stellar contract build
-# Output: target/wasm32-unknown-unknown/release/*.wasm
+cargo build --release --target wasm32v1-none
+# Output: target/wasm32v1-none/release/*.wasm
 ```
 
 ### Stellar JavaScript SDK
@@ -284,11 +284,15 @@ npx tsc --noEmit      # Zero-error requirement
 # Linting
 npm run lint          # ESLint
 
-# Smart contracts
+# Smart contracts (build)
 cd contracts
-stellar contract build
-stellar contract deploy --network testnet --source $STELLAR_ADMIN_SECRET_KEY \
-  --wasm target/wasm32-unknown-unknown/release/green_token.wasm
+cargo build --release --target wasm32v1-none
+
+# Deploy: upload WASM first, then deploy with hash
+stellar contract upload --wasm target/wasm32v1-none/release/green_token.wasm \
+  --network testnet --source admin
+stellar contract deploy --wasm-hash <HASH> --network testnet --source admin
+# Full deployment guide: architecture/stellar_blockchain_architecture.md
 ```
 
 ---

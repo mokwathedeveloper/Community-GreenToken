@@ -6,7 +6,26 @@
 **Wallet:** Freighter Browser Extension  
 **Testnet RPC:** `https://soroban-testnet.stellar.org`  
 **Mainnet RPC:** `https://soroban-mainnet.stellar.org`  
-**Horizon Testnet:** `https://horizon-testnet.stellar.org`
+**Horizon Testnet:** `https://horizon-testnet.stellar.org`  
+**Build toolchain:** Rust 1.84+, Soroban SDK 26.0.1, target `wasm32v1-none`
+
+---
+
+## Deployed Contract IDs (Testnet — updated 2026-06-08)
+
+| Contract | Address |
+|---|---|
+| GreenToken | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` |
+| ActionRegistry | `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS` |
+| RewardManager | `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE` |
+| Admin Public Key | `GBUJUY43L6EVCKLPRNZUPUE7RO7MTFFTRUDXURJPE2SRE4K6X6KAT6HZ` |
+
+WASM hashes uploaded this deployment:
+- GreenToken: `49f1aef40e6cc9ed009acfcc6b60b6b0a228cf53ae18e56e306cc20bb4c491fc`
+- ActionRegistry: `52fbc8dae43ebd59f07521ab7da17fd38a8dba3d3e1d5bf9c671f800900fbbea`
+- RewardManager: `9bfc2ed31b46aa684d54e70bfe198c6f3324e2adfefa0ff33cc04ff84522f88d`
+
+All 3 contracts include `upgrade(admin, new_wasm_hash)` for future in-place WASM upgrades.
 
 ---
 
@@ -112,7 +131,8 @@ Stellar is purpose-built for real-world asset tokenization and community incenti
 | `decimals` | — | `u32` | Anyone |
 | `name` | — | `String` | Anyone |
 | `symbol` | — | `String` | Anyone |
-| `set_admin` | `new_admin: Address` | — | Current admin |
+| `set_admin` | `admin: Address, new_admin: Address` | — | Current admin |
+| `upgrade` | `admin: Address, new_wasm_hash: BytesN<32>` | — | Admin only |
 
 **Storage Keys (DataKey enum):**
 ```
@@ -122,11 +142,17 @@ Allowance(AllowanceDataKey { from, spender })
 Metadata (name, symbol, decimal)
 ```
 
-**Events to Emit:**
-- `mint(admin, to, amount)`
-- `burn(from, amount)`
-- `transfer(from, to, amount)`
-- `approve(from, spender, amount, expiration_ledger)`
+**Events (type-safe `#[contractevent]` structs, SDK 26+):**
+
+| Struct | Fields (data) | Auto topic |
+|---|---|---|
+| `Mint` | `to: Address, amount: i128` | `"mint"` |
+| `Burn` | `from: Address, amount: i128` | `"burn"` |
+| `Transfer` | `from: Address, to: Address, amount: i128` | `"transfer"` |
+| `Approve` | `from: Address, spender: Address, amount: i128, expiration_ledger: u32` | `"approve"` |
+| `BurnFrom` | `spender: Address, from: Address, amount: i128` | `"burn_from"` |
+
+**`approve()` TTL fix:** Uses `extend_ttl()` to align Soroban temporary storage TTL with `expiration_ledger`, preventing allowance entries from expiring before the logical deadline.
 
 ---
 
@@ -173,9 +199,9 @@ org_id:         BytesN<32>  ← for SaaS multi-tenancy
 | `get_user_actions` | `user: Address` | `Vec<u64>` | Anyone |
 | `get_pending_count` | — | `u64` | Anyone |
 | `action_count` | — | `u64` | Anyone |
-| `set_admin` | `new_admin: Address` | — | Current admin |
-| `set_token_rewards` | `action_type: ActionType, tokens: i128` | — | Admin only |
-| `get_token_rewards` | `action_type: ActionType` | `i128` | Anyone |
+| `set_token_reward` | `admin: Address, action_type: ActionType, tokens: i128` | — | Admin only |
+| `get_token_reward` | `action_type: ActionType` | `i128` | Anyone |
+| `upgrade` | `admin: Address, new_wasm_hash: BytesN<32>` | — | Admin only |
 
 **Default Token Rewards Per Action:**
 ```
@@ -196,15 +222,19 @@ BeachCleanup       → 30 GTK
 Admin
 TokenContract
 ActionCount
-Action(u64)             ← action by ID
-UserActions(Address)    ← Vec<u64> of action IDs per user
-TokenRewards(ActionType)
+Action(u64)               ← action by ID
+UserActions(Address)      ← Vec<u64> of action IDs per user
+EvidenceUsed(BytesN<32>)  ← duplicate prevention
+TokenReward(ActionType)
 ```
 
-**Events to Emit:**
-- `action_submitted(action_id, user, action_type, timestamp)`
-- `action_verified(action_id, admin, tokens_minted)`
-- `action_rejected(action_id, admin, reason)`
+**Events (type-safe `#[contractevent]` structs, SDK 26+):**
+
+| Struct | Fields | Auto topic |
+|---|---|---|
+| `ActionSubmitted` | `action_id: u64, user: Address, timestamp: u64` | `"action_submitted"` |
+| `ActionVerified` | `action_id: u64, tokens: i128` | `"action_verified"` |
+| `ActionRejected` | `action_id: u64` | `"action_rejected"` |
 
 ---
 
@@ -248,6 +278,7 @@ tx_reference:   String    ← on-chain tx hash reference
 | `get_redemption` | `redemption_id: u64` | `Redemption` | Anyone |
 | `redemption_count` | — | `u64` | Anyone |
 | `total_burned` | — | `i128` | Anyone |
+| `upgrade` | `admin: Address, new_wasm_hash: BytesN<32>` | — | Admin only |
 
 **Storage Keys:**
 ```
@@ -261,9 +292,12 @@ Redemption(u64)
 TotalBurned
 ```
 
-**Events to Emit:**
-- `reward_added(reward_id, name, token_cost, admin)`
-- `reward_redeemed(redemption_id, user, reward_id, tokens_burned)`
+**Events (type-safe `#[contractevent]` structs, SDK 26+):**
+
+| Struct | Fields | Auto topic |
+|---|---|---|
+| `RewardAdded` | `reward_id: u32, token_cost: i128` | `"reward_added"` |
+| `RewardRedeemed` | `redemption_id: u64, user: Address, reward_id: u32, tokens_burned: i128` | `"reward_redeemed"` |
 
 ---
 
@@ -408,31 +442,73 @@ Every Stellar operation requires a small XLM fee:
 
 ---
 
-## Contract Deployment Order
+## Contract Deployment (Stellar CLI — exact commands)
 
+### Prerequisites
+```bash
+# Rust 1.84+ with wasm32v1-none target
+rustup target add wasm32v1-none
+
+# Stellar CLI 26+
+stellar keys add admin --secret-key <STELLAR_ADMIN_SECRET_KEY>
 ```
-1. Deploy GreenToken contract
-   └── Initialize: admin=PLATFORM_PUBLIC_KEY, decimal=7, name="GreenToken", symbol="GTK"
 
-2. Deploy ActionRegistry contract
-   └── Initialize: admin=PLATFORM_PUBLIC_KEY, token_contract=GREEN_TOKEN_CONTRACT_ID
+### Build
+```bash
+cd contracts
+cargo build --release --target wasm32v1-none
+```
 
-3. Deploy RewardManager contract
-   └── Initialize: admin=PLATFORM_PUBLIC_KEY, token_contract=GREEN_TOKEN_CONTRACT_ID
+### Upload WASMs (get hash for each)
+```bash
+stellar contract upload --wasm target/wasm32v1-none/release/green_token.wasm \
+  --network testnet --source admin
 
-4. Configure ActionRegistry:
-   └── Set default token rewards for each ActionType
+stellar contract upload --wasm target/wasm32v1-none/release/action_registry.wasm \
+  --network testnet --source admin
 
-5. Add initial rewards to RewardManager:
-   └── Tree Planting Certificate (50 GTK)
-   └── Recycling Kit (100 GTK)
-   └── Workshop Entry (75 GTK)
-   └── Community Badge NFT reference (200 GTK)
+stellar contract upload --wasm target/wasm32v1-none/release/reward_manager.wasm \
+  --network testnet --source admin
+```
 
-6. Store all 3 Contract IDs in .env.local:
-   GREEN_TOKEN_CONTRACT_ID=C...
-   ACTION_REGISTRY_CONTRACT_ID=C...
-   REWARD_MANAGER_CONTRACT_ID=C...
+### Deploy (each returns a contract ID)
+```bash
+stellar contract deploy --wasm-hash <GREEN_TOKEN_HASH>   --network testnet --source admin
+stellar contract deploy --wasm-hash <ACTION_REGISTRY_HASH> --network testnet --source admin
+stellar contract deploy --wasm-hash <REWARD_MANAGER_HASH>  --network testnet --source admin
+```
+
+### Initialize
+```bash
+# 1. GreenToken
+stellar contract invoke --id <GREEN_TOKEN_ID> --network testnet --source admin \
+  -- initialize \
+  --admin <ADMIN_PUBLIC_KEY> --decimal 7 --name "GreenToken" --symbol "GTK"
+
+# 2. ActionRegistry
+stellar contract invoke --id <ACTION_REGISTRY_ID> --network testnet --source admin \
+  -- initialize \
+  --admin <ADMIN_PUBLIC_KEY> --token_contract <GREEN_TOKEN_ID>
+
+# 3. RewardManager
+stellar contract invoke --id <REWARD_MANAGER_ID> --network testnet --source admin \
+  -- initialize \
+  --admin <ADMIN_PUBLIC_KEY> --token_contract <GREEN_TOKEN_ID>
+```
+
+### Update .env.local
+```
+NEXT_PUBLIC_GREEN_TOKEN_CONTRACT_ID=<GREEN_TOKEN_ID>
+NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID=<ACTION_REGISTRY_ID>
+NEXT_PUBLIC_REWARD_MANAGER_CONTRACT_ID=<REWARD_MANAGER_ID>
+```
+
+### Future upgrades (in-place WASM swap, no re-deploy needed)
+```bash
+# Upload new WASM, then call upgrade() — storage is preserved
+NEW_HASH=$(stellar contract upload --wasm target/.../green_token.wasm --network testnet --source admin)
+stellar contract invoke --id <GREEN_TOKEN_ID> --network testnet --source admin \
+  -- upgrade --admin <ADMIN_PUBLIC_KEY> --new_wasm_hash "$NEW_HASH"
 ```
 
 ---

@@ -171,9 +171,35 @@ mint(adminSecret: string, toAddress: string, amount: bigint): Promise<TxResult>
 burn(adminSecret: string, fromAddress: string, amount: bigint): Promise<TxResult>
 // Calls: GreenToken.burn(from, amount)
 
+// Allowance functions (SEP-41):
+buildApproveTx(
+  ownerAddress: string,
+  spenderAddress: string,
+  amount: bigint,
+  expirationLedger: number
+): Promise<string>
+// Returns: unsigned XDR — owner signs with Freighter
+
+getAllowance(ownerAddress: string, spenderAddress: string): Promise<bigint>
+// Calls: GreenToken.allowance(from, spender)
+
+buildBurnFromTx(
+  spenderAddress: string,
+  ownerAddress: string,
+  amount: bigint
+): Promise<string>
+// Returns: unsigned XDR for spender to sign
+// Calls: GreenToken.burn_from(spender, from, amount)
+// Requires prior approve() from owner
+
 // User functions (uses user-signed XDR):
 buildTransferTx(fromAddress: string, toAddress: string, amount: bigint): Promise<string>
 // Returns: unsigned XDR — user must sign with Freighter
+
+// Admin upgrade (server-side):
+upgrade(adminSecret: string, newWasmHash: string): Promise<TxResult>
+// Calls: GreenToken.upgrade(admin, new_wasm_hash)
+// newWasmHash: 64-char hex string of the uploaded WASM hash
 ```
 
 ---
@@ -542,6 +568,60 @@ export const ACTION_TOKEN_REWARDS: Record<ActionType, number> = {
   [ActionType.BeachCleanup]:       30,
 };
 ```
+
+---
+
+---
+
+### GET /api/stats/public
+
+**Purpose:** Unauthenticated aggregate stats for landing and impact pages. CDN-cacheable.  
+**Auth:** None  
+**Cache:** `Cache-Control: public, s-maxage=300, stale-while-revalidate=600` (5-min ISR via `export const revalidate = 300`)  
+**Returns:**
+```json
+{
+  "data": {
+    "verifiedActions":  4218,
+    "tokensMinted":     82450,
+    "activeMembers":    312,
+    "co2KgTotal":       1847.5,
+    "tokensDonated":    3200,
+    "weeklyChart": [
+      { "label": "Apr 21", "value": 38 },
+      { "label": "Apr 28", "value": 52 },
+      "... 8 buckets total, oldest→newest"
+    ]
+  }
+}
+```
+**Notes:**
+- `co2KgTotal` — sum from `certificates.co2_kg_offset`; if zero, estimates from action types × CO2 per action
+- `weeklyChart` — 8 weekly buckets, each spanning 7 days, counted from verified `actions` table
+- Uses `supabase.createAdminClient()` to bypass RLS for aggregate queries
+
+---
+
+### GET /api/impact/me
+
+**Purpose:** Personal CO₂ offset + action streak for the authenticated user.  
+**Auth:** Required (Supabase JWT)  
+**Returns:**
+```json
+{
+  "data": {
+    "co2KgTotal":     24.3,
+    "currentStreak":  7,
+    "longestStreak":  14,
+    "totalActions":   31,
+    "lastActionDate": "2026-06-07"
+  }
+}
+```
+**Streak logic:**
+- Deduplicates verified action dates to unique UTC calendar days (`YYYY-MM-DD`)
+- Streak is "active" only if the most recent date is today or yesterday
+- Walks dates in descending order; breaks on first non-consecutive day
 
 ---
 

@@ -40,7 +40,43 @@ This deployment plan ensures a **secure, automated, and scalable deployment proc
 
 ---
 
-## SaaS Extension — Multi-Tenant Deployment
+## 5. Stellar Smart Contract Deployment
+
+> **Full commands with exact flags:** `architecture/stellar_blockchain_architecture.md` → "Contract Deployment" section
+
+### Toolchain requirements
+- Rust 1.84+
+- Soroban SDK 26.0.1
+- Build target: `wasm32v1-none` (NOT `wasm32-unknown-unknown`)
+- Stellar CLI 26+
+
+```bash
+# One-time: add Rust target
+rustup target add wasm32v1-none
+
+# Build all 3 contracts
+cd contracts && cargo build --release --target wasm32v1-none
+```
+
+### Testnet deployment (current — 2026-06-08)
+
+| Contract | Address |
+|---|---|
+| GreenToken | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` |
+| ActionRegistry | `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS` |
+| RewardManager | `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE` |
+
+### Future upgrade path (in-place WASM swap)
+All 3 contracts implement `upgrade(admin, new_wasm_hash)`. No re-deploy needed — all storage (balances, actions, redemptions) is preserved:
+```bash
+NEW_HASH=$(stellar contract upload --wasm target/.../green_token.wasm --network testnet --source admin)
+stellar contract invoke --id <CONTRACT_ID> --network testnet --source admin \
+  -- upgrade --admin <ADMIN_PUBLIC_KEY> --new_wasm_hash "$NEW_HASH"
+```
+
+---
+
+## 6. SaaS Extension — Multi-Tenant Deployment
 
 > **Full SaaS deployment guide:** `saas/saas_deployment_plan.md`
 
@@ -54,10 +90,9 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 STRIPE_STARTER_PRICE_ID=price_xxx
 STRIPE_PRO_PRICE_ID=price_xxx
 
-# Smart Contract Factory
-FACTORY_CONTRACT_ADDRESS=0xxxx
-SHARED_CONTRACT_ADDRESS=0xxxx
-PLATFORM_WALLET_PRIVATE_KEY=0xxxx
+# Stellar Admin (server-side only)
+STELLAR_ADMIN_PUBLIC_KEY=G...
+STELLAR_ADMIN_SECRET_KEY=S...
 
 # App domain (for subdomain routing)
 NEXT_PUBLIC_APP_DOMAIN=greentoken.app

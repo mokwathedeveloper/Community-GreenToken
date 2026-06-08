@@ -89,9 +89,9 @@ Every minted token is traceable to a verified real-world action. Every redemptio
 
 | Contract | Role | Contract ID | Explorer |
 |---|---|---|---|
-| **GreenToken (GTK)** | SEP-41 token — mint, burn, transfer | `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH` | [View ↗](https://stellar.expert/explorer/testnet/contract/CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH) |
-| **ActionRegistry** | Records eco-actions with SHA-256 proof | `CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO` | [View ↗](https://stellar.expert/explorer/testnet/contract/CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO) |
-| **RewardManager** | Burns GTK on redemption, manages reward catalog | `CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR` | [View ↗](https://stellar.expert/explorer/testnet/contract/CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR) |
+| **GreenToken (GTK)** | SEP-41 token — mint, burn, transfer | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` | [View ↗](https://stellar.expert/explorer/testnet/contract/CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK) |
+| **ActionRegistry** | Records eco-actions with SHA-256 proof | `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS` | [View ↗](https://stellar.expert/explorer/testnet/contract/CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS) |
+| **RewardManager** | Burns GTK on redemption, manages reward catalog | `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE` | [View ↗](https://stellar.expert/explorer/testnet/contract/CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE) |
 
 **Admin Wallet (Testnet):** `GBUJUY43L6EVCKLPRNZUPUE7RO7MTFFTRUDXURJPE2SRE4K6X6KAT6HZ`
 
@@ -232,7 +232,7 @@ flowchart TD
 ### Blockchain Layer
 | Component | Technology | Version |
 |---|---|---|
-| Smart Contracts | Rust (Soroban SDK) | soroban-sdk 22 |
+| Smart Contracts | Rust (Soroban SDK) | soroban-sdk 26.0.1 |
 | Token Standard | SEP-41 | Latest |
 | Wallet Integration | Freighter API | 3.0.0 |
 | Stellar JS SDK | @stellar/stellar-sdk | 13.1.0 |
@@ -393,7 +393,7 @@ Community-GreenToken/
 node --version  # must be >= 18
 
 # Rust + Soroban CLI
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 cargo install --locked stellar-cli --features opt
 
 # Freighter browser extension → https://freighter.app
@@ -433,7 +433,7 @@ stellar contract build
 
 # Deploy to testnet (requires funded admin account)
 stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/green_token.wasm \
+  --wasm target/wasm32v1-none/release/green_token.wasm \
   --network testnet \
   --source STELLAR_ADMIN_SECRET_KEY
 

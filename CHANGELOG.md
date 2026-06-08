@@ -5,6 +5,58 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## v2.3.0 — 2026-06-08 · Blockchain Redeployment · #[contractevent] Migration · Upgrade Path
+
+### Changed
+- **All 3 Soroban contracts:** Migrated all `env.events().publish()` calls to type-safe `#[contractevent]` macro structs (Soroban SDK 26 — zero deprecation warnings)
+  - GreenToken: `Mint`, `Burn`, `Transfer`, `Approve`, `BurnFrom` event structs
+  - ActionRegistry: `ActionSubmitted`, `ActionVerified`, `ActionRejected` event structs
+  - RewardManager: `RewardAdded`, `RewardRedeemed` event structs
+- **Build target:** Upgraded from `wasm32-unknown-unknown` to `wasm32v1-none` (required by Soroban SDK 26 + Rust 1.84+)
+- **All 3 contracts:** Added `upgrade(admin, new_wasm_hash: BytesN<32>)` function — enables in-place WASM upgrade without re-deploy, preserving all on-chain storage
+
+### Added
+- `app/api/stats/public/route.ts` — unauthenticated aggregate stats endpoint (5-min ISR cache) used by landing page StatsRow and Impact page
+- `app/api/impact/me/route.ts` — personal CO₂ offset + action streak (consecutive UTC calendar days) for authenticated dashboard users
+- `components/dashboard/ImpactSummary.tsx` — CO₂ offset widget with real-world equivalencies (car km, tree months) and streak flame indicator
+- Dashboard `app/dashboard/page.tsx`: ImpactSummary widget added to left column
+
+### Fixed
+- **Landing StatsRow:** All 4 stats now from live `/api/stats/public` — was hardcoded fake numbers
+- **Impact page:** All 5 stat blocks and the weekly chart now use real API data — was all hardcoded
+- **`approve()` in GreenToken:** Added `extend_ttl()` to align Soroban temporary storage TTL with `expiration_ledger` — prevents allowance entries expiring before their deadline
+- **GreenToken:** Added `burn_from(spender, from, amount)` — SEP-41 required function was missing
+
+### Deployed (fresh testnet deployment — 2026-06-08)
+
+| Contract | New Contract ID | WASM Hash |
+|---|---|---|
+| GreenToken (GTK) | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` | `49f1aef4...` |
+| ActionRegistry | `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS` | `52fbc8da...` |
+| RewardManager | `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE` | `9bfc2ed3...` |
+
+All 3 initialized and smoke-tested on Stellar Testnet.
+
+### Documentation
+- `architecture/stellar_blockchain_architecture.md` — deployed IDs, WASM hashes, `upgrade()` in function tables, `#[contractevent]` event tables, `extend_ttl` note, exact Stellar CLI commands
+- `architecture/blockchain_implementation_md.md` — full rewrite; removed all Solidity/Ethereum references; corrected to App Router `app/api/` paths
+- `architecture/deployment_plan.md` — Stellar CLI section with `wasm32v1-none` build target and upgrade path
+- `architecture/stellar_sdk_api_spec.md` — `burn_from`, `approve`, `buildBurnFromTx`, `upgrade`, `/api/stats/public`, `/api/impact/me` all documented
+- `README.md`, `TECH_STACK.md`, `TOKENOMICS.md`, `DEMO_GUIDE.md`, `WHITEPAPER.md`, `SECURITY.md` — contract IDs and SDK version updated to reflect v2.3 deployment
+
+---
+
+## v2.2.0 — 2026-06-08 · Dashboard Real Data + Analytics Fixes
+
+### Fixed
+- **Dashboard:** Replaced fake chart data with real API data (action counts, member stats)
+- **Audit page:** Admin user names, pagination, modal icon, donation data — 4 bugs fixed
+- **Analytics period selector:** Fixed period filter, removed hardcoded fake chart data
+- **Leaderboard page:** Real API data for podium and full table
+- **Admin settings/billing pages:** Type and display corrections
+
+---
+
 ## v2.0.0 — 2026-06-07 · Full Documentation Suite + Auth & Nav Fixes
 
 ### Added
@@ -193,9 +245,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Public: `/how-it-works`, `/impact`, `/about`, `/pricing`, `/terms`, `/privacy`
 
 **Blockchain (Stellar Soroban)**
-- `GreenToken.rs` — SEP-41 token deployed: `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH`
-- `ActionRegistry.rs` — deployed: `CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO`
-- `RewardManager.rs` — deployed: `CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR`
+- `GreenToken.rs` — SEP-41 token deployed: `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK`
+- `ActionRegistry.rs` — deployed: `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS`
+- `RewardManager.rs` — deployed: `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE`
 - Freighter wallet integration (`@stellar/freighter-api`)
 
 **Backend (Next.js API Routes)**
@@ -218,12 +270,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Deployed Contracts — Live on Stellar Testnet
 
-All 3 contracts deployed at v1.0.0. Addresses unchanged.
+Redeployed at v2.3.0 (2026-06-08) — new contract IDs below. All 3 contracts now include `upgrade()`, `burn_from`, type-safe events, and zero deprecation warnings.
 
 | Contract | Contract ID | Explorer |
 |---|---|---|
-| GreenToken (GTK) | `CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH` | [View ↗](https://stellar.expert/explorer/testnet/contract/CCWB632FUW5RVXEZ424JI6HPC723FOVGX5Z2Z6DF4XZ7CEMLQB2U2JVH) |
-| ActionRegistry | `CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO` | [View ↗](https://stellar.expert/explorer/testnet/contract/CBN5MHWIRHT4UKLAVVHOJC3MP5PNK7S2PCNWF4GOSEWVMUCORJOR2OMO) |
-| RewardManager | `CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR` | [View ↗](https://stellar.expert/explorer/testnet/contract/CCM6ELX6CBDNTHS2XNVQSLE4GQLPEHCYRHKWJCT6PCO55PD2U33FEJTR) |
+| GreenToken (GTK) | `CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK` | [View ↗](https://stellar.expert/explorer/testnet/contract/CCSSWPHW3KJHEI4FIBTMBNQ7DPMN73JVCQB7JHEWXFAVFRCYTTS5UJDK) |
+| ActionRegistry | `CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS` | [View ↗](https://stellar.expert/explorer/testnet/contract/CBIHBB35RI2LWHECDJ4G2ZZSGXYVOCCTVFPUNGOI7DOWQOWA3OPDVRDS) |
+| RewardManager | `CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE` | [View ↗](https://stellar.expert/explorer/testnet/contract/CAZJ4I42D4CATJMF2WOIUUYXJ5GOP5N3ICUFAS6SOQKU4DD6TSQAFSQE) |
 
 **Network:** Stellar Testnet · Soroban RPC `https://soroban-testnet.stellar.org`
