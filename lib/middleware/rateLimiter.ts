@@ -32,7 +32,7 @@ setInterval(() => {
       evicted++;
     }
   }
-}, 300_000);
+}, 300_000).unref();
 
 interface RateLimitConfig {
   /** Maximum requests allowed in the window */
