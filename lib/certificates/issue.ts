@@ -25,14 +25,10 @@ export async function issueCertificate(
 
     if (existing) return { id: existing.id, certNumber: existing.cert_number };
 
-    // 2. Fetch action with joined user display_name and org name
+    // 2. Fetch action — plain select, no FK joins (FK names not guaranteed in schema cache)
     const { data: action } = await supabase
       .from("actions")
-      .select(`
-        id, org_id, user_id, action_type, tokens_awarded, proof_hash, stellar_tx_hash,
-        users!actions_user_id_fkey(display_name),
-        organizations!actions_org_id_fkey(name)
-      `)
+      .select("id, org_id, user_id, action_type, tokens_awarded, proof_hash, stellar_tx_hash")
       .eq("id", actionId)
       .single() as {
         data: {
@@ -43,8 +39,6 @@ export async function issueCertificate(
           tokens_awarded:   number;
           proof_hash:       string | null;
           stellar_tx_hash:  string | null;
-          users:            { display_name: string | null } | null;
-          organizations:    { name: string | null } | null;
         } | null;
       };
 
