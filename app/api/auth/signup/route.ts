@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseBody } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
+import { generateWallet } from "@/lib/stellar/wallet";
 import { z } from "zod";
 
 // POST /api/auth/signup
@@ -74,6 +75,9 @@ export async function POST(req: NextRequest) {
         email,
         display_name: displayName,
       });
+
+      // Auto-generate Stellar wallet — non-critical, does not block response
+      try { await generateWallet(authData.user.id, supabase); } catch { /* user can generate from profile */ }
 
       // Decrement uses_left if limited
       if (invite.uses_left !== null) {
