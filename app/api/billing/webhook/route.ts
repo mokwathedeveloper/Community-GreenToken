@@ -30,7 +30,7 @@ async function updateOrgPlan(
   orgId:    string,
   sub:      Stripe.Subscription
 ) {
-  const priceId = sub.items?.data[0]?.price?.id ?? "";
+  const priceId = sub.items?.data?.length > 0 ? (sub.items.data[0]?.price?.id ?? "") : "";
   const plan    = planFromPriceId(priceId);
 
   await (supabase as any).from("organizations").update({

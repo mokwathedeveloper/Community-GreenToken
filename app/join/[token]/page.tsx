@@ -54,6 +54,10 @@ export default function JoinPage() {
   // concurrently — causing a 409 race that leaves the button stuck loading.
   const acceptingRef   = useRef(false);
   const manualAuthRef  = useRef(false); // true while handleAuth is in flight
+  const redirectTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cancel any pending redirect if the component unmounts mid-flow
+  useEffect(() => () => { if (redirectTimer.current) clearTimeout(redirectTimer.current); }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -148,7 +152,7 @@ export default function JoinPage() {
 
       if (res.status === 409) {
         setStatus("already_member");
-        setTimeout(() => router.push("/dashboard"), 2000);
+        redirectTimer.current = setTimeout(() => router.push("/dashboard"), 2000);
         return;
       }
       if (res.status === 403 && json.error?.code === "WRONG_EMAIL") {
@@ -164,7 +168,7 @@ export default function JoinPage() {
 
       setStatus("accepted");
       showToast(`Welcome to ${invite?.orgName ?? "the organization"}!`, "success");
-      setTimeout(() => router.push("/dashboard"), 1800);
+      redirectTimer.current = setTimeout(() => router.push("/dashboard"), 1800);
     } catch {
       showToast("Something went wrong. Please try again.", "error");
       acceptingRef.current = false;  // allow retry on network error
