@@ -179,7 +179,7 @@ export default function ActionSubmissionPage() {
           setError("Your session has expired. Please sign in again.");
         } else if (err?.code === "NO_ORGANIZATION") {
           setError("You need to create your organization first.");
-          setTimeout(() => { window.location.href = "/org/setup"; }, 2500);
+          setTimeout(() => { window.location.assign("/org/setup"); }, 2500);
         } else if (err?.code === "RATE_LIMITED") {
           setError(`Too many submissions. Please wait ${err.retryAfter ?? 60} seconds.`);
         } else if (err?.code === "DUPLICATE_EVIDENCE") {
