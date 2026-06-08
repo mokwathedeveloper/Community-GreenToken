@@ -462,7 +462,7 @@ export default function ActionSubmissionPage() {
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <span className="flex items-center gap-1 text-xs text-gray-700">
                           <MLocationPin className="w-3 h-3 text-primary-500 flex-shrink-0" aria-hidden />
-                          GPS: {exifData.lat!.toFixed(5)}°,&nbsp;{exifData.lng!.toFixed(5)}°
+                          GPS: {(exifData.lat ?? 0).toFixed(5)}°,&nbsp;{(exifData.lng ?? 0).toFixed(5)}°
                         </span>
                         <a
                           href={`https://maps.google.com/?q=${exifData.lat},${exifData.lng}`}

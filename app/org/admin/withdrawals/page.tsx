@@ -300,7 +300,7 @@ export default function AdminWithdrawalsPage() {
                     {/* Amount */}
                     <td className="px-5 py-4">
                       <p className="font-bold text-gray-900">
-                        {row.currency === "KES" ? `KES ${row.cash_amount.toLocaleString()}` : `$${row.cash_amount.toFixed(2)}`}
+                        {row.currency === "KES" ? `KES ${(row.cash_amount ?? 0).toLocaleString()}` : `$${(row.cash_amount ?? 0).toFixed(2)}`}
                       </p>
                       <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
                         <MCoin className="w-3 h-3 text-amber-400" />{row.tokens_amount.toLocaleString()} GTK
@@ -396,8 +396,8 @@ export default function AdminWithdrawalsPage() {
                 <span className="text-gray-500">Amount</span>
                 <span className="font-bold text-gray-900">
                   {approveTarget.currency === "KES"
-                    ? `KES ${approveTarget.cash_amount.toLocaleString()}`
-                    : `$${approveTarget.cash_amount.toFixed(2)} USD`}
+                    ? `KES ${(approveTarget.cash_amount ?? 0).toLocaleString()}`
+                    : `$${(approveTarget.cash_amount ?? 0).toFixed(2)} USD`}
                 </span>
               </div>
               <div className="flex justify-between text-sm">

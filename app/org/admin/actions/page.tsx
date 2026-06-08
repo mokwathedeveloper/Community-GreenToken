@@ -319,11 +319,11 @@ export default function AdminActionsPage() {
                           )}
 
                           {/* GPS verified */}
-                          {a.exif_lat !== null && a.exif_lng !== null && (
+                          {a.exif_lat != null && a.exif_lng != null && (
                             <a
                               href={`https://maps.google.com/?q=${a.exif_lat},${a.exif_lng}`}
                               target="_blank" rel="noopener noreferrer"
-                              title={`GPS: ${a.exif_lat.toFixed(4)}°, ${a.exif_lng.toFixed(4)}° — click to verify location`}
+                              title={`GPS: ${(a.exif_lat as number).toFixed(4)}°, ${(a.exif_lng as number).toFixed(4)}° — click to verify location`}
                               className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-primary-50 text-primary-700 border border-primary-200 px-1.5 py-0.5 rounded-full hover:bg-primary-100 transition-colors">
                               <MLocationPin className="w-2.5 h-2.5" aria-hidden /> GPS ↗
                             </a>
