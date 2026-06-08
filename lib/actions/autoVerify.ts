@@ -25,7 +25,6 @@ export async function autoVerifyAction(params: AutoVerifyParams): Promise<void> 
       status:         "verified",
       tokens_awarded: params.tokensToMint,
       verified_at:    new Date().toISOString(),
-      auto_verified:  true,
     })
     .eq("id", params.actionId)
     .eq("status", "pending");
@@ -46,7 +45,7 @@ export async function autoVerifyAction(params: AutoVerifyParams): Promise<void> 
     // Rollback so action returns to the admin queue
     await (supabase as any)
       .from("actions")
-      .update({ status: "pending", tokens_awarded: 0, verified_at: null, auto_verified: false })
+      .update({ status: "pending", tokens_awarded: 0, verified_at: null })
       .eq("id", params.actionId);
     console.error("[autoVerify] Balance RPC failed, rolled back:", rpcErr);
     return;

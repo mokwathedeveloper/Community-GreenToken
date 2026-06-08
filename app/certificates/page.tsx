@@ -50,18 +50,20 @@ function getActionColor(type: string) {
 }
 
 export default function CertificatesPage() {
-  const [certs,     setCerts]     = useState<CertificateSummary[]>([]);
-  const [total,     setTotal]     = useState(0);
-  const [loading,   setLoading]   = useState(true);
-  const [loadErr,   setLoadErr]   = useState<string | null>(null);
-  const [copied,    setCopied]    = useState<string | null>(null);
-  const [backfilling, setBackfilling] = useState(false);
+  const [certs,           setCerts]           = useState<CertificateSummary[]>([]);
+  const [total,           setTotal]           = useState(0);
+  const [loading,         setLoading]         = useState(true);
+  const [loadErr,         setLoadErr]         = useState<string | null>(null);
+  const [copied,          setCopied]          = useState<string | null>(null);
+  const [backfilling,     setBackfilling]     = useState(false);
+  const [migrationPending, setMigrationPending] = useState(false);
 
   async function loadCerts() {
     const r    = await fetch("/api/certificates?limit=50");
     const json = await r.json();
     setCerts(json.data ?? []);
     setTotal(json.meta?.total ?? 0);
+    if (json.meta?.migrationPending) setMigrationPending(true);
     return (json.data ?? []) as CertificateSummary[];
   }
 
@@ -167,11 +169,17 @@ export default function CertificatesPage() {
             </div>
           </div>
           <p className="text-sm font-bold text-gray-700">
-            {backfilling ? "Generating your certificates…" : "No certificates yet"}
+            {backfilling
+              ? "Generating your certificates…"
+              : migrationPending
+              ? "Certificates not yet enabled"
+              : "No certificates yet"}
           </p>
           <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
             {backfilling
               ? "Issuing carbon credit certificates for your verified actions."
+              : migrationPending
+              ? "An admin needs to run migration 031_create_certificates.sql in Supabase SQL Editor to enable this feature."
               : "Complete an eco-action (QR scan or submit a photo) and get it verified to earn your first carbon credit certificate."
             }
           </p>

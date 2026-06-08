@@ -151,12 +151,6 @@ export default function ActionSubmissionPage() {
     if (!description.trim()){ setError("Please describe your action."); return; }
     if (!evidence)          { setError("Please upload photo evidence."); return; }
 
-    // Block submission if photo has no EXIF — member must use a fresh camera photo
-    if (exifData && !exifData.present) {
-      setError("Your photo has no GPS or timestamp data. Please take a fresh photo directly from your camera app with location enabled.");
-      return;
-    }
-
     // 4 MB client-side guard (Vercel serverless payload limit)
     if (evidence.size > 4 * 1024 * 1024) {
       setError("Photo is too large. Please use a photo under 4 MB.");
@@ -698,8 +692,6 @@ export default function ActionSubmissionPage() {
                         <MLink className="w-3 h-3 flex-shrink-0" aria-hidden />
                         {r.stellar_tx_hash.slice(0, 8)}…
                       </a>
-                    ) : r.status === "verified" ? (
-                      <span className="text-xs text-gray-400 italic">Pending on-chain</span>
                     ) : (
                       <span className="text-xs text-gray-300">—</span>
                     )}

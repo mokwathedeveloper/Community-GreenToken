@@ -199,20 +199,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // 10. Reject if photo has no EXIF — server enforces what the UI already blocks
-  if (!exif.present) {
-    return NextResponse.json(
-      {
-        error: {
-          code:    "NO_EXIF_METADATA",
-          message: "Your photo has no GPS or timestamp data. Please take a fresh photo directly from your camera app with location enabled.",
-        },
-      },
-      { status: 422 }
-    );
-  }
-
-  // 11. Confidence score — computed from server-extracted signals only
+  // 10. Confidence score — computed from server-extracted signals only
+  // Photos without EXIF score 0-3 (description only) and always require admin review.
   const confidenceScore = computeConfidenceScore(exif, file.size, description);
 
   // 12. Same-org duplicate check
@@ -268,7 +256,6 @@ export async function POST(req: NextRequest) {
       exif_device:      exif.device,
       exif_present:     exif.present,
       proof_hash:       proofHash,
-      confidence_score: confidenceScore,
     })
     .select("id, action_type, status, submitted_at")
     .single();
