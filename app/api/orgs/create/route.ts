@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { parseBody, createOrgSchema } from "@/lib/validation/schemas";
 import { createAdminClient } from "@/lib/supabase/server";
+import { generateWallet } from "@/lib/stellar/wallet";
 
 // POST /api/orgs/create — Onboarding step 1
 // Rule R-SAAS-10: slug is permanent after creation
@@ -65,12 +66,24 @@ export async function POST(req: NextRequest) {
     role:    "owner",
   });
 
+  // Check if owner already has a wallet before upserting (upsert would wipe the check)
+  const { data: existingProfile } = await (supabase as any)
+    .from("users")
+    .select("wallet_address")
+    .eq("id", auth.userId)
+    .maybeSingle() as { data: { wallet_address: string | null } | null };
+
   // Update user profile with org_id
   await (supabase as any).from("users").upsert({
     id:     auth.userId,
     org_id: org.id,
     email:  auth.email,
   });
+
+  // Auto-generate Stellar wallet for owners who don't have one yet
+  if (!existingProfile?.wallet_address) {
+    try { await generateWallet(auth.userId, supabase); } catch { /* user can generate from profile */ }
+  }
 
   return NextResponse.json({ data: org, meta: { org_id: org.id } }, { status: 201 });
 }
