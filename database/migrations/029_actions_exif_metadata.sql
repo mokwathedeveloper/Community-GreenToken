@@ -17,11 +17,22 @@ ALTER TABLE public.actions
   ADD COLUMN IF NOT EXISTS proof_hash        TEXT;               -- SHA-256(evidenceHash|lat|lng|capturedAt)
 
 -- Constraints: GPS range checks
-ALTER TABLE public.actions
-  ADD CONSTRAINT IF NOT EXISTS chk_exif_lat
-    CHECK (exif_lat IS NULL OR exif_lat BETWEEN -90 AND 90),
-  ADD CONSTRAINT IF NOT EXISTS chk_exif_lng
-    CHECK (exif_lng IS NULL OR exif_lng BETWEEN -180 AND 180);
+-- (ADD CONSTRAINT IF NOT EXISTS is not supported in PostgreSQL — use DO block)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_exif_lat' AND conrelid = 'public.actions'::regclass
+  ) THEN
+    ALTER TABLE public.actions
+      ADD CONSTRAINT chk_exif_lat CHECK (exif_lat IS NULL OR exif_lat BETWEEN -90 AND 90);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_exif_lng' AND conrelid = 'public.actions'::regclass
+  ) THEN
+    ALTER TABLE public.actions
+      ADD CONSTRAINT chk_exif_lng CHECK (exif_lng IS NULL OR exif_lng BETWEEN -180 AND 180);
+  END IF;
+END $$;
 
 -- ── 2. Indexes for fraud and geospatial queries ───────────────
 
