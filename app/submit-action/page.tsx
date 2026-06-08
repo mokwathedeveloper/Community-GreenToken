@@ -10,8 +10,9 @@ import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 import {
   MLeaf, MCheckCircle, MCoin, MWarning, MInfo,
-  MAttachFile, MUpload, MLink, MBolt,
+  MAttachFile, MUpload, MLink, MBolt, MShield, MLocationPin,
 } from "@/components/icons";
+import { extractExif, buildProofHash, type ExifResult } from "@/lib/exif/parser";
 
 const ACTION_TYPES: { value: string; label: string; emoji: string }[] = [
   { value: "Recycling",          label: "Recycling",           emoji: "♻️" },
@@ -64,6 +65,9 @@ export default function ActionSubmissionPage() {
   const [description,  setDescription]  = useState("");
   const [evidence,     setEvidence]     = useState<File | null>(null);
   const [evidenceHash, setEvidenceHash] = useState<string | null>(null);
+  const [exifData,     setExifData]     = useState<ExifResult | null>(null);
+  const [exifLoading,  setExifLoading]  = useState(false);
+  const [proofHash,    setProofHash]    = useState<string | null>(null);
   const [dragOver,     setDragOver]     = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [success,      setSuccess]      = useState(false);
@@ -117,7 +121,18 @@ export default function ActionSubmissionPage() {
 
   async function handleFileSelected(file: File) {
     setEvidence(file);
-    setEvidenceHash(await hashFile(file));
+    setExifData(null);
+    setProofHash(null);
+    setExifLoading(true);
+    try {
+      const [hash, exif] = await Promise.all([hashFile(file), extractExif(file)]);
+      const ph = await buildProofHash(hash, exif);
+      setEvidenceHash(hash);
+      setExifData(exif);
+      setProofHash(ph);
+    } finally {
+      setExifLoading(false);
+    }
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -128,6 +143,8 @@ export default function ActionSubmissionPage() {
   function clearFile() {
     setEvidence(null);
     setEvidenceHash(null);
+    setExifData(null);
+    setProofHash(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -143,7 +160,17 @@ export default function ActionSubmissionPage() {
       const res  = await fetch("/api/actions/submit", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ actionType, description: description.trim(), evidenceHash }),
+        body:    JSON.stringify({
+        actionType,
+        description:    description.trim(),
+        evidenceHash,
+        exifLat:        exifData?.lat        ?? null,
+        exifLng:        exifData?.lng        ?? null,
+        exifCapturedAt: exifData?.capturedAt?.toISOString() ?? null,
+        exifDevice:     exifData?.device     ?? null,
+        exifPresent:    exifData?.present    ?? false,
+        proofHash,
+      }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -157,6 +184,8 @@ export default function ActionSubmissionPage() {
           setError(`Too many submissions. Please wait ${err.retryAfter ?? 60} seconds.`);
         } else if (err?.code === "DUPLICATE_EVIDENCE") {
           setError("This photo has already been submitted as evidence. Please use a different photo.");
+        } else if (err?.code === "EVIDENCE_TOO_OLD") {
+          setError("Photo evidence is more than 30 days old. Please upload a recent photo of your action.");
         } else {
           setError(err?.message ?? "Submission failed. Please try again.");
         }
@@ -399,6 +428,98 @@ export default function ActionSubmissionPage() {
                 />
               </div>
             </div>
+
+            {/* ── EXIF Metadata Panel ── */}
+            {exifLoading && (
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 animate-pulse">
+                <div className="w-3 h-3 rounded-full bg-primary-300 animate-ping" aria-hidden />
+                <p className="text-xs text-gray-400">Extracting photo metadata…</p>
+              </div>
+            )}
+
+            {!exifLoading && exifData && (
+              <div
+                role="status"
+                aria-label="Photo proof metadata"
+                className={cn(
+                  "rounded-xl border px-4 py-3 space-y-2",
+                  exifData.present
+                    ? exifData.ageWarning
+                      ? "bg-amber-50 border-amber-200"
+                      : "bg-primary-50 border-primary-100"
+                    : "bg-amber-50 border-amber-200"
+                )}
+              >
+                {exifData.present ? (
+                  <>
+                    <p className={cn("text-xs font-semibold flex items-center gap-1.5",
+                      exifData.ageWarning ? "text-amber-700" : "text-primary-700")}>
+                      <MShield className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
+                      {exifData.ageWarning ? "Photo metadata captured — age warning" : "Photo proof metadata captured"}
+                    </p>
+
+                    {exifData.gpsPresent && (
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="flex items-center gap-1 text-xs text-gray-700">
+                          <MLocationPin className="w-3 h-3 text-primary-500 flex-shrink-0" aria-hidden />
+                          GPS: {exifData.lat!.toFixed(5)}°,&nbsp;{exifData.lng!.toFixed(5)}°
+                        </span>
+                        <a
+                          href={`https://maps.google.com/?q=${exifData.lat},${exifData.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-primary-600 hover:underline font-medium whitespace-nowrap"
+                          aria-label="View GPS location on Google Maps">
+                          View on Maps ↗
+                        </a>
+                      </div>
+                    )}
+
+                    {!exifData.gpsPresent && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <MWarning className="w-3 h-3 flex-shrink-0" aria-hidden />
+                        GPS not embedded — location cannot be verified from photo
+                      </p>
+                    )}
+
+                    {exifData.capturedAt && (
+                      <p className={cn("text-xs", exifData.ageWarning ? "text-amber-700" : "text-gray-600")}>
+                        Captured:{" "}
+                        <span className="font-medium">
+                          {exifData.capturedAt.toLocaleString("en-KE", {
+                            year: "numeric", month: "short", day: "numeric",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </span>
+                        {exifData.ageWarning && (
+                          <span className="ml-1.5 text-amber-600 font-semibold">(older than 7 days — admin will review closely)</span>
+                        )}
+                      </p>
+                    )}
+
+                    {exifData.device && (
+                      <p className="text-xs text-gray-500">Device: {exifData.device}</p>
+                    )}
+
+                    <p className="text-[10px] text-primary-600 border-t border-primary-100 pt-1.5 mt-1">
+                      SHA-256 + GPS + timestamp committed to Stellar as tamper-proof evidence.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+                      <MWarning className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
+                      No EXIF metadata found in this photo
+                    </p>
+                    <p className="text-xs text-amber-600 leading-relaxed">
+                      GPS location and capture time could not be extracted. This may indicate a
+                      screenshot or an edited/stripped image. Admins will be notified to review
+                      this submission more closely.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Info note */}
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">

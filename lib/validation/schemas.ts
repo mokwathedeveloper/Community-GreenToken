@@ -44,11 +44,19 @@ export const actionTypes = [
 ] as const;
 
 export const submitActionSchema = z.object({
-  actionType:   z.enum(actionTypes),
-  description:  z.string().min(5).max(200),
-  evidenceHash: z.string().regex(/^[0-9a-f]{64}$/, "Evidence hash must be a 64-char hex string (SHA-256)"),
+  actionType:     z.enum(actionTypes),
+  description:    z.string().min(5).max(200),
+  evidenceHash:   z.string().regex(/^[0-9a-f]{64}$/, "Evidence hash must be a 64-char hex string (SHA-256)"),
   // orgId is NOT sent by the client — it is always extracted from the JWT
   // (Rule R-SAAS-01: never trust client-sent org_id)
+
+  // EXIF anti-fraud fields — optional, extracted client-side from photo metadata
+  exifLat:        z.number().min(-90).max(90).nullable().optional(),
+  exifLng:        z.number().min(-180).max(180).nullable().optional(),
+  exifCapturedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  exifDevice:     z.string().max(100).nullable().optional(),
+  exifPresent:    z.boolean().optional(),
+  proofHash:      z.string().regex(/^[0-9a-f]{64}$/).nullable().optional(),
 });
 
 export const verifyActionSchema = z.object({

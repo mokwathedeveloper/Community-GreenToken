@@ -12,20 +12,27 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
-import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload, MOpenInNew, MWarning } from "@/components/icons";
+import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload, MOpenInNew, MWarning, MShield, MLocationPin } from "@/components/icons";
 
 type ActionStatus = "pending" | "verified" | "rejected";
 
 type QueueItem = {
-  id:             string;
-  action_type:    string;
-  description:    string;
-  evidence_hash:  string | null;
-  stellar_tx_hash:string | null;
-  tokens_awarded: number;
-  submitted_at:   string;
-  status:         ActionStatus;
+  id:               string;
+  action_type:      string;
+  description:      string;
+  evidence_hash:    string | null;
+  stellar_tx_hash:  string | null;
+  tokens_awarded:   number;
+  submitted_at:     string;
+  status:           ActionStatus;
   users: { display_name: string | null; email: string | null } | null;
+  // EXIF anti-fraud fields (migration 029)
+  exif_lat:         number | null;
+  exif_lng:         number | null;
+  exif_captured_at: string | null;
+  exif_device:      string | null;
+  exif_present:     boolean;
+  is_cross_org_dup: boolean;
 };
 
 const STATUS_TABS: { key: ActionStatus | "all"; label: string }[] = [
@@ -283,14 +290,72 @@ export default function AdminActionsPage() {
                         </span>
                       </td>
 
-                      {/* Description + evidence hash */}
-                      <td className="px-4 py-3.5 max-w-[180px]">
+                      {/* Description + evidence hash + fraud signals */}
+                      <td className="px-4 py-3.5 max-w-[220px]">
                         <p className="text-xs text-gray-700 truncate">{a.description || "—"}</p>
                         {a.evidence_hash && (
                           <p className="text-[10px] text-gray-400 font-mono truncate mt-0.5" title={a.evidence_hash}>
                             SHA-256: {a.evidence_hash.slice(0,10)}…
                           </p>
                         )}
+
+                        {/* EXIF fraud badges */}
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+
+                          {/* Cross-org stolen evidence — highest priority */}
+                          {a.is_cross_org_dup && (
+                            <span title="This photo was already submitted in another organization"
+                              className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-red-100 text-red-700 border border-red-300 px-1.5 py-0.5 rounded-full">
+                              <MWarning className="w-2.5 h-2.5" aria-hidden /> Stolen evidence
+                            </span>
+                          )}
+
+                          {/* No EXIF at all */}
+                          {!a.exif_present && (
+                            <span title="No GPS or timestamp found in photo — may be a screenshot or edited image"
+                              className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                              <MWarning className="w-2.5 h-2.5" aria-hidden /> No EXIF
+                            </span>
+                          )}
+
+                          {/* GPS verified */}
+                          {a.exif_lat !== null && a.exif_lng !== null && (
+                            <a
+                              href={`https://maps.google.com/?q=${a.exif_lat},${a.exif_lng}`}
+                              target="_blank" rel="noopener noreferrer"
+                              title={`GPS: ${a.exif_lat.toFixed(4)}°, ${a.exif_lng.toFixed(4)}° — click to verify location`}
+                              className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-primary-50 text-primary-700 border border-primary-200 px-1.5 py-0.5 rounded-full hover:bg-primary-100 transition-colors">
+                              <MLocationPin className="w-2.5 h-2.5" aria-hidden /> GPS ↗
+                            </a>
+                          )}
+
+                          {/* EXIF timestamp info */}
+                          {a.exif_captured_at && (() => {
+                            const ageMs  = Date.now() - new Date(a.exif_captured_at).getTime();
+                            const ageDays= Math.floor(ageMs / (24 * 60 * 60 * 1000));
+                            const isOld  = ageDays > 7;
+                            return (
+                              <span title={`Photo captured ${ageDays} day${ageDays !== 1 ? "s" : ""} before submission`}
+                                className={cn(
+                                  "inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
+                                  isOld
+                                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                                    : "bg-green-50 text-green-700 border-green-200"
+                                )}>
+                                <MShield className="w-2.5 h-2.5" aria-hidden />
+                                {isOld ? `${ageDays}d old` : "Recent"}
+                              </span>
+                            );
+                          })()}
+
+                          {/* Device info */}
+                          {a.exif_device && (
+                            <span title={`Captured on: ${a.exif_device}`}
+                              className="inline-flex items-center text-[10px] text-gray-400 truncate max-w-[80px]">
+                              {a.exif_device.length > 14 ? a.exif_device.slice(0, 14) + "…" : a.exif_device}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Date */}
