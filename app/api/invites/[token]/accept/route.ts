@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, unauthorized } from "@/lib/middleware/auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { generateWallet } from "@/lib/stellar/wallet";
 
 // POST /api/invites/[token]/accept
 // Rule R-SAAS-08: expired tokens MUST return 410 Gone, NOT 404
@@ -120,6 +121,27 @@ export async function POST(
     await (supabase as any).from("invites")
       .update({ uses_left: invite.uses_left - 1 })
       .eq("id", invite.id);
+  }
+
+  // Ensure users profile row exists (existing users accepting invites may not have one)
+  const { data: existingProfile } = await (supabase as any)
+    .from("users")
+    .select("wallet_address")
+    .eq("id", auth.userId)
+    .maybeSingle() as { data: { wallet_address: string | null } | null };
+
+  if (!existingProfile) {
+    // First-time profile creation for an existing Supabase auth user
+    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(auth.userId);
+    await (supabase as any).from("users").insert({
+      id:           auth.userId,
+      org_id:       invite.org_id,
+      email:        authUser?.email ?? "",
+      display_name: (authUser?.user_metadata?.display_name as string) ?? (authUser?.email?.split("@")[0] ?? "User"),
+    });
+    try { await generateWallet(auth.userId, supabase); } catch { /* user can generate from profile */ }
+  } else if (!existingProfile.wallet_address) {
+    try { await generateWallet(auth.userId, supabase); } catch { /* user can generate from profile */ }
   }
 
   return NextResponse.json({
