@@ -13,6 +13,7 @@ import {
   MLink2, MAccessTime, MCheckCircle, MGift, MLeaf,
   MEmail, MWarning, MLock,
 } from "@/components/icons";
+import Spinner from "@/components/ui/Spinner";
 
 type InviteStatus =
   | "loading"
@@ -258,7 +259,7 @@ export default function JoinPage() {
           {/* ── Loading ── */}
           {status === "loading" && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <div className="w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <Spinner size="xl" className="mx-auto mb-4" label="Checking your invitation…" />
               <p className="text-sm text-gray-500">Checking your invitation…</p>
             </div>
           )}
@@ -383,7 +384,7 @@ export default function JoinPage() {
               <div className="flex justify-center mb-4"><MGift className="w-12 h-12 text-primary-600" /></div>
               <h2 className="text-xl font-bold text-primary-700 mb-2">You&apos;re in!</h2>
               <p className="text-sm text-gray-500">Welcome to <strong>{invite?.orgName}</strong>. Taking you to your dashboard…</p>
-              <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mt-4" />
+              <Spinner size="md" className="mx-auto mt-4" label="Redirecting to dashboard…" />
             </div>
           )}
 

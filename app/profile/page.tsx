@@ -13,6 +13,7 @@ import {
   MCrown, MBusiness, MShield, MLeaf, MLocationPin, MSave,
   MCheckCircle, MWarning, MContentCopy, MOpenInNew, MLink,
 } from "@/components/icons";
+import Spinner from "@/components/ui/Spinner";
 
 const ROLE_META = {
   superadmin: { label: "Super Admin",  color: "bg-purple-100 text-purple-700 border-purple-200", icon: <MCrown    className="w-3.5 h-3.5" /> },
@@ -171,7 +172,7 @@ export default function ProfilePage() {
     return (
       <AppLayout title="My Profile">
         <div className="flex items-center justify-center py-24">
-          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <Spinner size="lg" />
         </div>
       </AppLayout>
     );
@@ -309,7 +310,7 @@ export default function ProfilePage() {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60 transition-colors"
                     >
                       {walletLoading ? (
-                        <div className="w-3.5 h-3.5 border border-white border-t-transparent rounded-full animate-spin" />
+                        <Spinner size="xs" color="white" decorative />
                       ) : (
                         <MShield className="w-3.5 h-3.5" aria-hidden="true" />
                       )}

@@ -2,6 +2,7 @@
 
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import Spinner from "@/components/ui/Spinner";
 
 // Rule R-COMP-02: MUST NOT create raw <button> in pages. MUST use this component.
 // Rule R-COLOR-02: primary variant uses primary-600 for WCAG AA on white text.
@@ -81,12 +82,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {...props}
       >
-        {loading && (
-          <span
-            aria-hidden="true"
-            className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0"
-          />
-        )}
+        {loading && <Spinner size="sm" color="white" decorative />}
         {!loading && icon && (
           <span aria-hidden="true" className="w-4 h-4 flex-shrink-0">
             {icon}

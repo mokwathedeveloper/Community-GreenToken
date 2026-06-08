@@ -5,6 +5,7 @@
 // Owner: RockieRaheem
 
 import { cn } from "@/lib/utils";
+import Spinner from "@/components/ui/Spinner";
 
 interface PricingCTAButtonProps {
   planName:   string;
@@ -33,7 +34,7 @@ export default function PricingCTAButton({
     >
       {loading ? (
         <span className="flex items-center justify-center gap-2">
-          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+          <Spinner size="sm" color="current" decorative />
           Redirecting…
         </span>
       ) : label}

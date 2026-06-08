@@ -10,6 +10,7 @@ import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
 import { MCoin, MAccountBalance, MPayments, MCreditCard, MPhoneAndroid, MAttachMoney, MWarning } from "@/components/icons";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 
 type Currency  = "KES" | "USD";
 type Method    = "mpesa" | "bank_transfer";
@@ -362,7 +363,7 @@ export default function WithdrawPage() {
           <h3 className="text-sm font-semibold text-gray-900">Withdrawal History</h3>
         </div>
         {loading ? (
-          <div className="px-6 py-6 space-y-3 animate-pulse">{[1,2].map(i=><div key={i} className="h-4 bg-gray-100 rounded w-full"/>)}</div>
+          <SkeletonRows rows={2} height="h-4" rounded="rounded" padding="px-6 py-6" />
         ) : history.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">No withdrawals yet. Submit your first request above.</p>
         ) : (

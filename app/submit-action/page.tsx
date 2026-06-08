@@ -13,6 +13,7 @@ import {
   MAttachFile, MUpload, MLink, MBolt, MShield, MLocationPin,
 } from "@/components/icons";
 import { extractExif, type ExifResult } from "@/lib/exif/parser";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 
 const ACTION_TYPES: { value: string; label: string; emoji: string }[] = [
   { value: "Recycling",          label: "Recycling",           emoji: "♻️" },
@@ -604,11 +605,7 @@ export default function ActionSubmissionPage() {
               </div>
             ) : (
               <>
-                <div className="space-y-2 animate-pulse">
-                  <div className="h-3 bg-gray-100 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
-                  <div className="h-3 bg-gray-100 rounded w-2/3" />
-                </div>
+                <SkeletonRows rows={3} height="h-3" rounded="rounded" padding="" gap="space-y-2" />
                 <p className="text-xs text-gray-400 mt-3">
                   Fill in the form to see your action preview here.
                 </p>
@@ -628,9 +625,7 @@ export default function ActionSubmissionPage() {
         </div>
 
         {statsLoading ? (
-          <div className="px-6 py-6 space-y-3 animate-pulse">
-            {[1, 2, 3].map(i => <div key={i} className="h-4 bg-gray-100 rounded w-full" />)}
-          </div>
+          <SkeletonRows rows={3} height="h-4" rounded="rounded" padding="px-6 py-6" />
         ) : recentActions.length === 0 ? (
           <div className="py-12 text-center">
             <MLeaf className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />

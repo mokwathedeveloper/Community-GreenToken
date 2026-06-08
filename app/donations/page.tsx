@@ -154,7 +154,7 @@ export default function DonationsPage() {
 
       {/* Project list */}
       {loading ? (
-        <div className="space-y-4 animate-pulse">
+        <div role="status" aria-label="Loading projects…" aria-busy="true" className="space-y-4 animate-pulse">
           {[1, 2, 3].map(i => (
             <div key={i} className="bg-white rounded-xl border border-gray-100 h-28" />
           ))}

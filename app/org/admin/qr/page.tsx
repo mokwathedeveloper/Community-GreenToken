@@ -10,6 +10,7 @@ import {
   MQrCode, MWarning, MInfo, MDelete, MLocationPin,
   MAccessTime, MContentCopy, MCheckCircle, MLeaf,
 } from "@/components/icons";
+import Spinner from "@/components/ui/Spinner";
 
 // ── types ───────────────────────────────────────────────────────────────────
 
@@ -321,7 +322,7 @@ export default function QrEventsPage() {
                     )}
                   >
                     {geoFilling
-                      ? <><div className="w-3 h-3 border border-primary-400 border-t-transparent rounded-full animate-spin" aria-hidden="true" /> Getting…</>
+                      ? <><Spinner size="xs" decorative /> Getting…</>
                       : <><MLocationPin className="w-3 h-3" aria-hidden="true" /> Use My Location</>
                     }
                   </button>
@@ -435,7 +436,7 @@ export default function QrEventsPage() {
       {/* Events list */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-7 h-7 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+          <Spinner size="md" label="Loading QR events…" />
         </div>
       ) : events.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">

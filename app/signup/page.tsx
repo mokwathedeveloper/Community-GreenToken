@@ -19,6 +19,7 @@ import {
   MPublic, MPeople, MShield, MBusiness, MBolt,
   MInfo, MLogin,
 } from "@/components/icons";
+import Spinner from "@/components/ui/Spinner";
 
 function GoogleIcon() {
   return (
@@ -427,7 +428,7 @@ export default function SignUpPageWrapper() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        <Spinner size="lg" label="Loading sign-up…" />
       </div>
     }>
       <SignUpPage />

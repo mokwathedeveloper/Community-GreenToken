@@ -226,8 +226,8 @@ export default function LeaderboardPage() {
 
       {/* ── Loading skeleton ─────────────────────────────────────────────── */}
       {loading ? (
-        <div className="space-y-3 animate-pulse">
-          <div className="h-72 bg-gray-100 rounded-2xl" />
+        <div role="status" aria-label="Loading leaderboard…" aria-busy="true" className="space-y-3 animate-pulse">
+          <div aria-hidden="true" className="h-72 bg-gray-100 rounded-2xl" />
           {[1,2,3,4,5].map(i => (
             <div key={i} className="h-14 bg-white rounded-xl border border-gray-100" />
           ))}

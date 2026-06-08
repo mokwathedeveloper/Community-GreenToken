@@ -9,6 +9,7 @@ import {
   MQrCode, MLocationPin, MCheckCircle, MWarning, MInfo,
   MLeaf, MAccessTime, MPeople,
 } from "@/components/icons";
+import Spinner from "@/components/ui/Spinner";
 
 // ── types ───────────────────────────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ export default function QrScanPage() {
           {/* Loading skeleton */}
           {loading && (
             <div className="bg-white rounded-3xl shadow-lg p-8 text-center">
-              <div className="w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" aria-label="Loading" />
+              <Spinner size="xl" className="mx-auto mb-4" label="Loading event…" />
               <p className="text-sm text-gray-500">Loading event…</p>
             </div>
           )}
@@ -313,7 +314,7 @@ export default function QrScanPage() {
                         )}
                       >
                         {scanState === "locating" ? (
-                          <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" /> Getting Location…</>
+                          <><Spinner size="sm" color="white" decorative /> Getting Location…</>
                         ) : (
                           <><MLocationPin className="w-4 h-4" aria-hidden="true" /> Verify Location &amp; Scan</>
 
@@ -340,7 +341,7 @@ export default function QrScanPage() {
 
                     {scanState === "submitting" && (
                       <button disabled className="w-full py-3 rounded-xl text-sm font-semibold bg-primary-400 text-white cursor-not-allowed flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                        <Spinner size="sm" color="white" decorative />
                         Recording on Blockchain…
                       </button>
                     )}

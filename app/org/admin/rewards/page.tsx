@@ -288,7 +288,7 @@ export default function AdminRewardsPage() {
           </div>
 
           {loadCat ? (
-            <div className="px-5 py-4 space-y-3 animate-pulse">
+            <div role="status" aria-label="Loading rewards…" aria-busy="true" className="px-5 py-4 space-y-3 animate-pulse">
               {[1, 2, 3, 4].map(i => (
                 <div key={i} className="flex items-center gap-4">
                   <div className="w-9 h-9 rounded-lg bg-gray-100 flex-shrink-0" />
@@ -420,7 +420,7 @@ export default function AdminRewardsPage() {
             </div>
 
             {loadQueue ? (
-              <div className="px-5 py-4 space-y-3 animate-pulse">
+              <div role="status" aria-label="Loading redemption queue…" aria-busy="true" className="px-5 py-4 space-y-3 animate-pulse">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0" />

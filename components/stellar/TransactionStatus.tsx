@@ -7,6 +7,7 @@
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 import { getTxExplorerUrl } from "@/lib/stellar/config";
 import type { TransactionStatus } from "@/lib/stellar/types";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,7 @@ export default function TransactionStatusModal({
         {/* Animated indicator */}
         {config.animate && (
           <div className="flex justify-center">
-            <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            <Spinner size="xl" thick decorative />
           </div>
         )}
 

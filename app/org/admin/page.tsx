@@ -10,6 +10,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 import { MLeaf, MBarChart, MPeople, MBolt, MWarning } from "@/components/icons";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 
 type PendingAction = {
   id:             string;
@@ -133,9 +134,7 @@ export default function OrgAdminPage() {
           </div>
 
           {loading ? (
-            <div className="px-5 py-4 space-y-3 animate-pulse">
-              {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-gray-100 rounded-lg" />)}
-            </div>
+            <SkeletonRows rows={3} height="h-10" rounded="rounded-lg" padding="px-5 py-4" />
           ) : queue.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center mb-2">

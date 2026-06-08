@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   MCrown, MLeaf, MOpenInNew, MContentCopy, MWarning, MCheckCircle, MAccessTime,
 } from "@/components/icons";
+import Spinner from "@/components/ui/Spinner";
 
 type CertificateSummary = {
   id:              string;
@@ -146,9 +147,9 @@ export default function CertificatesPage() {
 
       {/* ── Certificate cards ────────────────────────────────────────────── */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div role="status" aria-label="Loading certificates…" aria-busy="true" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm animate-pulse">
+            <div key={i} aria-hidden="true" className="bg-white rounded-2xl border border-gray-100 shadow-sm animate-pulse">
               <div className="h-32 bg-gradient-to-br from-gray-100 to-gray-50 rounded-t-2xl" />
               <div className="p-4 space-y-2">
                 <div className="h-4 bg-gray-100 rounded w-3/4" />
@@ -163,7 +164,7 @@ export default function CertificatesPage() {
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center">
               {backfilling
-                ? <div className="w-7 h-7 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" aria-hidden />
+                ? <Spinner size="md" color="amber" decorative />
                 : <MCrown className="w-8 h-8 text-amber-300" aria-hidden />
               }
             </div>

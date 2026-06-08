@@ -13,6 +13,7 @@ import Button from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 import { MBolt, MLink, MBarChart, MCheckCircle, MSearch, MCoin, MUpload, MOpenInNew, MWarning, MShield, MLocationPin } from "@/components/icons";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 
 type ActionStatus = "pending" | "verified" | "rejected";
 
@@ -234,9 +235,7 @@ export default function AdminActionsPage() {
       {/* ── Queue table ── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 space-y-3 animate-pulse">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-gray-100 rounded-lg"/>)}
-          </div>
+          <SkeletonRows rows={5} height="h-12" rounded="rounded-lg" padding="p-8" />
         ) : items.length === 0 ? (
           <div className="text-center py-16">
             <div className="flex justify-center mb-3">

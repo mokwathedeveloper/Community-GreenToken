@@ -14,6 +14,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 import { MWarning, MGift, MSync } from "@/components/icons";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 
 interface BillingStatus {
   plan:                string;
@@ -374,9 +375,7 @@ export default function BillingPage() {
           </div>
 
           {loading ? (
-            <div className="p-6 space-y-3 animate-pulse">
-              {[1, 2, 3].map(i => <div key={i} className="h-4 bg-gray-100 rounded" />)}
-            </div>
+            <SkeletonRows rows={3} height="h-4" rounded="rounded" padding="p-6" />
           ) : !status?.stripe_subscription_id ? (
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
