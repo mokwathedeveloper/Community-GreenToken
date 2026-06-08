@@ -71,8 +71,7 @@ export async function redeemReward(
   signedXdr: string
 ): Promise<{ redemptionId: bigint } & TxResult & { explorerUrl: string }> {
   const result = await submitAndWait(signedXdr);
-  // TODO: parse redemptionId from transaction result meta
-  return { redemptionId: BigInt(0), ...result, explorerUrl: getTxExplorerUrl(result.txHash) };
+  return { redemptionId: result.returnValue ?? BigInt(0), ...result, explorerUrl: getTxExplorerUrl(result.txHash) };
 }
 
 // ── Admin: add reward to catalog ─────────────────────────────────────────
