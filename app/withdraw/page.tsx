@@ -26,7 +26,6 @@ type WithdrawalRecord = {
   created_at:     string;
 };
 
-const RATES: Record<Currency, number> = { KES: 0.50, USD: 0.004 };
 const MIN_GTK = 500;
 
 export default function WithdrawPage() {
@@ -37,6 +36,7 @@ export default function WithdrawPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success,    setSuccess]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
+  const [rates,      setRates]      = useState<Record<Currency, number>>({ KES: 0.50, USD: 0.004 });
 
   // Form state
   const [amount,     setAmount]     = useState<number>(500);
@@ -46,7 +46,7 @@ export default function WithdrawPage() {
   const [accNumber,  setAccNumber]  = useState("");
   const [bankName,   setBankName]   = useState("");
 
-  const rate      = RATES[currency];
+  const rate      = rates[currency];
   const cashOut   = parseFloat((amount * rate).toFixed(2));
   const canSubmit = amount >= MIN_GTK && (balance ?? 0) >= amount && accName.trim() && accNumber.trim() && (method === "mpesa" || bankName.trim());
 
@@ -54,9 +54,13 @@ export default function WithdrawPage() {
     Promise.all([
       fetch("/api/tokens/balance").then(r => r.json()),
       fetch("/api/withdraw").then(r => r.json()),
-    ]).then(([balRes, histRes]) => {
+      fetch("/api/exchange-rates").then(r => r.json()),
+    ]).then(([balRes, histRes, ratesRes]) => {
       setBalance(balRes.data?.balance ?? 0);
       setHistory(histRes.data ?? []);
+      if (ratesRes?.data) {
+        setRates({ KES: ratesRes.data.gtkToKes ?? 0.50, USD: ratesRes.data.gtkToUsd ?? 0.004 });
+      }
     }).catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load your balance. Please refresh.")).finally(() => setLoading(false));
   }, [success]);
 
@@ -127,7 +131,7 @@ export default function WithdrawPage() {
           <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0"><MAccountBalance className="w-6 h-6 text-green-600" aria-hidden="true" /></div>
           <div>
             <p className="text-2xl font-extrabold text-gray-900">
-              {loading ? "…" : `KES ${((balance ?? 0) * RATES.KES).toFixed(2)}`}
+              {loading ? "…" : `KES ${((balance ?? 0) * rates.KES).toFixed(2)}`}
             </p>
             <p className="text-xs text-gray-500">Equivalent (KES)</p>
           </div>
@@ -136,7 +140,7 @@ export default function WithdrawPage() {
           <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0"><MPayments className="w-6 h-6 text-blue-600" aria-hidden="true" /></div>
           <div>
             <p className="text-2xl font-extrabold text-gray-900">
-              {loading ? "…" : `$${((balance ?? 0) * RATES.USD).toFixed(2)}`}
+              {loading ? "…" : `$${((balance ?? 0) * rates.USD).toFixed(2)}`}
             </p>
             <p className="text-xs text-gray-500">Equivalent (USD)</p>
           </div>
@@ -151,7 +155,7 @@ export default function WithdrawPage() {
             <MCreditCard className="w-4 h-4 text-primary-500" aria-hidden="true" /> Request Withdrawal
           </h3>
           <p className="text-xs text-gray-400 mb-5">
-            Minimum {MIN_GTK.toLocaleString()} GTK · Rate: 1 GTK = {RATES.KES} KES / ${RATES.USD} USD
+            Minimum {MIN_GTK.toLocaleString()} GTK · Rate: 1 GTK = {rates.KES} KES / ${rates.USD.toFixed(4)} USD
           </p>
 
           {error && (
@@ -337,11 +341,11 @@ export default function WithdrawPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">1 GTK</span>
-                <span className="text-sm font-bold text-gray-900">= KES {RATES.KES}</span>
+                <span className="text-sm font-bold text-gray-900">= KES {rates.KES}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">1 GTK</span>
-                <span className="text-sm font-bold text-gray-900">= ${RATES.USD} USD</span>
+                <span className="text-sm font-bold text-gray-900">= ${rates.USD.toFixed(4)} USD</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-gray-50">
                 <span className="text-xs text-gray-400">Min withdrawal</span>
