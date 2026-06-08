@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/providers/UserProvider";
@@ -12,6 +12,15 @@ const poppins = Poppins({
   variable: "--font-poppins",
   display: "swap",
 });
+
+// viewport-fit=cover enables env(safe-area-inset-*) for devices with notches
+// (iPhone X/11/12/13/14/15 Dynamic Island, Android punch-hole cameras)
+export const viewport: Viewport = {
+  width:          "device-width",
+  initialScale:   1,
+  viewportFit:    "cover",
+  themeColor:     "#16a34a",
+};
 
 export const metadata: Metadata = {
   title: {

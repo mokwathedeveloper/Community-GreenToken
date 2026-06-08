@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MLeaf, MTrophy } from "@/components/icons";
@@ -8,6 +9,7 @@ import StatsRow from "@/components/landing/StatsRow";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import HowItWorks from "@/components/landing/HowItWorks";
 import CompetitiveEdge from "@/components/landing/CompetitiveEdge";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Community GreenToken — Rewarding Sustainable Actions",
@@ -15,7 +17,11 @@ export const metadata: Metadata = {
     "Earn blockchain-verified GreenTokens for recycling, tree planting, and eco-actions. Built on Stellar.",
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Authenticated users skip the marketing page and go straight to their app
+  const supabase = await createServerSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) redirect("/dashboard");
   return (
     <PublicLayout>
       {/* 1. Hero */}
