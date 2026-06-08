@@ -203,16 +203,14 @@ export async function POST(
   // 12. Atomic scan_count increment on qr_events
   await (supabase as any).rpc("increment_qr_scan_count", { p_qr_event_id: event.id });
 
-  // 13. Stellar blockchain commitment — non-blocking (fires after response)
-  const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
-  if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
-    after(async () => {
+  // 13. Post-response: Stellar commitment + certificate (non-blocking)
+  after(async () => {
+    const adminSecret = process.env.STELLAR_ADMIN_SECRET_KEY;
+    if (adminSecret && process.env.NEXT_PUBLIC_ACTION_REGISTRY_CONTRACT_ID) {
       try {
         const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
         const orgHex = event.org_id.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
-        // Look up the member's linked Stellar wallet address.
-        // Falls back to the platform admin pubkey for users without a linked wallet.
         const { data: profile } = await (supabase as any)
           .from("users")
           .select("wallet_address")
@@ -238,8 +236,16 @@ export async function POST(
       } catch (stellarErr) {
         console.error("[api/qr/scan] Stellar background call failed:", stellarErr);
       }
-    });
-  }
+    }
+
+    // Carbon credit certificate — always issued for every auto-verified QR scan
+    try {
+      const { issueCertificate } = await import("@/lib/certificates/issue");
+      await issueCertificate(action.id, supabase);
+    } catch (certErr) {
+      console.error("[api/qr/scan] Certificate issuance failed:", certErr);
+    }
+  });
 
   return NextResponse.json(
     {
