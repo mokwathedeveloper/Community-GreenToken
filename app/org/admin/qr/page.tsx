@@ -18,8 +18,8 @@ type QrEvent = {
   action_type:  string;
   label:        string;
   description:  string | null;
-  lat:          number | null;
-  lng:          number | null;
+  lat:          number;
+  lng:          number;
   radius_m:     number;
   tokens_award: number;
   valid_from:   string;
@@ -78,8 +78,9 @@ export default function QrEventsPage() {
     validFrom:   defaultFrom,
     validUntil:  defaultUntil,
   });
-  const [formErr,  setFormErr]  = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [formErr,   setFormErr]   = useState<string | null>(null);
+  const [creating,  setCreating]  = useState(false);
+  const [geoFilling, setGeoFilling] = useState(false);
 
   // ── fetch events ────────────────────────────────────────────────────────
   // Note: setLoading(true) is NOT called synchronously here — it starts as true via useState.
@@ -98,37 +99,66 @@ export default function QrEventsPage() {
 
   useEffect(() => { if (!userLoading && isOrgAdmin) loadEvents(); }, [userLoading, isOrgAdmin, loadEvents]);
 
+  // ── use admin's GPS to fill lat/lng ───────────────────────────────────
+  function fillAdminGps() {
+    if (!navigator.geolocation) {
+      setFormErr("Your browser does not support GPS."); return;
+    }
+    setGeoFilling(true);
+    setFormErr(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setForm(f => ({
+          ...f,
+          lat: pos.coords.latitude.toFixed(7),
+          lng: pos.coords.longitude.toFixed(7),
+        }));
+        setGeoFilling(false);
+      },
+      () => {
+        setFormErr("Could not get your location. Please enter coordinates manually.");
+        setGeoFilling(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+
   // ── create QR event ─────────────────────────────────────────────────────
   async function handleCreate() {
     setFormErr(null);
+
     if (!form.label.trim()) { setFormErr("Event name is required."); return; }
     if (form.label.trim().length < 3) { setFormErr("Event name must be at least 3 characters."); return; }
+
+    const latNum = parseFloat(form.lat);
+    const lngNum = parseFloat(form.lng);
+    if (!form.lat || isNaN(latNum)) { setFormErr("Event latitude is required — use the 'Use My Location' button or enter manually."); return; }
+    if (!form.lng || isNaN(lngNum)) { setFormErr("Event longitude is required — use the 'Use My Location' button or enter manually."); return; }
+    if (latNum < -90 || latNum > 90)  { setFormErr("Latitude must be between -90 and 90.");    return; }
+    if (lngNum < -180 || lngNum > 180) { setFormErr("Longitude must be between -180 and 180."); return; }
+
     if (!form.validFrom || !form.validUntil) { setFormErr("Start and end time are required."); return; }
     if (new Date(form.validUntil) <= new Date(form.validFrom)) {
       setFormErr("End time must be after start time."); return;
     }
 
-    const body: Record<string, unknown> = {
-      actionType:  form.actionType,
-      label:       form.label.trim(),
-      description: form.description.trim() || undefined,
-      radiusM:     parseInt(form.radiusM) || 200,
-      tokensAward: parseInt(form.tokensAward) || 10,
-      validFrom:   new Date(form.validFrom).toISOString(),
-      validUntil:  new Date(form.validUntil).toISOString(),
-    };
-
-    const latNum = parseFloat(form.lat);
-    const lngNum = parseFloat(form.lng);
-    if (form.lat && !isNaN(latNum)) body.lat = latNum;
-    if (form.lng && !isNaN(lngNum)) body.lng = lngNum;
-    if ((body.lat != null) !== (body.lng != null)) {
-      setFormErr("Provide both latitude and longitude, or leave both blank."); return;
-    }
-
     setCreating(true);
     try {
-      const res  = await fetch("/api/qr/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res  = await fetch("/api/qr/create", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          actionType:  form.actionType,
+          label:       form.label.trim(),
+          description: form.description.trim() || undefined,
+          lat:         latNum,
+          lng:         lngNum,
+          radiusM:     parseInt(form.radiusM) || 200,
+          tokensAward: parseInt(form.tokensAward) || 10,
+          validFrom:   new Date(form.validFrom).toISOString(),
+          validUntil:  new Date(form.validUntil).toISOString(),
+        }),
+      });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error?.message ?? "Failed to create QR event.");
       setShowForm(false);
@@ -272,31 +302,76 @@ export default function QrEventsPage() {
                 </div>
               </div>
 
-              {/* GPS (optional) */}
-              <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-                  <MLocationPin className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
-                  Location Verification (optional)
+              {/* GPS — mandatory */}
+              <div className="rounded-xl border border-primary-100 bg-primary-50 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold text-primary-800 flex items-center gap-1.5">
+                    <MLocationPin className="w-3.5 h-3.5 text-primary-600" aria-hidden="true" />
+                    Event Location <span className="text-red-500 ml-0.5">*</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={fillAdminGps}
+                    disabled={geoFilling}
+                    className={cn(
+                      "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors",
+                      geoFilling
+                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-white text-primary-700 border-primary-200 hover:bg-primary-50"
+                    )}
+                  >
+                    {geoFilling
+                      ? <><div className="w-3 h-3 border border-primary-400 border-t-transparent rounded-full animate-spin" aria-hidden="true" /> Getting…</>
+                      : <><MLocationPin className="w-3 h-3" aria-hidden="true" /> Use My Location</>
+                    }
+                  </button>
+                </div>
+                <p className="text-xs text-primary-600 mb-2">
+                  Members must be within the radius of these coordinates to scan. Required to prevent remote token farming.
                 </p>
-                <p className="text-xs text-gray-500 mb-2">If set, members must be within the radius of these coordinates to scan.</p>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1" htmlFor="qr-lat">Latitude</label>
-                    <input id="qr-lat" type="number" step="0.000001" min={-90} max={90} value={form.lat}
-                      onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} placeholder="0.000000"
-                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <label className="block text-xs text-gray-700 font-medium mb-1" htmlFor="qr-lat">
+                      Latitude <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="qr-lat" type="number" step="0.000001" min={-90} max={90}
+                      value={form.lat}
+                      onChange={e => setForm(f => ({ ...f, lat: e.target.value }))}
+                      placeholder="-1.286389"
+                      required
+                      aria-required="true"
+                      className={cn(
+                        "w-full border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500",
+                        form.lat ? "border-primary-300 bg-white" : "border-gray-200"
+                      )}
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1" htmlFor="qr-lng">Longitude</label>
-                    <input id="qr-lng" type="number" step="0.000001" min={-180} max={180} value={form.lng}
-                      onChange={e => setForm(f => ({ ...f, lng: e.target.value }))} placeholder="0.000000"
-                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <label className="block text-xs text-gray-700 font-medium mb-1" htmlFor="qr-lng">
+                      Longitude <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="qr-lng" type="number" step="0.000001" min={-180} max={180}
+                      value={form.lng}
+                      onChange={e => setForm(f => ({ ...f, lng: e.target.value }))}
+                      placeholder="36.817223"
+                      required
+                      aria-required="true"
+                      className={cn(
+                        "w-full border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500",
+                        form.lng ? "border-primary-300 bg-white" : "border-gray-200"
+                      )}
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1" htmlFor="qr-radius">Radius (m)</label>
-                    <input id="qr-radius" type="number" min={50} max={50000} value={form.radiusM}
+                    <label className="block text-xs text-gray-700 font-medium mb-1" htmlFor="qr-radius">Radius (m)</label>
+                    <input
+                      id="qr-radius" type="number" min={50} max={50000}
+                      value={form.radiusM}
                       onChange={e => setForm(f => ({ ...f, radiusM: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
                   </div>
                 </div>
               </div>
@@ -404,12 +479,10 @@ export default function QrEventsPage() {
                       </span>
                       <span className="text-xs font-semibold text-amber-600">{event.tokens_award} GTK / scan</span>
                       <span className="text-xs text-gray-400">{event.scan_count} scans</span>
-                      {event.lat !== null && (
-                        <span className="flex items-center gap-0.5 text-xs text-blue-600">
-                          <MLocationPin className="w-3 h-3" aria-hidden="true" />
-                          GPS {event.radius_m}m
-                        </span>
-                      )}
+                      <span className="flex items-center gap-0.5 text-xs text-blue-600">
+                        <MLocationPin className="w-3 h-3" aria-hidden="true" />
+                        GPS ±{event.radius_m}m
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
                       <MAccessTime className="w-3 h-3" aria-hidden="true" />
@@ -463,8 +536,8 @@ export default function QrEventsPage() {
       <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 flex items-start gap-2">
         <MInfo className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
         <p className="text-xs text-blue-700">
-          Members scan the QR code at your event. Their GPS location is verified against the event radius (if set)
-          and recorded on the Stellar blockchain as tamper-proof evidence. Each member can only scan each event once.
+          Members must be physically within the event radius to scan — GPS verification is mandatory on every scan.
+          Location + timestamp are committed to the Stellar blockchain as tamper-proof evidence. One scan per member per event.
         </p>
       </div>
     </OrgAdminLayout>

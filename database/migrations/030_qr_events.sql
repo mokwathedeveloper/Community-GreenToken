@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS public.qr_events (
   action_type  TEXT        NOT NULL,
   label        TEXT        NOT NULL,           -- e.g. "Saturday Park Cleanup"
   description  TEXT,
-  lat          DOUBLE PRECISION,               -- event GPS centre (optional)
-  lng          DOUBLE PRECISION,               -- event GPS centre (optional)
+  lat          DOUBLE PRECISION    NOT NULL,   -- event GPS centre (mandatory — GPS fraud prevention)
+  lng          DOUBLE PRECISION    NOT NULL,   -- event GPS centre (mandatory — GPS fraud prevention)
   radius_m     INTEGER     NOT NULL DEFAULT 200,   -- acceptance radius in metres
   tokens_award INTEGER     NOT NULL DEFAULT 10,
   valid_from   TIMESTAMPTZ NOT NULL,
@@ -31,10 +31,10 @@ DO $$ BEGIN
     ALTER TABLE public.qr_events ADD CONSTRAINT chk_qr_valid_window CHECK (valid_until > valid_from);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_qr_lat' AND conrelid = 'public.qr_events'::regclass) THEN
-    ALTER TABLE public.qr_events ADD CONSTRAINT chk_qr_lat CHECK (lat IS NULL OR lat BETWEEN -90 AND 90);
+    ALTER TABLE public.qr_events ADD CONSTRAINT chk_qr_lat CHECK (lat BETWEEN -90 AND 90);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_qr_lng' AND conrelid = 'public.qr_events'::regclass) THEN
-    ALTER TABLE public.qr_events ADD CONSTRAINT chk_qr_lng CHECK (lng IS NULL OR lng BETWEEN -180 AND 180);
+    ALTER TABLE public.qr_events ADD CONSTRAINT chk_qr_lng CHECK (lng BETWEEN -180 AND 180);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_qr_radius' AND conrelid = 'public.qr_events'::regclass) THEN
     ALTER TABLE public.qr_events ADD CONSTRAINT chk_qr_radius CHECK (radius_m BETWEEN 50 AND 50000);

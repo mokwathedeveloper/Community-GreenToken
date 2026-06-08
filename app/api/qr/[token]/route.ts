@@ -31,22 +31,20 @@ export async function GET(
       valid_from,
       valid_until,
       is_active,
-      has_location:lat,
       radius_m,
       organizations ( name )
     `)
     .eq("token", token)
     .single() as {
       data: {
-        label:        string;
-        description:  string | null;
-        action_type:  string;
-        tokens_award: number;
-        valid_from:   string;
-        valid_until:  string;
-        is_active:    boolean;
-        has_location: number | null;
-        radius_m:     number;
+        label:         string;
+        description:   string | null;
+        action_type:   string;
+        tokens_award:  number;
+        valid_from:    string;
+        valid_until:   string;
+        is_active:     boolean;
+        radius_m:      number;
         organizations: { name: string } | null;
       } | null;
       error: unknown;
@@ -76,7 +74,7 @@ export async function GET(
       valid_from:   event.valid_from,
       valid_until:  event.valid_until,
       is_active:    event.is_active,
-      has_location: event.has_location !== null,
+      has_location: true,  // always true — lat/lng are NOT NULL since migration 030
       radius_m:     event.radius_m,
       org_name:     event.organizations?.name ?? null,
       status,

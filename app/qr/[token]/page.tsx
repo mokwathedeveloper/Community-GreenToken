@@ -225,13 +225,11 @@ export default function QrScanPage() {
                   </div>
                 </div>
 
-                {/* GPS info */}
-                {event.has_location && (
-                  <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
-                    <MLocationPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-                    GPS verification required — must be within {event.radius_m}m of event location.
-                  </div>
-                )}
+                {/* GPS always required */}
+                <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
+                  <MLocationPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                  You must be within <span className="font-semibold mx-0.5">{event.radius_m}m</span> of the event location to scan.
+                </div>
 
                 {/* State-based UI */}
 
@@ -317,7 +315,8 @@ export default function QrScanPage() {
                         {scanState === "locating" ? (
                           <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" /> Getting Location…</>
                         ) : (
-                          <><MLocationPin className="w-4 h-4" aria-hidden="true" /> {event.has_location ? "Verify Location & Scan" : "Scan to Earn Tokens"}</>
+                          <><MLocationPin className="w-4 h-4" aria-hidden="true" /> Verify Location &amp; Scan</>
+
                         )}
                       </button>
                     )}

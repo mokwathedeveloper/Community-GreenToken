@@ -33,8 +33,8 @@ type QrEventRow = {
   created_by:   string;
   action_type:  string;
   label:        string;
-  lat:          number | null;
-  lng:          number | null;
+  lat:          number;   // always set — GPS mandatory since migration 030
+  lng:          number;   // always set — GPS mandatory since migration 030
   radius_m:     number;
   tokens_award: number;
   valid_from:   string;
@@ -58,7 +58,7 @@ export async function POST(
   const rl    = checkRateLimit(rlKey, "action_submit");
   if (rl) return rl;
 
-  // 3. Parse optional GPS from body
+  // 3. Parse GPS from body — mandatory for all QR events
   const parsed = await parseBody(req, qrScanSchema);
   if ("error" in parsed) return parsed.error;
   const { lat: memberLat, lng: memberLng } = parsed.data;
@@ -109,33 +109,32 @@ export async function POST(
     );
   }
 
-  // 7. GPS radius validation
-  if (event.lat !== null && event.lng !== null) {
-    if (memberLat == null || memberLng == null) {
-      return NextResponse.json(
-        {
-          error: {
-            code:    "GPS_REQUIRED",
-            message: "This event requires your GPS location. Please allow location access and try again.",
-          },
+  // 7. GPS validation — mandatory for all QR events (lat/lng are NOT NULL since migration 030)
+  if (memberLat == null || memberLng == null) {
+    return NextResponse.json(
+      {
+        error: {
+          code:    "GPS_REQUIRED",
+          message: "Your GPS location is required to verify you are at the event. Please enable location access and try again.",
         },
-        { status: 422 }
-      );
-    }
-    const distanceM = haversineMetres(event.lat, event.lng, memberLat, memberLng);
-    if (distanceM > event.radius_m) {
-      return NextResponse.json(
-        {
-          error: {
-            code:    "OUTSIDE_RADIUS",
-            message: `You are ${Math.round(distanceM)}m from the event location. You must be within ${event.radius_m}m to scan.`,
-            distanceM: Math.round(distanceM),
-            radiusM:   event.radius_m,
-          },
+      },
+      { status: 422 }
+    );
+  }
+
+  const distanceM = haversineMetres(event.lat, event.lng, memberLat, memberLng);
+  if (distanceM > event.radius_m) {
+    return NextResponse.json(
+      {
+        error: {
+          code:      "OUTSIDE_RADIUS",
+          message:   `You are ${Math.round(distanceM)}m from the event location. You must be within ${event.radius_m}m to scan.`,
+          distanceM: Math.round(distanceM),
+          radiusM:   event.radius_m,
         },
-        { status: 422 }
-      );
-    }
+      },
+      { status: 422 }
+    );
   }
 
   // 8. Duplicate scan check — one scan per user per event

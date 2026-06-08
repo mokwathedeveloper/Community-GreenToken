@@ -107,8 +107,8 @@ export const createQrEventSchema = z.object({
   actionType:  z.enum(actionTypes),
   label:       z.string().min(3).max(100),
   description: z.string().max(300).optional(),
-  lat:         z.number().min(-90).max(90).optional(),
-  lng:         z.number().min(-180).max(180).optional(),
+  lat:         z.number().min(-90).max(90),           // mandatory — members must be on-site
+  lng:         z.number().min(-180).max(180),          // mandatory — members must be on-site
   radiusM:     z.number().int().min(50).max(50000).default(200),
   tokensAward: z.number().int().min(1).max(10000).default(10),
   validFrom:   z.string().datetime(),
