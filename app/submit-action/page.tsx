@@ -448,7 +448,7 @@ export default function ActionSubmissionPage() {
                     ? exifData.ageWarning
                       ? "bg-amber-50 border-amber-200"
                       : "bg-primary-50 border-primary-100"
-                    : "bg-red-50 border-red-300"
+                    : "bg-amber-50 border-amber-200"
                 )}
               >
                 {exifData.present ? (
@@ -508,21 +508,15 @@ export default function ActionSubmissionPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-xs font-bold text-red-700 flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
                       <MWarning className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-                      Photo rejected — no GPS or timestamp found
+                      No GPS or timestamp found in photo
                     </p>
-                    <p className="text-xs text-red-600 leading-relaxed">
-                      This photo has no location or time data embedded in it. Screenshots,
-                      WhatsApp-forwarded images, and edited photos are not accepted as proof.
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      This photo has no embedded location or time data. Your submission will still be accepted but will require manual admin review before tokens are awarded.
                     </p>
-                    <ul className="text-xs text-red-700 space-y-0.5 pl-3 list-disc">
-                      <li>Open your camera app and take a <strong>fresh photo right now</strong></li>
-                      <li>Make sure GPS / location is enabled on your device</li>
-                      <li>Do not send the photo through WhatsApp or edit it before uploading</li>
-                    </ul>
-                    <p className="text-[10px] text-red-500 border-t border-red-200 pt-1.5 font-medium">
-                      Remove this photo and upload a valid one to continue.
+                    <p className="text-[10px] text-amber-600 border-t border-amber-200 pt-1.5 font-medium">
+                      Tip: Take a fresh photo from your camera app with GPS enabled for faster auto-verification.
                     </p>
                   </>
                 )}
@@ -544,9 +538,9 @@ export default function ActionSubmissionPage() {
               size="lg"
               fullWidth
               loading={loading}
-              disabled={loading || (!!exifData && !exifData.present)}
+              disabled={loading}
               icon={<MLeaf className="w-4 h-4" />}>
-              {exifData && !exifData.present ? "Upload a valid photo to continue" : "Submit Eco-Action"}
+              Submit Eco-Action
             </Button>
           </form>
         </div>
