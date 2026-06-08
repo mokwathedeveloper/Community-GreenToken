@@ -43,19 +43,20 @@ export const actionTypes = [
   "PublicTransport", "SolarEnergyUse", "BeachCleanup",
 ] as const;
 
-// Canonical GTK token awards per action type (used by auto-verification).
-// Impact-weighted: tree planting / beach cleanup = highest CO₂ offset per action.
+// Canonical GTK token awards per action type — MUST stay in sync with
+// default_reward() in contracts/action_registry/src/lib.rs.
+// These values are the authoritative amounts used by auto-verification.
 export const ACTION_TOKEN_AMOUNTS: Record<string, number> = {
-  Recycling:          10,
-  TreePlanting:       25,
-  Carpooling:         15,
-  EnergySaving:       12,
-  WaterSaving:        10,
-  CommunityCleanup:   20,
-  CompostingOrganics: 10,
-  PublicTransport:     8,
-  SolarEnergyUse:     20,
-  BeachCleanup:       25,
+  Recycling:          10,  // 100_000_000 stroops
+  TreePlanting:       20,  // 200_000_000 stroops
+  Carpooling:         15,  // 150_000_000 stroops
+  EnergySaving:       12,  // 120_000_000 stroops
+  WaterSaving:        10,  // 100_000_000 stroops
+  CommunityCleanup:   25,  // 250_000_000 stroops
+  CompostingOrganics: 10,  // 100_000_000 stroops
+  PublicTransport:     8,  //  80_000_000 stroops
+  SolarEnergyUse:     20,  // 200_000_000 stroops
+  BeachCleanup:       30,  // 300_000_000 stroops
 };
 
 // submitActionSchema validates only the text fields sent as FormData strings.

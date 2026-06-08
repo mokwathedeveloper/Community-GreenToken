@@ -332,7 +332,7 @@ export async function POST(req: NextRequest) {
           proofHash,
           orgHex,
         );
-        blockchainActionId = result.actionId ? Number(result.actionId) : null;
+        blockchainActionId = result.actionId !== undefined ? Number(result.actionId) : null;
         await (supabase as any).from("actions").update({
           stellar_tx_hash:      result.txHash,
           blockchain_action_id: blockchainActionId,

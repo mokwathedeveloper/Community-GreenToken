@@ -231,7 +231,7 @@ export async function POST(
 
         await (supabase as any).from("actions").update({
           stellar_tx_hash:      result.txHash,
-          blockchain_action_id: result.actionId ? Number(result.actionId) : null,
+          blockchain_action_id: result.actionId !== undefined ? Number(result.actionId) : null,
         }).eq("id", action.id);
       } catch (stellarErr) {
         console.error("[api/qr/scan] Stellar background call failed:", stellarErr);
