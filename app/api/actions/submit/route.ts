@@ -264,12 +264,23 @@ export async function POST(req: NextRequest) {
       const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
       const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
+      // Look up the member's linked Stellar wallet address.
+      // Falls back to the platform admin pubkey for users without a linked wallet.
+      const { data: profile } = await (supabase as any)
+        .from("users")
+        .select("wallet_address")
+        .eq("id", auth.userId)
+        .maybeSingle();
+      const stellarUserAddress = (profile?.wallet_address as string | null)
+        ?? process.env.STELLAR_ADMIN_PUBLIC_KEY
+        ?? "";
+
       const result = await submitAction(
         adminSecret,
-        auth.userId,
+        stellarUserAddress,
         actionType as import("@/lib/stellar/types").ActionType,
         description,
-        proofHash,   // always the combined image+GPS+time hash — never evidenceHash alone
+        proofHash,
         orgHex
       );
       txHash             = result.txHash;
