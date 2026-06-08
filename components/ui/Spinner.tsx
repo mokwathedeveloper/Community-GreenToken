@@ -50,12 +50,12 @@ export default function Spinner({
   decorative = false,
 }: SpinnerProps) {
   return (
-    <div
+    <span
       role={decorative ? undefined : "status"}
       aria-label={decorative ? undefined : label}
       aria-hidden={decorative ? true : undefined}
       className={cn(
-        "rounded-full animate-spin flex-shrink-0",
+        "inline-block rounded-full animate-spin flex-shrink-0",
         thick ? THICK_SIZES[size] : SIZES[size],
         COLORS[color],
         className,
