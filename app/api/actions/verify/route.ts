@@ -122,6 +122,10 @@ export async function POST(req: NextRequest) {
         await (supabase as any).from("actions")
           .update({ stellar_tx_hash: result.txHash })
           .eq("id", actionId);
+        // Keep certificate in sync — cert was issued before tx hash existed
+        await (supabase as any).from("certificates")
+          .update({ stellar_tx_hash: result.txHash })
+          .eq("action_id", actionId);
       } catch (stellarErr) {
         console.error("[api/actions/verify] Stellar background call failed:", stellarErr);
       }

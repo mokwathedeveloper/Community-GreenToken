@@ -129,7 +129,7 @@ export default function CertificatesPage() {
           {[
             { label: "Certificates Earned",  value: total.toLocaleString(),           Icon: MCrown,  color: "text-amber-500",  bg: "bg-amber-50"  },
             { label: "Total CO₂e Offset",    value: `${totalCo2.toFixed(2)} kg`,      Icon: MLeaf,   color: "text-green-600",  bg: "bg-green-50"  },
-            { label: "Blockchain Verified",  value: certs.filter(c => c.stellar_tx_hash).length.toString(), Icon: MCheckCircle, color: "text-primary-600", bg: "bg-primary-50" },
+            { label: "Anchored on Stellar",   value: certs.filter(c => c.stellar_tx_hash).length.toString(), Icon: MCheckCircle, color: "text-primary-600", bg: "bg-primary-50" },
           ].map(({ label, value, Icon, color, bg }) => (
             <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
               <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0", bg)}>
@@ -208,8 +208,8 @@ export default function CertificatesPage() {
                         <MCheckCircle className="w-3 h-3" aria-hidden /> On-chain
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-300 bg-white/10 rounded-full px-2 py-0.5 whitespace-nowrap flex-shrink-0">
-                        <MAccessTime className="w-3 h-3" aria-hidden /> Pending
+                      <span title="Certificate issued — awaiting Stellar blockchain anchor" className="flex items-center gap-1 text-[10px] font-bold text-yellow-300 bg-white/10 rounded-full px-2 py-0.5 whitespace-nowrap flex-shrink-0">
+                        <MAccessTime className="w-3 h-3" aria-hidden /> Issued
                       </span>
                     )}
                   </div>

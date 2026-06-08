@@ -61,6 +61,11 @@ export async function autoVerifyAction(params: AutoVerifyParams): Promise<void> 
         .from("actions")
         .update({ stellar_tx_hash: result.txHash })
         .eq("id", params.actionId);
+      // Keep certificate in sync — cert may have been issued before tx hash existed
+      await (supabase as any)
+        .from("certificates")
+        .update({ stellar_tx_hash: result.txHash })
+        .eq("action_id", params.actionId);
     } catch (stellarErr) {
       console.error("[autoVerify] Stellar verifyAction failed (non-fatal):", stellarErr);
     }
