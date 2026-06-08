@@ -14,7 +14,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@stellar/freighter-api": "^3.0.0",
-    "@stellar/stellar-sdk": "^13.1.0",
+    "@stellar/stellar-sdk": "^15.1.0",
     "@stripe/stripe-js": "^5.7.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.4",
