@@ -156,14 +156,57 @@ impl GreenToken {
         from.require_auth();
 
         let key = AllowanceKey { from: from.clone(), spender: spender.clone() };
-        env.storage().temporary().set(
-            &DataKey::Allowance(key),
-            &AllowanceValue { amount, expiration_ledger },
-        );
+
+        if amount == 0 {
+            // Revoking: remove the allowance entry entirely
+            env.storage().temporary().remove(&DataKey::Allowance(key.clone()));
+        } else {
+            env.storage().temporary().set(
+                &DataKey::Allowance(key.clone()),
+                &AllowanceValue { amount, expiration_ledger },
+            );
+            // Extend Soroban storage TTL to match the logical expiration_ledger,
+            // preventing the entry from expiring before the allowance period ends.
+            let current = env.ledger().sequence();
+            if expiration_ledger > current {
+                let ttl = expiration_ledger - current;
+                env.storage().temporary().extend_ttl(&DataKey::Allowance(key), ttl, ttl);
+            }
+        }
 
         env.events().publish(
             (symbol_short!("approve"), symbol_short!("gtok")),
             (from, spender, amount, expiration_ledger),
+        );
+    }
+
+    /// Burn tokens from `from` using an approved allowance. Required by SEP-41.
+    /// Rule R-SC-03: require_auth() is first.
+    pub fn burn_from(env: Env, spender: Address, from: Address, amount: i128) {
+        spender.require_auth();
+        assert!(amount > 0, "amount must be positive");
+
+        let allowed = Self::allowance(env.clone(), from.clone(), spender.clone());
+        assert!(allowed >= amount, "allowance exceeded");
+
+        // Reduce allowance
+        let key = AllowanceKey { from: from.clone(), spender: spender.clone() };
+        let val: AllowanceValue = env.storage().temporary()
+            .get(&DataKey::Allowance(key.clone()))
+            .unwrap();
+        env.storage().temporary().set(
+            &DataKey::Allowance(key),
+            &AllowanceValue { amount: val.amount - amount, expiration_ledger: val.expiration_ledger },
+        );
+
+        // Burn
+        let bal = Self::balance(env.clone(), from.clone());
+        assert!(bal >= amount, "insufficient balance");
+        env.storage().persistent().set(&DataKey::Balance(from.clone()), &(bal - amount));
+
+        env.events().publish(
+            (symbol_short!("burn"), symbol_short!("gtok")),
+            (spender, from, amount),
         );
     }
 
@@ -325,6 +368,37 @@ mod test {
         client.mint(&admin, &user, &1_000_000_000i128);
         client.approve(&user, &spender, &100_000_000i128, &9999u32);
         client.transfer_from(&spender, &user, &recipient, &200_000_000i128);
+    }
+
+    #[test]
+    fn test_burn_from() {
+        let (env, admin, user, client) = setup();
+        let spender = Address::generate(&env);
+        client.mint(&admin, &user, &1_000_000_000i128);
+        client.approve(&user, &spender, &300_000_000i128, &9999u32);
+        client.burn_from(&spender, &user, &200_000_000i128);
+        assert_eq!(client.balance(&user), 800_000_000i128);
+        assert_eq!(client.allowance(&user, &spender), 100_000_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "allowance exceeded")]
+    fn test_burn_from_exceeds_allowance() {
+        let (env, admin, user, client) = setup();
+        let spender = Address::generate(&env);
+        client.mint(&admin, &user, &1_000_000_000i128);
+        client.approve(&user, &spender, &100_000_000i128, &9999u32);
+        client.burn_from(&spender, &user, &200_000_000i128);
+    }
+
+    #[test]
+    fn test_approve_zero_revokes() {
+        let (env, admin, user, client) = setup();
+        let spender = Address::generate(&env);
+        client.mint(&admin, &user, &1_000_000_000i128);
+        client.approve(&user, &spender, &300_000_000i128, &9999u32);
+        client.approve(&user, &spender, &0i128, &9999u32); // revoke
+        assert_eq!(client.allowance(&user, &spender), 0i128);
     }
 
     #[test]

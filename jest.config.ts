@@ -1,9 +1,10 @@
-import nextJest from "next/jest.js";
-import type { Config } from "jest";
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- next/jest is CJS-only; ESM import breaks dir resolution
+const nextJest = require("next/jest");
 
 const createJestConfig = nextJest({ dir: "./" });
 
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   coverageProvider: "v8",
   testEnvironment:  "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
@@ -15,4 +16,4 @@ const config: Config = {
   ],
 };
 
-export default createJestConfig(config);
+module.exports = createJestConfig(config);

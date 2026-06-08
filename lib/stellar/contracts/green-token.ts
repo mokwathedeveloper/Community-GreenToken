@@ -128,3 +128,29 @@ export async function buildBurnTx(
   const assembled = assembleTx(tx, sim);
   return assembled.toXDR();
 }
+
+/**
+ * Build unsigned burn_from XDR — spender uses an approved allowance to burn
+ * tokens from `fromAddress`. Required by SEP-41.
+ * The spender signs this transaction with Freighter.
+ */
+export async function buildBurnFromTx(
+  spenderAddress: string,
+  fromAddress:    string,
+  amount:         bigint
+): Promise<string> {
+  const contract = getContract();
+  const tx = (await buildBaseTx(spenderAddress))
+    .addOperation(contract.call(
+      "burn_from",
+      new Address(spenderAddress).toScVal(),
+      new Address(fromAddress).toScVal(),
+      nativeToScVal(amount, { type: "i128" })
+    ))
+    .setTimeout(30)
+    .build();
+
+  const sim      = await simulateTx(tx);
+  const assembled = assembleTx(tx, sim);
+  return assembled.toXDR();
+}

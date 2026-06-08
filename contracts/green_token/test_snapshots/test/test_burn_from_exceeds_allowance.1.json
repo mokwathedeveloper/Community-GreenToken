@@ -48,10 +48,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "i128": "300000000"
+                  "i128": "100000000"
                 },
                 {
-                  "u32": 1000
+                  "u32": 9999
                 }
               ]
             }
@@ -154,7 +154,7 @@
                       "symbol": "amount"
                     },
                     "val": {
-                      "i128": "300000000"
+                      "i128": "100000000"
                     }
                   },
                   {
@@ -162,7 +162,7 @@
                       "symbol": "expiration_ledger"
                     },
                     "val": {
-                      "u32": 1000
+                      "u32": 9999
                     }
                   }
                 ]
@@ -171,7 +171,7 @@
           },
           "ext": "v0"
         },
-        "live_until": 1000
+        "live_until": 9999
       },
       {
         "entry": {
