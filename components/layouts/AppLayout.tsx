@@ -1,14 +1,21 @@
+"use client";
+
+import { useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import Sidebar from "@/components/Sidebar";
 import AppTopBar from "@/components/AppTopBar";
 
 interface AppLayoutProps {
-  children:     ReactNode;
-  title:        string;
+  children:      ReactNode;
+  title:         string;
   tokenBalance?: bigint | null;
 }
 
 export default function AppLayout({ children, title, tokenBalance }: AppLayoutProps) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openDrawer  = useCallback(() => setDrawerOpen(true),  []);
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Skip link for keyboard/screen reader users */}
@@ -19,11 +26,15 @@ export default function AppLayout({ children, title, tokenBalance }: AppLayoutPr
         Skip to content
       </a>
 
-      <Sidebar />
+      <Sidebar drawerOpen={drawerOpen} onDrawerClose={closeDrawer} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* AppTopBar fetches its own user data via useUser() */}
-        <AppTopBar title={title} tokenBalance={tokenBalance} />
+        <AppTopBar
+          title={title}
+          tokenBalance={tokenBalance}
+          onMenuOpen={openDrawer}
+          menuOpen={drawerOpen}
+        />
 
         <main
           id="page-content"

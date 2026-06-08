@@ -1,17 +1,19 @@
 "use client";
 
-import { BellIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import { BellIcon, CalendarIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { Coins } from "lucide-react";
 import { formatGTK } from "@/lib/utils";
 import UserMenu from "@/components/ui/UserMenu";
 import { useUser } from "@/hooks/useUser";
 
 interface AppTopBarProps {
-  title: string;
+  title:         string;
   tokenBalance?: bigint | null;
+  onMenuOpen?:   () => void;
+  menuOpen?:     boolean;
 }
 
-export default function AppTopBar({ title, tokenBalance }: AppTopBarProps) {
+export default function AppTopBar({ title, tokenBalance, onMenuOpen, menuOpen = false }: AppTopBarProps) {
   const { user, role, orgName, displayName, avatarUrl, isOrgAdmin, isSuperAdmin } = useUser();
 
   const today = new Date().toLocaleDateString("en-US", {
@@ -19,17 +21,31 @@ export default function AppTopBar({ title, tokenBalance }: AppTopBarProps) {
   });
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 bg-white border-b border-gray-100 shadow-sm flex-shrink-0">
+    <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-4 sm:px-6 bg-white border-b border-gray-100 shadow-sm flex-shrink-0">
 
-      {/* Page title */}
-      <h1 className="text-base font-semibold text-gray-900 truncate max-w-xs">
-        {title}
-      </h1>
+      {/* Left: hamburger (mobile only) + page title */}
+      <div className="flex items-center gap-2 min-w-0">
+        {onMenuOpen && (
+          <button
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex-shrink-0"
+            aria-label="Open navigation menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav-drawer"
+            onClick={onMenuOpen}
+          >
+            <Bars3Icon className="w-5 h-5" aria-hidden="true" />
+          </button>
+        )}
+
+        <h1 className="text-base font-semibold text-gray-900 truncate max-w-[10rem] sm:max-w-xs">
+          {title}
+        </h1>
+      </div>
 
       {/* Right controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
 
-        {/* Date */}
+        {/* Date (hidden on xs) */}
         <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
           <CalendarIcon className="w-3.5 h-3.5" aria-hidden="true" />
           <time dateTime={new Date().toISOString().split("T")[0]}>{today}</time>
