@@ -1,5 +1,4 @@
 /** @jest-environment node */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // Tests for lib/stellar/contracts/reward-manager.ts — all SDK and network calls mocked.
 
 // ── Mocks ────────────────────────────────────────────────────────────────────

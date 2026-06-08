@@ -111,7 +111,7 @@ export default function ExitIntentPopup({ cooldownMs = 86_400_000 }: ExitIntentP
             onClick={dismiss}
             className="w-full mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded"
           >
-            No thanks, I'll pass on the free trial
+            No thanks, I&apos;ll pass on the free trial
           </button>
         </div>
       </div>

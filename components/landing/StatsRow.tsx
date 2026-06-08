@@ -45,7 +45,9 @@ function useCountUp(target: number, duration = 1500, active: boolean) {
   useEffect(() => {
     if (!active) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setCount(target); return;
+      // Defer to next animation frame — avoids synchronous setState inside effect body
+      const raf = requestAnimationFrame(() => setCount(target));
+      return () => cancelAnimationFrame(raf);
     }
     let start = 0;
     const step = target / (duration / 16);

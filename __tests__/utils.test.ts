@@ -69,7 +69,7 @@ describe("shortenStellarKey()", () => {
 
 describe("fromStroops()", () => {
   it("converts 10 000 000 stroops to 1 GTK (bigint)", () => {
-    expect(fromStroops(10_000_000n)).toBe(1);
+    expect(fromStroops(BigInt(10_000_000))).toBe(1);
   });
 
   it("converts 5 000 000 stroops to 0.5 GTK (number)", () => {
@@ -77,7 +77,7 @@ describe("fromStroops()", () => {
   });
 
   it("converts 0 to 0", () => {
-    expect(fromStroops(0n)).toBe(0);
+    expect(fromStroops(BigInt(0))).toBe(0);
   });
 
   it("handles partial stroops correctly", () => {
@@ -86,38 +86,38 @@ describe("fromStroops()", () => {
 });
 
 describe("toStroops()", () => {
-  it("converts 1 GTK to 10 000 000n stroops", () => {
-    expect(toStroops(1)).toBe(10_000_000n);
+  it("converts 1 GTK to 10 000 000 stroops", () => {
+    expect(toStroops(1)).toBe(BigInt(10_000_000));
   });
 
-  it("converts 0.5 GTK to 5 000 000n stroops", () => {
-    expect(toStroops(0.5)).toBe(5_000_000n);
+  it("converts 0.5 GTK to 5 000 000 stroops", () => {
+    expect(toStroops(0.5)).toBe(BigInt(5_000_000));
   });
 
-  it("converts 0 to 0n", () => {
-    expect(toStroops(0)).toBe(0n);
+  it("converts 0 to BigInt(0)", () => {
+    expect(toStroops(0)).toBe(BigInt(0));
   });
 
   it("rounds fractional stroops", () => {
     // 0.0000001 GTK = 1 stroop
-    expect(toStroops(0.0000001)).toBe(1n);
+    expect(toStroops(0.0000001)).toBe(BigInt(1));
   });
 });
 
 describe("formatGTK()", () => {
   it("formats 1 GTK with 1 decimal by default", () => {
-    expect(formatGTK(10_000_000n)).toBe("1.0");
+    expect(formatGTK(BigInt(10_000_000))).toBe("1.0");
   });
 
   it("formats large amounts with locale separator", () => {
-    const result = formatGTK(10_000_000_000n);
+    const result = formatGTK(BigInt(10_000_000_000));
     // "1,000.0" on most locales; just verify the decimal and magnitude
     expect(result).toContain("000");
     expect(result).toMatch(/\d/);
   });
 
   it("respects custom decimals param", () => {
-    expect(formatGTK(10_000_000n, 2)).toBe("1.00");
+    expect(formatGTK(BigInt(10_000_000), 2)).toBe("1.00");
   });
 });
 

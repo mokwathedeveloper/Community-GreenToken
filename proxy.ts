@@ -72,9 +72,10 @@ export async function proxy(req: NextRequest) {
   // ── 4. Admin route protection ──────────────────────────────────────
   // Rule R-SAAS-04: Super admin routes validated server-side
   if (pathname.startsWith("/admin") && session) {
-    const jwt = session.user?.user_metadata;
-    const role = (session as any)?.access_token
-      ? JSON.parse(atob((session.access_token as string).split(".")[1]))?.role
+    const sessionRecord = session as unknown as Record<string, unknown>;
+    const accessToken   = typeof sessionRecord.access_token === "string" ? sessionRecord.access_token : null;
+    const role = accessToken
+      ? (JSON.parse(atob(accessToken.split(".")[1])) as Record<string, unknown>)?.role
       : null;
 
     if (role !== "superadmin") {

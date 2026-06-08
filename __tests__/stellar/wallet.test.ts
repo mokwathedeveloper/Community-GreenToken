@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- mock objects in tests intentionally bypass strict SDK types */
 // Tests for lib/stellar/wallet.ts — generateWallet().
 // Stellar SDK and Supabase admin client are fully mocked.
 

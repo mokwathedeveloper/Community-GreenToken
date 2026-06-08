@@ -35,7 +35,6 @@ interface PlanGateResult {
 export function usePlan(feature: PlanFeature): PlanGateResult {
   const { plan, trialEndsAt } = useOrg();
   const allowedPlans = FEATURE_PLAN_MAP[feature];
-  const canAccess = allowedPlans.includes(plan);
   const isTrialing = !!(trialEndsAt && new Date(trialEndsAt) > new Date());
 
   // During Pro trial, treat as Pro

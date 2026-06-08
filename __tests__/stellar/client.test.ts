@@ -1,4 +1,5 @@
 /** @jest-environment node */
+/* eslint-disable @typescript-eslint/no-explicit-any -- mock objects in tests intentionally bypass strict SDK types */
 // Tests for lib/stellar/client.ts — all SDK calls and network are fully mocked.
 
 // ── Mocks ────────────────────────────────────────────────────────────────────

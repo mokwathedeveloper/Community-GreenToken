@@ -33,6 +33,7 @@ export function useGreenToken() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchBalance is async; setState only fires after awaits
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
   return {

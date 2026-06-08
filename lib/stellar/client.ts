@@ -117,7 +117,11 @@ export async function submitAndWait(signedXdr: string): Promise<TxResult> {
       let returnValue: bigint | null = null;
       try {
         // Protocol 26+ uses TransactionMeta v4; earlier protocols use v3
-        const meta        = (result as any).resultMetaXdr;
+        type ScValParam = Parameters<typeof scValToNative>[0];
+        type SorobanMeta = { returnValue?: () => ScValParam };
+        type MetaV  = { sorobanMeta?: () => SorobanMeta | null } | null;
+        type XdrMeta = { v4?: () => MetaV; v3?: () => MetaV };
+        const meta        = (result as unknown as { resultMetaXdr?: XdrMeta }).resultMetaXdr;
         const sorobanMeta = meta?.v4?.()?.sorobanMeta?.() ?? meta?.v3?.()?.sorobanMeta?.();
         const retval      = sorobanMeta?.returnValue?.();
         if (retval) returnValue = BigInt(scValToNative(retval) ?? 0);

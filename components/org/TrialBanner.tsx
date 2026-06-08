@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useOrg } from "@/hooks/useOrg";
@@ -11,14 +11,18 @@ import { useOrg } from "@/hooks/useOrg";
 export default function TrialBanner() {
   const { trialEndsAt, plan } = useOrg();
   const [dismissed, setDismissed] = useState(false);
+  // Capture "now" once at mount via lazy initializer — Date.now referenced as fn, not called in render
+  const [now] = useState<number>(Date.now);
 
-  if (dismissed || !trialEndsAt || plan !== "free") return null;
-
-  const daysLeft = Math.max(
-    0,
-    Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  // Compute daysLeft before early returns — hooks must not be conditional
+  const daysLeft = useMemo(
+    () => trialEndsAt
+      ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - now) / (1000 * 60 * 60 * 24)))
+      : 0,
+    [trialEndsAt, now]
   );
 
+  if (dismissed || !trialEndsAt || plan !== "free") return null;
   if (daysLeft <= 0) return null;
 
   const isUrgent = daysLeft <= 3;

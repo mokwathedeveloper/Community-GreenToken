@@ -2,7 +2,6 @@
 
 import { BellIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { Coins } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { formatGTK } from "@/lib/utils";
 import UserMenu from "@/components/ui/UserMenu";
 import { useUser } from "@/hooks/useUser";

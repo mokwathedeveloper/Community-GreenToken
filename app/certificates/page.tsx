@@ -66,6 +66,7 @@ export default function CertificatesPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadCerts is async; all setState calls fire after awaits
     loadCerts()
       .then(async (data) => {
         // Auto-backfill: if no certs returned, trigger issuance for existing verified actions
@@ -84,7 +85,6 @@ export default function CertificatesPage() {
       })
       .catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load certificates."))
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function copyToClipboard(text: string, id: string) {

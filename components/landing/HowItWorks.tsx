@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight, ArrowRight } from "lucide-react";
 import {
   MPersonAdd, MShield, MCoin, MGift, MLeaf,
-  MLink, MBarChart,
+  MLink,
 } from "@/components/icons";
 
 const STEPS = [

@@ -42,9 +42,8 @@ export default function ProfilePage() {
   const [showSecret,      setShowSecret]      = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
 
-  useEffect(() => {
-    if (displayName) setName(displayName);
-  }, [displayName]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-fills form when UserProvider resolves async displayName
+  useEffect(() => { if (displayName) setName(displayName); }, [displayName]);
 
   // Load wallet_address from DB on mount (UserProvider does not expose it)
   useEffect(() => {
@@ -76,7 +75,6 @@ export default function ProfilePage() {
       if (metaErr) { showToast(metaErr.message, "error"); return; }
 
       if (user?.id) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payload: Record<string, string> = {
           display_name: name.trim(),
           updated_at:   new Date().toISOString(),
