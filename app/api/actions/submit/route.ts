@@ -315,14 +315,12 @@ export async function POST(req: NextRequest) {
         const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
         const orgHex = orgId.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
-        const { data: profile } = await (supabase as any)
-          .from("users")
-          .select("wallet_address")
-          .eq("id", capturedUserId)
-          .maybeSingle();
-        const stellarUserAddress = (profile?.wallet_address as string | null)
-          ?? process.env.STELLAR_ADMIN_PUBLIC_KEY
-          ?? "";
+        // Always use admin keypair as the on-chain user address.
+        // The contract's user.require_auth() is satisfied by the admin signer.
+        // Using a member's wallet address would fail because only the admin signs.
+        // Real user identity is tracked in the DB (user_id column).
+        const { Keypair } = await import("@stellar/stellar-sdk");
+        const stellarUserAddress = Keypair.fromSecret(adminSecret).publicKey();
 
         const result = await submitAction(
           adminSecret,

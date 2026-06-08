@@ -211,14 +211,10 @@ export async function POST(
         const { submitAction } = await import("@/lib/stellar/contracts/action-registry");
         const orgHex = event.org_id.replace(/-/g, "").padEnd(64, "0").slice(0, 64);
 
-        const { data: profile } = await (supabase as any)
-          .from("users")
-          .select("wallet_address")
-          .eq("id", auth.userId)
-          .maybeSingle();
-        const stellarUserAddress = (profile?.wallet_address as string | null)
-          ?? process.env.STELLAR_ADMIN_PUBLIC_KEY
-          ?? "";
+        // Always use admin keypair as the on-chain user address.
+        // user.require_auth() in the contract is satisfied by the admin signer.
+        const { Keypair } = await import("@stellar/stellar-sdk");
+        const stellarUserAddress = Keypair.fromSecret(adminSecret).publicKey();
 
         const result = await submitAction(
           adminSecret,
