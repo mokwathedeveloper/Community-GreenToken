@@ -206,6 +206,7 @@ flowchart TD
 | **Org Setup Wizard** | 5-step onboarding: profile → token config → plan → deploy | ✅ Live |
 | **Member Invite System** | Email + token-based invite links (`/join/[token]`) | ✅ Live |
 | **Action Verification Queue** | Admin reviews pending actions, approve triggers on-chain mint | ✅ Live |
+| **QR Event Check-in** | Generate event QR codes; member scans auto-submit geo-verified actions | ✅ Live |
 | **Reward Catalog** | Create custom rewards; members redeem GTK for them | ✅ Live |
 | **Analytics Dashboard** | Actions verified, tokens distributed, CO₂ offset, member growth | ✅ Live |
 | **Org Settings** | Logo, token name, reward rates, member permissions | ✅ Live |
@@ -217,12 +218,14 @@ flowchart TD
 | Feature | Description | Status |
 |---|---|:---:|
 | **Action Submission** | Photo proof + category → submitted for admin review | ✅ Live |
+| **QR Code Check-in** | Scan event QR codes to instantly submit geo-verified eco-actions | ✅ Live |
 | **GTK Wallet** | On-chain balance, synced with Freighter | ✅ Live |
 | **Token History** | Full mint + redemption log | ✅ Live |
 | **Leaderboard** | Global + org-level rankings by GTK earned | ✅ Live |
 | **Redeem Rewards** | Browse org reward catalog, burn GTK for goods | ✅ Live |
+| **Carbon Credit Certificates** | Stellar-anchored certificates issued per verified action with CO₂ offset data | ✅ Live |
 | **Donations** | Allocate GTK to eco-projects | ✅ Live |
-| **Withdrawal** | Request GTK payout | ✅ Live |
+| **Withdrawal** | Multi-currency cash-out: KES via M-Pesa or USD via bank transfer; live exchange rates | ✅ Live |
 | **Freighter Login** | Connect Stellar wallet for signed redemptions | ✅ Live |
 
 ---
@@ -729,13 +732,13 @@ GET /tokens/balance  ←  Return updated GTK balance
 | **Phase 2 — SaaS** | Leaderboard + gamification | ✅ Complete |
 | **Phase 2 — SaaS** | Competitive edge landing section | ✅ Complete |
 | **Phase 2 — SaaS** | Tokenomics investor page | ✅ Complete |
-| **Phase 3 — Growth** | QR code action verification | 🔄 Planned |
+| **Phase 3 — Growth** | QR code action verification | ✅ Complete |
 | **Phase 3 — Growth** | IoT sensor integration (automatic actions) | 🔄 Planned |
-| **Phase 3 — Growth** | M-Pesa withdrawal (KES/USD off-ramp) | 🔄 Planned |
+| **Phase 3 — Growth** | M-Pesa withdrawal (KES/USD off-ramp) | ✅ Complete |
 | **Phase 3 — Growth** | Mobile app (React Native) | 🔄 Planned |
 | **Phase 4 — Scale** | Stellar Mainnet deployment | 🔄 Planned |
-| **Phase 4 — Scale** | Multi-currency reward redemption | 🔄 Planned |
-| **Phase 4 — Scale** | Carbon credit NFT certificates | 🔄 Planned |
+| **Phase 4 — Scale** | Multi-currency reward redemption (KES / USD) | ✅ Complete |
+| **Phase 4 — Scale** | Carbon credit NFT certificates (Stellar-anchored) | ✅ Complete |
 
 ---
 

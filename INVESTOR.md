@@ -131,9 +131,12 @@ Built for the WebBridge Hackathon Stellar Track:
 
 **Seed round target:** To be determined post-hackathon
 
+**Shipped (no additional capital required):**
+- QR code event check-in, M-Pesa / bank withdrawal off-ramp, multi-currency (KES / USD) redemption, carbon credit NFT certificates on Stellar
+
 **Use of funds:**
-- 40% Engineering — mobile app, IoT integration, M-Pesa off-ramp
-- 25% Protocol — Mainnet deployment, external audit, DAO governance
+- 40% Engineering — mobile app (React Native), IoT integration, Stellar Mainnet deployment
+- 25% Protocol — external smart contract audit, DAO governance, Mainnet launch
 - 20% Go-to-Market — East Africa NGO partnerships, school pilots
 - 15% Operations — legal entity, team, infrastructure
 

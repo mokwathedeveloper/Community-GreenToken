@@ -5,6 +5,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## v2.5.0 — 2026-06-09 · Mobile Navigation · Docs Accuracy Pass
+
+### Added
+- **Mobile hamburger drawer** (`components/Sidebar.tsx`, `components/AppTopBar.tsx`, `components/layouts/AppLayout.tsx`)
+  - `Bars3Icon` hamburger button in the top bar, visible only on screens below the `lg` breakpoint
+  - Slide-in panel (`w-72`) with blurred backdrop; closes on Escape key, backdrop click, or any nav-link click
+  - Full ARIA: `role="dialog"`, `aria-modal="true"`, `aria-expanded` on trigger button, `aria-controls="mobile-nav-drawer"`
+  - Desktop sidebar (`hidden lg:flex`) is unchanged
+
+### Fixed
+- **Vercel build failure** (`.vercelignore`): Unanchored pattern `contracts/` was stripping `lib/stellar/contracts/` from the build bundle, causing 8 "module not found" errors. Changed to `/contracts/` to scope the rule to the repo root (Rust contracts only).
+
+### Documentation
+- **README.md**, **WHITEPAPER.md**: Updated roadmap table — 4 features that shipped were still marked `🔄 Planned`:
+  - QR code action verification → `✅ Complete`
+  - M-Pesa withdrawal (KES/USD off-ramp) → `✅ Complete`
+  - Multi-currency reward redemption (KES / USD) → `✅ Complete`
+  - Carbon credit NFT certificates (Stellar-anchored) → `✅ Complete`
+- **README.md**: Added QR Event Check-in and Carbon Credit Certificates to Platform Features tables; updated Withdrawal description to reflect multi-currency support
+- **INVESTOR.md**: "Use of funds" updated — M-Pesa off-ramp and carbon credit certificates listed as shipped; remaining capital directed to mobile app, Mainnet deployment, audit
+
+---
+
 ## v2.3.0 — 2026-06-08 · Blockchain Redeployment · #[contractevent] Migration · Upgrade Path
 
 ### Changed

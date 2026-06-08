@@ -325,9 +325,11 @@ pub fn get_redemption_history(env: Env, user: Address) -> Vec<RedemptionRecord>;
 | **Phase 2 — SaaS** | Stripe billing + plan enforcement | ✅ Done |
 | **Phase 2 — SaaS** | Analytics dashboards | ✅ Done |
 | **Phase 2 — SaaS** | Leaderboard + gamification | ✅ Done |
-| **Phase 3 — Scale** | QR code action verification | 🔄 Planned |
+| **Phase 3 — Scale** | QR code action verification | ✅ Done |
 | **Phase 3 — Scale** | IoT sensor integration | 🔄 Planned |
-| **Phase 3 — Scale** | M-Pesa withdrawal (KES/USD off-ramp) | 🔄 Planned |
+| **Phase 3 — Scale** | M-Pesa withdrawal (KES/USD off-ramp) | ✅ Done |
+| **Phase 3 — Scale** | Multi-currency reward redemption (KES / USD) | ✅ Done |
+| **Phase 3 — Scale** | Carbon credit NFT certificates (Stellar-anchored) | ✅ Done |
 | **Phase 4 — Mainnet** | External smart contract audit | 🔄 Planned |
 | **Phase 4 — Mainnet** | Stellar Mainnet deployment | 🔄 Planned |
 | **Phase 4 — Mainnet** | DAO governance | 🔄 Planned |
