@@ -149,6 +149,12 @@ export default function ActionSubmissionPage() {
     if (!description.trim()){ setError("Please describe your action."); return; }
     if (!evidence)          { setError("Please upload photo evidence."); return; }
 
+    // Block submission if photo has no EXIF — member must use a fresh camera photo
+    if (exifData && !exifData.present) {
+      setError("Your photo has no GPS or timestamp data. Please take a fresh photo directly from your camera app with location enabled.");
+      return;
+    }
+
     // 4 MB client-side guard (Vercel serverless payload limit)
     if (evidence.size > 4 * 1024 * 1024) {
       setError("Photo is too large. Please use a photo under 4 MB.");
@@ -179,6 +185,8 @@ export default function ActionSubmissionPage() {
           setError(`Too many submissions. Please wait ${err.retryAfter ?? 60} seconds.`);
         } else if (err?.code === "DUPLICATE_EVIDENCE") {
           setError("This photo has already been submitted as evidence. Please use a different photo.");
+        } else if (err?.code === "NO_EXIF_METADATA") {
+          setError("Your photo has no GPS or timestamp. Please take a fresh photo from your camera app with location turned on.");
         } else if (err?.code === "EVIDENCE_TOO_OLD") {
           setError("Photo evidence is more than 30 days old. Please upload a recent photo of your action.");
         } else {
@@ -442,7 +450,7 @@ export default function ActionSubmissionPage() {
                     ? exifData.ageWarning
                       ? "bg-amber-50 border-amber-200"
                       : "bg-primary-50 border-primary-100"
-                    : "bg-amber-50 border-amber-200"
+                    : "bg-red-50 border-red-300"
                 )}
               >
                 {exifData.present ? (
@@ -502,14 +510,21 @@ export default function ActionSubmissionPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-red-700 flex items-center gap-1.5">
                       <MWarning className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-                      No EXIF metadata found in this photo
+                      Photo rejected — no GPS or timestamp found
                     </p>
-                    <p className="text-xs text-amber-600 leading-relaxed">
-                      GPS location and capture time could not be extracted. This may indicate a
-                      screenshot or an edited/stripped image. Admins will be notified to review
-                      this submission more closely.
+                    <p className="text-xs text-red-600 leading-relaxed">
+                      This photo has no location or time data embedded in it. Screenshots,
+                      WhatsApp-forwarded images, and edited photos are not accepted as proof.
+                    </p>
+                    <ul className="text-xs text-red-700 space-y-0.5 pl-3 list-disc">
+                      <li>Open your camera app and take a <strong>fresh photo right now</strong></li>
+                      <li>Make sure GPS / location is enabled on your device</li>
+                      <li>Do not send the photo through WhatsApp or edit it before uploading</li>
+                    </ul>
+                    <p className="text-[10px] text-red-500 border-t border-red-200 pt-1.5 font-medium">
+                      Remove this photo and upload a valid one to continue.
                     </p>
                   </>
                 )}
@@ -525,9 +540,15 @@ export default function ActionSubmissionPage() {
               </p>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={loading}
+              disabled={loading || (!!exifData && !exifData.present)}
               icon={<MLeaf className="w-4 h-4" />}>
-              Submit Eco-Action
+              {exifData && !exifData.present ? "Upload a valid photo to continue" : "Submit Eco-Action"}
             </Button>
           </form>
         </div>

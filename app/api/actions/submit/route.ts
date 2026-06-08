@@ -158,7 +158,20 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // 10. Same-org duplicate check
+  // 10. Reject if photo has no EXIF — server enforces what the UI already blocks
+  if (!exif.present) {
+    return NextResponse.json(
+      {
+        error: {
+          code:    "NO_EXIF_METADATA",
+          message: "Your photo has no GPS or timestamp data. Please take a fresh photo directly from your camera app with location enabled.",
+        },
+      },
+      { status: 422 }
+    );
+  }
+
+  // 12. Same-org duplicate check
   const { data: existing } = await (supabase as any)
     .from("actions")
     .select("id")
@@ -175,7 +188,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 11. EXIF age check — server-enforced, cannot be bypassed
+  // 13. EXIF age check — server-enforced, cannot be bypassed
   if (exif.capturedAt) {
     const captureAge = Date.now() - exif.capturedAt.getTime();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;
