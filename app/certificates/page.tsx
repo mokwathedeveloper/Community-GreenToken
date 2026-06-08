@@ -50,21 +50,41 @@ function getActionColor(type: string) {
 }
 
 export default function CertificatesPage() {
-  const [certs,   setCerts]   = useState<CertificateSummary[]>([]);
-  const [total,   setTotal]   = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [copied,  setCopied]  = useState<string | null>(null);
+  const [certs,     setCerts]     = useState<CertificateSummary[]>([]);
+  const [total,     setTotal]     = useState(0);
+  const [loading,   setLoading]   = useState(true);
+  const [loadErr,   setLoadErr]   = useState<string | null>(null);
+  const [copied,    setCopied]    = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+
+  async function loadCerts() {
+    const r    = await fetch("/api/certificates?limit=50");
+    const json = await r.json();
+    setCerts(json.data ?? []);
+    setTotal(json.meta?.total ?? 0);
+    return (json.data ?? []) as CertificateSummary[];
+  }
 
   useEffect(() => {
-    fetch("/api/certificates?limit=50")
-      .then(r => r.json())
-      .then(json => {
-        setCerts(json.data ?? []);
-        setTotal(json.meta?.total ?? 0);
+    loadCerts()
+      .then(async (data) => {
+        // Auto-backfill: if no certs returned, trigger issuance for existing verified actions
+        if (data.length === 0) {
+          setBackfilling(true);
+          try {
+            const br = await fetch("/api/certificates/backfill", { method: "POST" });
+            const bj = await br.json();
+            if (bj.data?.issued > 0) {
+              // Reload after backfill issued new certificates
+              await loadCerts();
+            }
+          } catch { /* non-critical */ }
+          setBackfilling(false);
+        }
       })
       .catch((err: unknown) => setLoadErr(err instanceof Error ? err.message : "Failed to load certificates."))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function copyToClipboard(text: string, id: string) {
@@ -140,12 +160,20 @@ export default function CertificatesPage() {
         <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center">
-              <MCrown className="w-8 h-8 text-amber-300" aria-hidden />
+              {backfilling
+                ? <div className="w-7 h-7 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" aria-hidden />
+                : <MCrown className="w-8 h-8 text-amber-300" aria-hidden />
+              }
             </div>
           </div>
-          <p className="text-sm font-bold text-gray-700">No certificates yet</p>
+          <p className="text-sm font-bold text-gray-700">
+            {backfilling ? "Generating your certificates…" : "No certificates yet"}
+          </p>
           <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
-            Complete an eco-action (QR scan or submit a photo) to earn your first carbon credit certificate.
+            {backfilling
+              ? "Issuing carbon credit certificates for your verified actions."
+              : "Complete an eco-action (QR scan or submit a photo) and get it verified to earn your first carbon credit certificate."
+            }
           </p>
         </div>
       ) : (
