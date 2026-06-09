@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MLink, MPeople, MLeaf, MLightbulb, MPhoneAndroid, MStar } from "@/components/icons";
+import { MLink, MPeople, MLeaf, MLightbulb, MPhoneAndroid, MStar, MDashboard } from "@/components/icons";
 
 const TRUST_BADGES = [
   { Icon: MLink,   label: "Stellar Blockchain" },
@@ -9,7 +9,11 @@ const TRUST_BADGES = [
   { Icon: MStar,   label: "Africa-First"        },
 ];
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  isLoggedIn?: boolean;
+}
+
+export default function HeroSection({ isLoggedIn = false }: HeroSectionProps) {
   return (
     <section
       aria-label="Hero — Rewarding Sustainable Actions"
@@ -65,13 +69,23 @@ export default function HeroSection() {
 
           {/* CTA Buttons — stack on mobile, row on sm+ */}
           <div className="flex flex-col sm:flex-row gap-3 mb-8 sm:mb-10">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 active:bg-primary-800 rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none min-h-[48px] touch-manipulation"
-            >
-              <MLeaf className="w-5 h-5" aria-hidden="true" />
-              Start Earning Tokens
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 active:bg-primary-800 rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none min-h-[48px] touch-manipulation"
+              >
+                <MDashboard className="w-5 h-5" aria-hidden="true" />
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 active:bg-primary-800 rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none min-h-[48px] touch-manipulation"
+              >
+                <MLeaf className="w-5 h-5" aria-hidden="true" />
+                Start Earning Tokens
+              </Link>
+            )}
             <Link
               href="/how-it-works"
               className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-primary-600 border-2 border-primary-500 hover:bg-primary-50 active:bg-primary-100 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none min-h-[48px] touch-manipulation"

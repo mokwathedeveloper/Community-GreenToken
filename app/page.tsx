@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { MLeaf, MTrophy } from "@/components/icons";
+import { MLeaf, MTrophy, MDashboard } from "@/components/icons";
 import PublicLayout from "@/components/layouts/PublicLayout";
 import HeroSection from "@/components/landing/HeroSection";
 import StatsRow from "@/components/landing/StatsRow";
@@ -18,14 +17,14 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
-  // Authenticated users skip the marketing page and go straight to their app
   const supabase = await createServerSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) redirect("/dashboard");
+  const isLoggedIn = !!session?.user;
+
   return (
     <PublicLayout>
       {/* 1. Hero */}
-      <HeroSection />
+      <HeroSection isLoggedIn={isLoggedIn} />
 
       {/* 2. Platform Stats */}
       <StatsRow />
@@ -61,13 +60,23 @@ export default async function LandingPage() {
               Join thousands of changemakers building a greener tomorrow.
             </p>
             <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 justify-center lg:justify-start">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shadow-md text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              >
-                <MLeaf className="w-4 h-4" aria-hidden="true" />
-                Get Started
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shadow-md text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                >
+                  <MDashboard className="w-4 h-4" aria-hidden="true" />
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shadow-md text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                >
+                  <MLeaf className="w-4 h-4" aria-hidden="true" />
+                  Get Started
+                </Link>
+              )}
               <Link
                 href="/leaderboard"
                 className="inline-flex items-center gap-2 px-8 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl border border-white/30 transition-colors backdrop-blur-sm text-sm focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"

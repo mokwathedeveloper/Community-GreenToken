@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { BellIcon, CalendarIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { Coins } from "lucide-react";
 import { formatGTK } from "@/lib/utils";
@@ -16,9 +17,15 @@ interface AppTopBarProps {
 export default function AppTopBar({ title, tokenBalance, onMenuOpen, menuOpen = false }: AppTopBarProps) {
   const { user, role, orgName, displayName, avatarUrl, isOrgAdmin, isSuperAdmin } = useUser();
 
-  const today = new Date().toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-  });
+  // Date is computed client-side only to avoid server/client timezone mismatch (React #418)
+  const [today,   setToday]   = useState("");
+  const [dateIso, setDateIso] = useState("");
+  useEffect(() => {
+    const d = new Date();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only date; avoids server/client timezone mismatch (React #418)
+    setToday(d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }));
+    setDateIso(d.toISOString().split("T")[0]);
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-4 sm:px-6 bg-white border-b border-gray-100 shadow-sm flex-shrink-0">
@@ -45,11 +52,13 @@ export default function AppTopBar({ title, tokenBalance, onMenuOpen, menuOpen = 
       {/* Right controls */}
       <div className="flex items-center gap-2 sm:gap-3">
 
-        {/* Date (hidden on xs) */}
-        <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
-          <CalendarIcon className="w-3.5 h-3.5" aria-hidden="true" />
-          <time dateTime={new Date().toISOString().split("T")[0]}>{today}</time>
-        </span>
+        {/* Date (hidden on xs) — rendered client-only to avoid timezone hydration mismatch */}
+        {today && (
+          <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
+            <CalendarIcon className="w-3.5 h-3.5" aria-hidden="true" />
+            <time dateTime={dateIso}>{today}</time>
+          </span>
+        )}
 
         {/* GTK Token chip */}
         {tokenBalance != null && (
